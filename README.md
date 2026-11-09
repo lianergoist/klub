@@ -35,4 +35,15 @@ PHP under Apache kører med `pcre.jit=0` (`/etc/php/8.5/apache2/conf.d/99-klub.i
 - MobilePay er simuleret (`app/Support/Payments.php::markPaid` er det sted, Vipps MobilePay-webhooket skal kalde).
 - E-mails skrives til `storage/logs/laravel.log` (`MAIL_MAILER=log`) i stedet for at blive sendt.
 - Push-beskeder, venteliste, gentagne aktiviteter, udlæg og to-trins-login er ikke med endnu.
-- Ingen automatisk backup endnu.
+
+## Backup af databasen
+
+`/usr/local/sbin/klub-db-backup` tager et konsistent `mysqldump` hver 6. time (cron: `/etc/cron.d/klub-db-backup`, kl. 00:15, 06:15, 12:15, 18:15 UTC).
+Dumps gemmes i `/var/backups/klub` (kun root) og kommer med i udbyderens daglige serverbackup. Dumps ældre end 14 dage slettes automatisk.
+Bilag ligger i `storage/app/private` og er dækket af serverbackuppen.
+
+Se seneste kørsler: `journalctl -t klub-db-backup`
+
+Genskab (overskriver den nuværende database!):
+
+    zcat /var/backups/klub/klub-ÅÅÅÅMMDD-TTMM.sql.gz | mysql klub
