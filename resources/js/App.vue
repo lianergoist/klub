@@ -1,0 +1,54 @@
+<template>
+    <div v-if="store.user && !route.meta.public" class="shell">
+        <aside class="sidebar">
+            <div class="brandmark"><img src="/icon.svg" alt=""> Klubben</div>
+            <nav>
+                <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
+                <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
+                <RouterLink to="/indbakke"><Icon name="inbox" /> Indbakke <span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
+                <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
+                <template v-if="can.members || can.finance_read || can.board">
+                    <div class="sect">Administration</div>
+                    <RouterLink v-if="can.members" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
+                    <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
+                    <RouterLink v-if="can.board" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
+                </template>
+            </nav>
+            <div class="who">
+                <div><strong>{{ store.user.name }}</strong></div>
+                <div class="small" style="opacity:.8">{{ store.user.roles.map(r => roleLabel[r]).join(' · ') }}</div>
+                <button class="btn small" @click="logout"><Icon name="logout" style="width:16px" /> Log ud</button>
+            </div>
+        </aside>
+        <main :class="['main', { wide: route.matched.some(r => r.meta.wide) }]">
+            <RouterView />
+        </main>
+        <nav class="tabbar">
+            <RouterLink to="/aktiviteter"><Icon name="cal" />Aktiviteter</RouterLink>
+            <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" />Træner</RouterLink>
+            <RouterLink to="/indbakke"><Icon name="inbox" />Indbakke<span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
+            <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
+            <RouterLink v-if="can.members || can.finance_read || can.board" to="/mere"><Icon name="more" />Mere</RouterLink>
+        </nav>
+    </div>
+    <RouterView v-else />
+    <div v-if="store.toast" :class="['toast', store.toast.kind]" role="status">{{ store.toast.text }}</div>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import Icon from './components/Icon.vue';
+import { store, api, setSession, roleLabel } from './api';
+
+const route = useRoute();
+const router = useRouter();
+const can = computed(() => store.user?.can || {});
+
+async function logout() {
+    try { await api('logout', { method: 'POST' }); } catch {}
+    setSession(null, null);
+    router.push('/login');
+}
+defineExpose({ logout });
+</script>

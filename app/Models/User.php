@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $guarded = ['id'];
+
+    protected $hidden = ['password', 'remember_token'];
+
+    public const ROLE_LABELS = [
+        'member' => 'Medlem',
+        'trainer' => 'Træner',
+        'board' => 'Bestyrelse',
+        'treasurer' => 'Kasserer',
+        'auditor' => 'Revisor',
+        'admin' => 'Administrator',
+    ];
+
+    public const STATUS_LABELS = [
+        'pending' => 'Afventer',
+        'active' => 'Aktiv',
+        'passive' => 'Passiv',
+        'resigned' => 'Udmeldt',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'birthdate' => 'date',
+            'joined_on' => 'date',
+            'resigned_on' => 'date',
+            'consent_at' => 'datetime',
+            'notify_email' => 'boolean',
+            'notify_push' => 'boolean',
+        ];
+    }
+
+    public function household() { return $this->belongsTo(Household::class); }
+    public function membershipType() { return $this->belongsTo(MembershipType::class); }
+    public function roleAssignments() { return $this->hasMany(RoleAssignment::class); }
+    public function registrations() { return $this->hasMany(Registration::class); }
+    public function unavailabilities() { return $this->hasMany(Unavailability::class); }
+    public function categorySettings() { return $this->belongsToMany(Category::class)->withPivot('show', 'notify'); }
+
+    /** Aktive roller i dag (medlem er altid med). */
+    public function roles(): array
+    {
+        $today = now()->toDateString();
+        $roles = $this->roleAssignments
+            ->filter(fn ($r) => $r->starts_on->toDateString() <= $today && (! $r->ends_on || $r->ends_on->toDateString() >= $today))
+            ->pluck('role')->unique()->values()->all();
+
+        return array_values(array_unique(array_merge(['member'], $roles)));
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return (bool) array_intersect($roles, $this->roles());
+    }
+
+    public function isTrainer(): bool { return $this->hasRole('trainer', 'board', 'admin'); }
+    public function isBoard(): bool { return $this->hasRole('board', 'admin'); }
+    public function canReadFinance(): bool { return $this->hasRole('treasurer', 'auditor', 'board'); }
+    public function canWriteFinance(): bool { return $this->hasRole('treasurer'); }
+    public function canSeeMembers(): bool { return $this->hasRole('board', 'treasurer', 'admin'); }
+
+    public function age(): ?int
+    {
+        return $this->birthdate?->age;
+    }
+
+    /** Medlemmer denne bruger må handle på vegne af (sig selv + husstand, hvis betaler). */
+    public function managedMembers()
+    {
+        if ($this->household_id && $this->household?->payer_id === $this->id) {
+            return User::where('household_id', $this->household_id)->orderByRaw('id = ? desc', [$this->id])->orderBy('birthdate')->get();
+        }
+
+        return collect([$this]);
+    }
+
+    public function payer(): User
+    {
+        if ($this->household_id && $this->household?->payer_id && $this->household->payer_id !== $this->id) {
+            return $this->household->payer;
+        }
+
+        return $this;
+    }
+
+    public function hasValidMembership(?int $year = null): bool
+    {
+        $year = (string) ($year ?? now()->year);
+
+        return Invoice::where('kind', 'membership')->where('period', $year)->where('status', 'paid')
+            ->where(function ($q) {
+                $q->where('member_id', $this->id);
+                if ($this->household_id) {
+                    $q->orWhere(fn ($q) => $q->whereNull('member_id')
+                        ->whereIn('payer_id', User::where('household_id', $this->household_id)->select('id')));
+                }
+            })->exists();
+    }
+
+    public function isUnavailableOn($date): bool
+    {
+        $d = \Illuminate\Support\Carbon::parse($date)->toDateString();
+
+        return $this->unavailabilities()->where('from_date', '<=', $d)->where('to_date', '>=', $d)->exists();
+    }
+
+    public function brief(): array
+    {
+        return ['id' => $this->id, 'name' => $this->name];
+    }
+}

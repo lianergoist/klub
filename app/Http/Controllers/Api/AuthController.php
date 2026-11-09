@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Household;
+use App\Models\User;
+use App\Notifications\ClubMessage;
+use App\Support\Audit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    public function login(Request $r)
+    {
+        $data = $r->validate(['email' => 'required|email', 'password' => 'required']);
+        $user = User::where('email', $data['email'])->first();
+        if (! $user || ! $user->password || ! Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages(['email' => 'Forkert e-mail eller adgangskode.']);
+        }
+        if ($user->status === 'resigned') {
+            throw ValidationException::withMessages(['email' => 'Medlemskabet er afsluttet.']);
+        }
+
+        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user)];
+    }
+
+    /** Kun i demo-tilstand: hurtig-login til bestyrelsens afprøvning. */
+    public function demoAccounts()
+    {
+        abort_unless(config('app.demo'), 404);
+
+        return collect(config('app.demo_accounts'))->map(function ($label, $email) {
+            $u = User::where('email', $email)->first();
+
+            return $u ? ['email' => $email, 'name' => $u->name, 'label' => $label] : null;
+        })->filter()->values();
+    }
+
+    public function demoLogin(Request $r)
+    {
+        abort_unless(config('app.demo'), 404);
+        abort_unless(array_key_exists($r->input('email'), config('app.demo_accounts')), 403);
+        $user = User::where('email', $r->input('email'))->firstOrFail();
+
+        return ['token' => $user->createToken('demo')->plainTextToken, 'user' => self::me($user)];
+    }
+
+    public function register(Request $r)
+    {
+        $data = $r->validate([
+            'name' => 'required|string|max:120',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8',
+            'phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:200',
+            'postal_code' => 'nullable|string|max:10',
+            'city' => 'nullable|string|max:100',
+            'birthdate' => 'required|date|before:today',
+            'consent' => 'accepted',
+        ], ['consent.accepted' => 'Du skal give samtykke for at kunne melde dig ind.']);
+
+        unset($data['consent']);
+        $user = User::create($data + ['status' => 'pending', 'consent_at' => now()]);
+        $hh = Household::create(['name' => 'Husstand '.$user->name, 'payer_id' => $user->id]);
+        $user->update(['household_id' => $hh->id]);
+        Audit::log('member.registered', $user);
+
+        User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['board', 'treasurer'])->whereNull('ends_on'))->get()
+            ->each->notify(new ClubMessage('Nyt medlem afventer godkendelse', $user->name.' har meldt sig ind.', '/medlemmer/'.$user->id));
+
+        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user->fresh())];
+    }
+
+    public function logout(Request $r)
+    {
+        $r->user()->currentAccessToken()?->delete();
+
+        return ['ok' => true];
+    }
+
+    public function show(Request $r)
+    {
+        return self::me($r->user());
+    }
+
+    public static function me(User $u): array
+    {
+        $u->loadMissing('roleAssignments', 'household', 'membershipType');
+
+        return [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'status' => $u->status,
+            'roles' => $u->roles(),
+            'unread' => $u->unreadNotifications()->count(),
+            'is_payer' => $u->household?->payer_id === $u->id,
+            'can' => [
+                'trainer' => $u->isTrainer(),
+                'board' => $u->isBoard(),
+                'members' => $u->canSeeMembers(),
+                'finance_read' => $u->canReadFinance(),
+                'finance_write' => $u->canWriteFinance(),
+                'admin' => $u->hasRole('admin'),
+            ],
+        ];
+    }
+}
