@@ -17,6 +17,8 @@ return [
 
     // Demo-tilstand til proof of concept: hurtig-login som forskellige roller
     'demo' => (bool) env('APP_DEMO', false),
+    // bcrypt-hash af fælles adgangskode til hele sitet (sæt med: php artisan site:code)
+    'access_hash' => env('SITE_ACCESS_HASH'),
     'demo_accounts' => [
         'medlem@demo.dk' => 'Medlem (forælder med to børn)',
         'traener@demo.dk' => 'Træner',

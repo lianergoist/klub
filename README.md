@@ -22,6 +22,17 @@ Nulstil demodata:
 
     cd /var/www/klub && php artisan migrate:fresh --seed --force && chown -R www-data:www-data storage
 
+## Adgangskode til sitet
+
+Hele sitet (webapp og API) ligger bag en fælles adgangskode (`app/Http/Middleware/SiteGate.php`). Koden huskes i en cookie i 90 dage pr. enhed.
+Kun en bcrypt-hash ligger i `.env` (`SITE_ACCESS_HASH`).
+
+    php artisan site:code              # generér og sæt ny kode (alle skal indtaste den igen)
+    php artisan site:code min-kode     # sæt en bestemt kode
+    php artisan site:code --off        # fjern porten
+
+Kør kommandoen som root (den skriver i `.env`), og kør derefter `chown -R www-data:www-data bootstrap/cache`.
+
 ## Efter ændringer i koden
 
     npm run build                     # frontend

@@ -20,8 +20,11 @@ export async function api(path, { method = 'GET', body, form } = {}) {
     if (form) payload = form;
     else if (body !== undefined) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
     const res = await fetch(`/api/${path}`, { method, headers, body: payload });
-    if (res.status === 401) { setSession(null, null); location.href = '/login'; throw new ApiError('Log ind igen', 401); }
     const data = res.headers.get('content-type')?.includes('json') ? await res.json() : null;
+    if (res.status === 401) {
+        if (data?.gate) { location.href = '/adgang?til=' + encodeURIComponent(location.pathname); throw new ApiError(data.message, 401); }
+        setSession(null, null); location.href = '/login'; throw new ApiError('Log ind igen', 401);
+    }
     if (!res.ok) {
         const first = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
         const msg = first || data?.message || (res.status === 403 ? 'Det har du ikke adgang til.' : 'Noget gik galt. Prøv igen.');
