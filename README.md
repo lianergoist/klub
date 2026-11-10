@@ -55,6 +55,14 @@ Kun en bcrypt-hash ligger i `.env` (`SITE_ACCESS_HASH`).
 
 Kør kommandoen som root (den skriver i `.env`), og kør derefter `chown -R www-data:www-data bootstrap/cache`.
 
+## Testmiljø
+
+Nye funktioner kan afprøves på **https://test.klub.rpix.dk** før de kommer på klub.rpix.dk:
+
+- kode: `/var/www/klub-test` (en git-gren, fx `beskeder`), database `klub_test`, egen `.env` med rødt TEST-bånd (`APP_TEST_BANNER=true`)
+- samme adgangskode til sitet; demodata nulstilles med samme kommando som nedenfor, kørt i `/var/www/klub-test`
+- testdatabasen er ikke med i den automatiske databasebackup
+
 ## Efter ændringer i koden
 
     npm run build                     # frontend
