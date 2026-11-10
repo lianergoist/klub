@@ -17,7 +17,8 @@
                     <button class="btn ghost small block" @click="menu = false; newTitle = c.title || ''; showRename = true">Omdøb gruppe</button>
                     <button class="btn ghost small block danger" @click="leave">Forlad gruppe</button>
                 </template>
-                <button v-else class="btn ghost small block" @click="toggleBlock">{{ c.i_blocked ? 'Fjern blokering' : `Bloker ${c.with.name.split(' ')[0]}` }}</button>
+                <button v-else-if="!c.other_is_staff || c.i_blocked" class="btn ghost small block" @click="toggleBlock">{{ c.i_blocked ? 'Fjern blokering' : `Bloker ${c.with.name.split(' ')[0]}` }}</button>
+                <p v-else class="small muted" style="padding:4px 8px;margin:0">Trænere og bestyrelse kan ikke blokeres. Er der et problem, så anmeld beskeden med flaget.</p>
             </div>
         </header>
 
@@ -47,7 +48,7 @@
             <p class="small">Beskeden sendes til bestyrelsen sammen med din begrundelse. Ellers kan kun deltagerne i samtalen se beskederne.</p>
             <blockquote class="bubble-q">{{ reportMsg.body }}</blockquote>
             <label class="field"><span>Hvorfor anmelder du beskeden?</span><input v-model="reportReason" placeholder="Fx chikane, upassende indhold"></label>
-            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="alsoBlock"> Bloker også {{ reportMsg.sender?.split(' ')[0] }}</label>
+            <label v-if="!c.members.find(m => m.id === reportMsg.sender_id)?.staff" class="check small" style="margin-top:8px"><input type="checkbox" v-model="alsoBlock"> Bloker også {{ reportMsg.sender?.split(' ')[0] }}</label>
             <button class="btn primary block" style="margin-top:12px" :disabled="!reportReason.trim()" @click="report">Anmeld</button>
         </Modal>
         <Modal v-if="showAdd" title="Tilføj deltagere" @close="showAdd = false">

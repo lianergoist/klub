@@ -120,10 +120,21 @@ class User extends Authenticatable
         return $this->unavailabilities()->where('from_date', '<=', $d)->where('to_date', '>=', $d)->exists();
     }
 
-    /** Medlemmer der blokerer / er blokeret af denne bruger. */
+    /** Id'er på aktive trænere, bestyrelse og administratorer. */
+    public static function staffIds()
+    {
+        return RoleAssignment::whereIn('role', ['trainer', 'board', 'admin'])->where('starts_on', '<=', now())
+            ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id');
+    }
+
+    /**
+     * Medlemmer denne bruger har blokeret. Trænere og bestyrelse kan ikke blokeres,
+     * så en ældre blokering af en person, der siden er blevet træner, ignoreres.
+     */
     public function blockedIds(): array
     {
-        return \Illuminate\Support\Facades\DB::table('user_blocks')->where('user_id', $this->id)->pluck('blocked_id')->all();
+        return \Illuminate\Support\Facades\DB::table('user_blocks')->where('user_id', $this->id)
+            ->whereNotIn('blocked_id', self::staffIds())->pluck('blocked_id')->all();
     }
 
     /**
@@ -154,7 +165,7 @@ class User extends Authenticatable
         if (! $to->canUseMessages()) return $to->name.' kan ikke modtage beskeder.';
         $first = explode(' ', $to->name)[0];
         if (in_array($to->id, $this->blockedIds())) return 'Du har blokeret '.$to->name.'. Fjern blokeringen for at skrive.';
-        if (in_array($this->id, $to->blockedIds())) return 'Du kan ikke skrive til '.$to->name.'.';
+        if (in_array($this->id, $to->blockedIds())) return 'Du kan ikke skrive til '.$to->name.'.'; // (staff er aldrig i blockedIds)
         if (! $this->allow_messages && ! $this->isStaff() && ! $to->isStaff()) {
             return 'Du har slået beskeder fra, så du kan kun skrive med trænere og bestyrelse. Slå beskeder til under Profil → Beskeder.';
         }
@@ -176,14 +187,13 @@ class User extends Authenticatable
     public function messageableQuery()
     {
         $cut = now()->subYears(18)->toDateString();
-        $staffIds = RoleAssignment::whereIn('role', ['trainer', 'board', 'admin'])->where('starts_on', '<=', now())
-            ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id');
+        $staffIds = self::staffIds();
 
         $q = User::where('id', '!=', $this->id)->whereNotNull('email')->whereNotNull('password')
             ->whereIn('status', ['active', 'passive'])
             ->where(fn ($q) => $q->whereNull('birthdate')->orWhere('birthdate', '<=', $cut))
             ->whereNotIn('id', $this->blockedIds())
-            ->whereNotIn('id', \Illuminate\Support\Facades\DB::table('user_blocks')->where('blocked_id', $this->id)->select('user_id'));
+            ->when(! $this->isStaff(), fn ($q) => $q->whereNotIn('id', \Illuminate\Support\Facades\DB::table('user_blocks')->where('blocked_id', $this->id)->select('user_id')));
 
         if ($this->isStaff()) return $q;                                  // trænere/bestyrelse: alle
         if (! $this->allow_messages) return $q->whereIn('id', $staffIds);   // selv fravalgt: kun trænere/bestyrelse

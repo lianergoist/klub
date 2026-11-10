@@ -145,11 +145,12 @@ class MessageController extends Controller
             'name' => $conversation->displayName($u),
             'title' => $conversation->title,
             'is_group' => $conversation->is_group,
-            'members' => $members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'me' => $m->id === $u->id])->sortBy('name')->values(),
+            'members' => $members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'me' => $m->id === $u->id, 'staff' => $m->isStaff()])->sortBy('name')->values(),
             'with' => $other ? ['id' => $other->id, 'name' => $other->name] : null,
             'can_send' => $why === null,
             'cannot_reason' => $why,
             'i_blocked' => $other && in_array($other->id, $u->blockedIds()),
+            'other_is_staff' => $other && $other->isStaff(),
             'more' => ! $after && $msgs->count() === 50,
             // Hvor langt har de andre læst? Bruges til "Læst" / "Læst af 3"
             'read_upto' => $others->map(fn ($m) => ['name' => explode(' ', $m->name)[0], 'id' => (int) $m->pivot->last_read_message_id])->values(),
@@ -227,6 +228,7 @@ class MessageController extends Controller
         $u = $this->me($r);
         abort_if($user->id === $u->id, 422);
         $block = (bool) $r->validate(['block' => 'required|boolean'])['block'];
+        abort_if($block && $user->isStaff(), 422, 'Trænere og bestyrelsesmedlemmer kan ikke blokeres. Oplever du problemer, så anmeld beskeden.');
         $block ? DB::table('user_blocks')->insertOrIgnore(['user_id' => $u->id, 'blocked_id' => $user->id, 'created_at' => now()])
                : DB::table('user_blocks')->where('user_id', $u->id)->where('blocked_id', $user->id)->delete();
         Audit::log($block ? 'user.blocked' : 'user.unblocked', $user);
