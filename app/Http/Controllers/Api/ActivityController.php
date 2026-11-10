@@ -145,10 +145,21 @@ class ActivityController extends Controller
         ];
     }
 
+    /** Arkiverede kategorier kan ikke vælges til nye aktiviteter, men en aktivitet må beholde dem, den har. */
+    private function rejectArchived(array $ids, ?Activity $keep = null): void
+    {
+        $archived = \App\Models\Category::whereIn('id', $ids)->whereNotNull('archived_at')->pluck('id');
+        if ($keep) {
+            $archived = $archived->diff($keep->categories()->pluck('categories.id'));
+        }
+        abort_if($archived->isNotEmpty(), 422, 'En af kategorierne er arkiveret og kan ikke vælges.');
+    }
+
     public function store(Request $r)
     {
         abort_unless($r->user()->isTrainer(), 403);
         $data = $r->validate($this->rules(), [], ['category_ids' => 'kategori']);
+        $this->rejectArchived($data['category_ids']);
 
         $activity = DB::transaction(function () use ($r, $data) {
             $a = Activity::create(collect($data)->except('category_ids', 'trainer_ids', 'notify')->all() + ['created_by' => $r->user()->id]);
@@ -170,6 +181,7 @@ class ActivityController extends Controller
     {
         abort_unless($r->user()->isTrainer(), 403);
         $data = $r->validate($this->rules());
+        $this->rejectArchived($data['category_ids'], $activity);
         $before = $activity->only('starts_at', 'ends_at', 'location');
 
         DB::transaction(function () use ($r, $data, $activity) {
