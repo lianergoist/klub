@@ -79,7 +79,7 @@
             </div>
             <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
-            <p class="small muted" style="margin-top:4px">Slår du det fra, kan ingen finde dig under "Ny besked". Trænere og bestyrelse når dig stadig via notifikationer og mail.</p>
+            <p class="small muted" style="margin-top:4px">Slår du det fra, kan andre medlemmer ikke skrive til dig, og du kan selv kun skrive med trænere og bestyrelse. Trænere og bestyrelse kan altid skrive til dig om klubbens aktiviteter.</p>
             <h2 style="margin-top:20px">Hvilke aktiviteter vil du høre om?</h2>
             <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Du får stadig besked om aktiviteter, du er tilmeldt.</p>
             <ul class="list">

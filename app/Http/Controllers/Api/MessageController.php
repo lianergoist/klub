@@ -34,6 +34,20 @@ class MessageController extends Controller
         return $u;
     }
 
+    /** Hvorfor kan $u ikke skrive i samtalen? null = må gerne. */
+    private function cannotSend(User $u, Conversation $c): ?string
+    {
+        $others = $c->members->where('id', '!=', $u->id);
+        if ($others->isEmpty()) return 'Der er ikke andre i samtalen.';
+        if (! $c->is_group) return $u->cannotMessage($others->first());
+        // Gruppe: har man selv fravalgt beskeder, kan man kun skrive i grupper startet af trænere/bestyrelse
+        if (! $u->allow_messages && ! $u->isStaff() && ! User::find($c->created_by)?->isStaff()) {
+            return 'Du har slået beskeder fra, så du kan kun skrive i grupper startet af trænere eller bestyrelse.';
+        }
+
+        return null;
+    }
+
     public function index(Request $r)
     {
         $u = $this->me($r);
@@ -71,10 +85,12 @@ class MessageController extends Controller
     public function people(Request $r)
     {
         $u = $this->me($r);
+        $u->loadMissing('roleAssignments');
         $trainers = User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['trainer', 'board'])->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now())))->pluck('id')->flip();
 
-        return $u->messageableQuery()->orderBy('name')->get(['id', 'name'])->map(fn ($p) => [
+        return $u->messageableQuery()->orderBy('name')->get(['id', 'name', 'allow_messages'])->map(fn ($p) => [
             'id' => $p->id, 'name' => $p->name, 'trainer' => isset($trainers[$p->id]),
+            'opted_out' => ! $p->allow_messages, // kun synlig for trænere/bestyrelse, som stadig kan skrive
         ]);
     }
 
@@ -109,7 +125,7 @@ class MessageController extends Controller
     public function show(Request $r, Conversation $conversation)
     {
         $u = $this->mine($r, $conversation);
-        $conversation->load('members:id,name');
+        $conversation->load('members.roleAssignments'); // fulde brugere: reglerne kræver login, status, fravalg m.m.
         $members = $conversation->members;
 
         $q = $conversation->messages()->with('sender:id,name')->orderByDesc('id');
@@ -122,7 +138,7 @@ class MessageController extends Controller
 
         $others = $members->where('id', '!=', $u->id);
         $other = $conversation->is_group ? null : $others->first();
-        $why = $other ? $u->cannotMessage($other) : null;
+        $why = $this->cannotSend($u, $conversation);
 
         return [
             'id' => $conversation->id,
@@ -131,8 +147,8 @@ class MessageController extends Controller
             'is_group' => $conversation->is_group,
             'members' => $members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'me' => $m->id === $u->id])->sortBy('name')->values(),
             'with' => $other ? ['id' => $other->id, 'name' => $other->name] : null,
-            'can_send' => $why === null && ($conversation->is_group ? $others->isNotEmpty() : (bool) $other),
-            'cannot_reason' => $why ?? ($others->isEmpty() ? 'Der er ikke andre i samtalen.' : null),
+            'can_send' => $why === null,
+            'cannot_reason' => $why,
             'i_blocked' => $other && in_array($other->id, $u->blockedIds()),
             'more' => ! $after && $msgs->count() === 50,
             // Hvor langt har de andre læst? Bruges til "Læst" / "Læst af 3"
@@ -147,10 +163,9 @@ class MessageController extends Controller
     public function send(Request $r, Conversation $conversation)
     {
         $u = $this->mine($r, $conversation);
-        $conversation->load('members');
+        $conversation->load('members.roleAssignments');
         $others = $conversation->members->where('id', '!=', $u->id);
-        abort_if($others->isEmpty(), 422, 'Der er ikke andre i samtalen.');
-        if (! $conversation->is_group && ($why = $u->cannotMessage($others->first()))) abort(422, $why);
+        if ($why = $this->cannotSend($u, $conversation)) abort(422, $why);
         $body = trim($r->validate(['body' => 'required|string|max:4000'])['body']);
         abort_if($body === '', 422, 'Skriv en besked.');
 

@@ -13,17 +13,18 @@
                     <span class="avatar sm">{{ initials(p.name) }}</span>
                     <span style="flex:1">{{ p.name }}</span>
                     <span v-if="p.trainer" class="tag">Træner/bestyrelse</span>
+                    <span v-else-if="p.opted_out" class="tag warn" title="Har fravalgt beskeder fra andre medlemmer – du kan skrive, fordi du er træner/bestyrelse">Kun fra trænere</span>
                 </label>
             </template>
             <p v-if="!groups.length" class="muted small" style="padding:12px 4px">Ingen medlemmer matcher.</p>
         </div>
-        <p class="small muted" style="margin:8px 0 0">Listen viser voksne medlemmer, der modtager beskeder fra andre medlemmer.</p>
+        <p class="small muted" style="margin:8px 0 0">{{ store.user.can.trainer ? 'Som træner/bestyrelse kan du skrive til alle voksne medlemmer – også dem, der har fravalgt beskeder fra andre medlemmer.' : 'Listen viser voksne medlemmer, der modtager beskeder, samt trænere og bestyrelse.' }}</p>
     </div>
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import Icon from './Icon.vue';
-import { api } from '../api';
+import { api, store } from '../api';
 const props = defineProps({ exclude: { type: Array, default: () => [] } });
 const emit = defineEmits(['change']);
 const people = ref(null); const filter = ref(''); const picked = ref([]);
