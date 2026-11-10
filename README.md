@@ -24,9 +24,12 @@ Nulstil demodata:
 
 ## Medlemskab og betaling
 
-- **Indmeldelse** (`/bliv-medlem`): medlemstype vælges ud fra alder (eller passiv), prisen er forholdsmæssig for resten af året. Medlemmet oprettes som *afventer betaling* og sendes direkte til betaling. Betalt => aktivt medlem (`App\Support\Memberships::onPaid`).
-- **Skift til familie**: tilføjer et enkeltmedlem et barn/en partner, oprettes en regning på forskellen til familiekontingent for resten af året. Personerne gemmes på regningen (`invoices.payload`) og oprettes først, når den er betalt. Kan fortrydes, så længe den ikke er betalt.
-- Manuel betaling registreret af kassereren aktiverer på samme måde.
+- **Sæson**: træningssæsonen løber 1. maj – 30. april (`App\Support\Season`); regnskabsåret er kalenderåret. Kontingent og sæsonprodukter har perioden fx `2026/27`.
+- **Priser** ligger i tabellen `prices` med `valid_from` (`App\Support\Prices`). En ny pris = en ny række med senere dato.
+- **Kontingent pr. husstand** (`Prices::membership`): 1–2 personer enkeltkontingent hver (halv pris fra 1. august), 3 personer familie, 4+ familie (stor). Støttemedlemmer betaler for sig.
+- **Indmeldelse** (`/bliv-medlem`): medlemmet oprettes som *afventer betaling* og sendes til betaling. Betalt => aktivt medlem (`App\Support\Memberships::onPaid`).
+- **Tilføjelse af barn/partner**: der oprettes en regning på forskellen mellem den nye husstandspris og det betalte. Personerne gemmes på regningen (`invoices.payload`) og oprettes først ved betaling. Koster det intet ekstra, tilføjes de med det samme.
+- **Udstyrsleje** prissættes samlet for de valgte i husstanden (`Prices::rental`) og gælder sæsonen ud.
 
 ## Opslagstavle
 

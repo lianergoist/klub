@@ -102,6 +102,7 @@ class AuthController extends Controller
             'unread_messages' => $u->canUseMessages() ? $u->unreadMessages() : 0,
             'can_message' => (bool) $u->canUseMessages(),
             'is_payer' => $u->household?->payer_id === $u->id,
+            'season' => \App\Support\Season::label(),
             'can' => [
                 'trainer' => $u->isTrainer(),
                 'board' => $u->isBoard(),

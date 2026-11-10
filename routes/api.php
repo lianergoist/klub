@@ -103,6 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('entries/{entry}/reverse', [FinanceController::class, 'reverseEntry']);
         Route::get('entries/{entry}/attachment', [FinanceController::class, 'attachment']);
         Route::post('reconcile', [FinanceController::class, 'reconcile']);
+        Route::get('prices', [FinanceController::class, 'prices']);
         Route::get('payouts', [FinanceController::class, 'payouts']);
         Route::post('payouts/fetch', [FinanceController::class, 'fetchPayouts']);
         Route::get('payouts/{payout}', [FinanceController::class, 'payout']);

@@ -4,8 +4,8 @@
         <h1>{{ p.profile.name }}</h1>
         <p class="muted" style="margin-bottom:14px">
             {{ p.profile.membership_type || 'Medlemstype ikke fastsat' }} · <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
-            <span v-if="p.membership_valid" class="tag ok">Kontingent {{ year }} betalt</span>
-            <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Kontingent {{ year }} mangler</span>
+            <span v-if="p.membership_valid" class="tag ok">Kontingent {{ p.season }} betalt</span>
+            <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Kontingent {{ p.season }} mangler</span>
         </p>
         <div class="tabs">
             <RouterLink v-for="t in tabs" :key="t.id" :to="`/profil/${t.id}`" :class="{ on: cur === t.id }">{{ t.label }}</RouterLink>
@@ -52,11 +52,11 @@
             <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget kontingent. Derefter kan du tilføje familiemedlemmer.</div>
             <form v-else-if="store.user.is_payer" class="card stack" @submit.prevent="addChild">
                 <h2>Tilføj barn eller partner</h2>
-                <p v-if="p.upgrade_price_fmt" class="banner info small" style="margin:0">
-                    Du har i dag <strong>{{ p.profile.membership_type }}</strong>. Når du tilføjer et familiemedlem, skifter husstanden til <strong>familiekontingent</strong>, og du betaler forskellen for resten af året: <strong>{{ p.upgrade_price_fmt }}</strong>.
-                    Personen bliver først tilføjet, når betalingen er gennemført. Flere personer kan tilføjes på samme betaling.
-                </p>
-                <p v-else class="small muted" style="margin:0">I har familiekontingent, så det koster ikke ekstra at tilføje flere i husstanden.</p>
+                <div class="banner info small" style="margin:0">
+                    <p style="margin:0 0 6px">Kontingentet for sæson {{ p.season }} afhænger af, hvor mange I er i husstanden: 1–2 personer betaler enkeltkontingent hver, 3 personer betaler familiekontingent, og 4 eller flere betaler familiekontingent for store familier. I er {{ p.household_count + (p.pending_upgrade?.members.length || 0) }} nu.</p>
+                    <p v-if="p.add_quote" style="margin:0">Tilføjer du én person mere, skal I betale <strong>{{ p.add_quote_fmt }}</strong> ekstra for resten af sæsonen. Personen bliver først tilføjet, når betalingen er gennemført.</p>
+                    <p v-else style="margin:0">Det koster ikke ekstra at tilføje én person mere – vedkommende tilføjes med det samme.</p>
+                </div>
                 <div class="grid c2">
                     <label class="field"><span>Navn</span><input v-model="child.name" required></label>
                     <label class="field"><span>Fødselsdato</span><input v-model="child.birthdate" type="date" required></label>
@@ -67,7 +67,7 @@
                     <label class="field"><span>Nødkontakt, telefon</span><input v-model="child.emergency_phone" :placeholder="p.profile.phone"></label>
                 </div>
                 <label class="check small"><input type="checkbox" v-model="child.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
-                <button class="btn primary">{{ p.upgrade_price_fmt ? (p.pending_upgrade ? 'Tilføj til samme betaling' : 'Tilføj og gå til betaling') : 'Tilføj' }}</button>
+                <button class="btn primary">{{ p.add_quote ? (p.pending_upgrade ? 'Tilføj til samme betaling' : 'Tilføj og gå til betaling') : 'Tilføj' }}</button>
             </form>
         </div>
 
@@ -119,7 +119,7 @@
                     <div class="row between"><strong>{{ x.name }}</strong><span class="num">{{ x.price_fmt }}</span></div>
                     <p class="small muted" style="margin:4px 0 8px">{{ x.description }} <span>({{ billing[x.billing] }})</span></p>
                     <p v-if="x.needs_resource" class="small">{{ x.free_resources.length ? `${x.free_resources.length} ledige pladser` : 'Ingen ledige pladser' }}</p>
-                    <button class="btn small" :disabled="x.needs_resource && !x.free_resources.length" @click="buy = x; buyMember = p.profile.id; buyRes = x.free_resources[0]?.id">Vælg</button>
+                    <button class="btn small" :disabled="x.needs_resource && !x.free_resources.length" @click="buy = x; buyMember = p.profile.id; buyMembers = [p.profile.id]; buyRes = x.free_resources[0]?.id">Vælg</button>
                 </div>
             </div>
         </div>
@@ -141,10 +141,16 @@
 
         <Modal v-if="buy" :title="buy.name" @close="buy = null">
             <div class="stack">
-                <label class="field"><span>Til hvem?</span><select v-model="buyMember"><option v-for="m in p.household" :key="m.id" :value="m.id">{{ m.name }}</option></select></label>
+                <div v-if="buy.household">
+                    <span class="small" style="font-weight:600;color:var(--ink-2)">Hvem skal have udstyrsleje?</span>
+                    <label v-for="m in p.household" :key="m.id" class="check" style="margin-top:6px"><input type="checkbox" :value="m.id" v-model="buyMembers"> {{ m.name }}</label>
+                    <p class="small muted" style="margin-top:6px">1–2 personer: {{ kr(buy.tiers[1]) }} pr. person. 3 personer: familiepris. Derover: + {{ kr((buy.tiers[4] || 0) - (buy.tiers[3] || 0)) }} pr. ekstra person.</p>
+                </div>
+                <label v-else class="field"><span>Til hvem?</span><select v-model="buyMember"><option v-for="m in p.household" :key="m.id" :value="m.id">{{ m.name }}</option></select></label>
                 <label v-if="buy.needs_resource" class="field"><span>Plads</span><select v-model="buyRes"><option v-for="r in buy.free_resources" :key="r.id" :value="r.id">{{ r.label }}</option></select></label>
-                <p><strong>{{ buy.price_fmt }}</strong> <span class="muted">({{ billing[buy.billing] }})</span></p>
-                <button class="btn primary block" @click="order">Bestil og betal</button>
+                <p><strong>{{ buy.household ? (buyMembers.length ? kr(buy.tiers[buyMembers.length]) : 'Vælg mindst én') : buy.price_fmt }}</strong>
+                    <span class="muted">({{ buy.billing === 'season' ? `sæson ${prod.season}, gælder til ${dato(prod.season_end)}` : billing[buy.billing] }})</span></p>
+                <button class="btn primary block" :disabled="buy.household && !buyMembers.length" @click="order">Bestil og betal</button>
             </div>
         </Modal>
     </div>
@@ -156,19 +162,18 @@ import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
-import { api, store, dato, toast, download, setSession } from '../api';
+import { api, store, dato, kr, toast, download, setSession } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();
 const tabs = [{ id: 'oplysninger', label: 'Oplysninger' }, { id: 'familie', label: 'Familie' }, { id: 'beskeder', label: 'Beskeder' }, { id: 'regninger', label: 'Regninger' }, { id: 'tilkob', label: 'Tilkøb' }, { id: 'data', label: 'Mine data' }];
 const cur = computed(() => props.tab || 'oplysninger');
-const year = new Date().getFullYear();
 const billing = { once: 'engangsbeløb', season: 'pr. sæson', year: 'pr. år' };
 const stCls = (s) => ({ paid: 'ok', open: 'info', overdue: 'bad', refunded: '', cancelled: '' })[s];
 
 const p = ref(null); const f = reactive({}); const cats = ref([]); const invoices = ref(null); const prod = ref(null);
 const child = reactive({ name: '', birthdate: '', email: '', emergency_name: '', emergency_phone: '', consent: false });
-const buy = ref(null); const buyMember = ref(null); const buyRes = ref(null);
+const buy = ref(null); const buyMember = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
 
 async function load() { p.value = await api('profile'); Object.assign(f, p.value.profile); }
 async function saveProfile() {
@@ -186,7 +191,7 @@ async function addChild() {
 }
 async function cancelUpgrade() { await api('profile/household/upgrade', { method: 'DELETE' }); toast('Tilføjelsen er annulleret'); load(); }
 async function order() {
-    try { const r = await api(`products/${buy.value.id}/order`, { method: 'POST', body: { member_id: buyMember.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
+    try { const r = await api(`products/${buy.value.id}/order`, { method: 'POST', body: buy.value.household ? { member_ids: buyMembers.value } : { member_id: buyMember.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
     catch (e) { toast(e.message, 'error'); }
 }
 async function logout() { try { await api('logout', { method: 'POST' }); } catch {} setSession(null, null); router.push('/login'); }

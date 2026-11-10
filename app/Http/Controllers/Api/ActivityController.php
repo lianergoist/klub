@@ -248,7 +248,7 @@ class ActivityController extends Controller
             foreach ($data['member_ids'] as $mid) {
                 $m = $allowed[$mid] ?? abort(403, 'Du kan kun tilmelde dig selv og din husstand.');
                 if ($activity->members_only && ! $m->hasValidMembership()) {
-                    abort(422, $m->name.' har ikke betalt kontingent for '.now()->year.'.');
+                    abort(422, $m->name.' har ikke betalt kontingent for sæson '.\App\Support\Season::label().'.');
                 }
                 $reg = Registration::firstOrNew(['activity_id' => $activity->id, 'user_id' => $m->id]);
                 if ($reg->exists && $reg->status === 'signed_up') {

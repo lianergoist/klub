@@ -6,7 +6,7 @@
             <div><h1>{{ m.profile.name }}</h1>
                 <span :class="['tag', m.profile.status === 'active' ? 'ok' : 'warn']">{{ m.profile.status_label }}</span>
                 <span class="tag">{{ m.profile.membership_type || 'Ingen medlemstype' }}</span>
-                <span v-if="['active', 'passive'].includes(m.profile.status)" :class="['tag', m.membership_valid ? 'ok' : 'bad']">Kontingent {{ year }} {{ m.membership_valid ? 'betalt' : 'mangler' }}</span>
+                <span v-if="['active', 'passive'].includes(m.profile.status)" :class="['tag', m.membership_valid ? 'ok' : 'bad']">Kontingent {{ store.user.season }} {{ m.membership_valid ? 'betalt' : 'mangler' }}</span>
             </div>
             <button v-if="can.admin" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
         </div>

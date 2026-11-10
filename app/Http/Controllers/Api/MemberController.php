@@ -64,7 +64,7 @@ class MemberController extends Controller
             implode(', ', array_map(fn ($x) => User::ROLE_LABELS[$x], $u->roles())),
         ]);
 
-        return Csv::download('medlemsliste.csv', ['Navn', 'E-mail', 'Telefon', 'Adresse', 'Postnr', 'By', 'Fødselsdato', 'Status', 'Medlemstype', 'Kontingent '.now()->year, 'Roller'], $rows);
+        return Csv::download('medlemsliste.csv', ['Navn', 'E-mail', 'Telefon', 'Adresse', 'Postnr', 'By', 'Fødselsdato', 'Status', 'Medlemstype', 'Kontingent '.\App\Support\Season::label(), 'Roller'], $rows);
     }
 
     public function show(Request $r, User $member)

@@ -202,32 +202,43 @@ Private beskeder mellem medlemmer – to eller flere i samme samtale, fx foræld
 
 ## Kontingent og medlemstyper
 
-Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og følge op på det uden manuel regnearksstyring. 
+Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og følge op på det uden manuel regnearksstyring.
 
-| Medlemstype | Hvem |
+**Træningssæsonen løber 1. maj – 30. april. Regnskabsåret er kalenderåret (1. januar – 31. december).** Kontingent og sæsonprodukter følger sæsonen; regnskab og budget følger kalenderåret.
+
+| Pris (fra 1. maj 2026) | Beløb |
 | - | - |
-| Voksen | Fra en fastsat alder |
-| Barn/ung | Under en fastsat alder |
-| Familie | Én betaling, dækker flere medlemmer i samme husstand |
-| Træner | Aktive trænere |
-| Passiv/støttemedlem | Betaler men deltager ikke |
+| Støttemedlem, fuld sæson | 400 kr. |
+| Enkelt medlem, fuld sæson | 1.000 kr. |
+| Enkelt medlem, halv sæson (indmeldelse fra 1. august) | 400 kr. |
+| Familiekontingent, 3 personer i samme husstand | 2.500 kr. |
+| Familiekontingent, 4 eller flere i samme husstand | 3.000 kr. |
 
+- **Kerne:** medlemstyperne er *enkelt medlem*, *familie* og *støttemedlem*. Kontingentet beregnes pr. husstand ud fra antallet af aktive medlemmer (støttemedlemmer tæller ikke med): 1–2 personer betaler enkeltkontingent hver, 3 personer familiekontingent, 4 eller flere familiekontingent for store familier.
 
-- **Kerne:** hvert medlem har en medlemstype og kontingentperiode
+- **Kerne:** priser gemmes med en dato, de gælder fra, så nye priser kan lægges ind på forhånd uden at ændre det, der allerede er opkrævet. (I proof of concept kan priserne ses under Indstillinger.)
 
-- **Kerne:** systemet opretter automatisk kontingentopkrævning for hver periode og sender den til medlemmet (eller familiens betaler).
+- **Senere:** bestyrelse/kasserer kan selv ændre priserne med virkning fra en valgt dato.
 
-- **Kerne:** betalingsstatus pr. medlem og periode: ikke opkrævet, opkrævet, betalt, forfalden.
+- **Kerne:** kassereren opretter kontingentopkrævning for en sæson med ét tryk: én regning pr. husstand og én pr. støttemedlem, sendt til husstandens betaler.
 
-- **Kerne:** forholdsmæssigt kontingent ved indmeldelse midt i perioden (i proof of concept: betaling for de resterende måneder af året inkl. indeværende).
+- **Kerne:** betalingsstatus pr. medlem og sæson: ikke opkrævet, opkrævet, betalt, forfalden.
 
-- **Afklares:** hvordan beregnes forholdsmæssigt kontingent? Betaling for de resterende måneder (som i proof of concept), afrunding til hele kvartaler, eller altid fuld pris? Gælder samme regel, når en husstand skifter til familiekontingent midt i året?
+- **Kerne:** halv sæson: melder et enkelt medlem sig ind fra 1. august, betales halvsæsonprisen.
 
-- **Kerne:** aktiviteter (og evt. dele af systemet) kan kræve gyldigt medlemskab, dvs. betalt kontingent.
+- **Kerne:** tilføjes et barn eller en partner midt i sæsonen, betaler husstanden forskellen mellem den nye husstandspris og det, der allerede er betalt for sæsonen (fx enkelt medlem på halv sæson 400 kr. → 2 personer 800 kr. → 3 personer 2.500 kr.).
 
-- **Senere:** rabatter og særtilbud (fx sæsonstart, søskendekontingent).
+- **Kerne:** aktiviteter (og evt. dele af systemet) kan kræve gyldigt medlemskab, dvs. betalt kontingent for den aktuelle sæson.
 
-- **Senere:** automatisk overgang fra barn til voksen ved en given alder.
+- **Afklares:** en husstand med 2 personer betaler i proof of concept 2 × enkeltkontingent (2.000 kr.), da familiekontingent først gælder fra 3 personer. Er det rigtigt?
+
+- **Afklares:** børn og trænere har ingen særpris og betaler som enkelt medlem. Er det rigtigt, eller skal der være en børnepris eller gratis/nedsat kontingent for trænere?
+
+- **Afklares:** halv sæson gælder kun enkelt medlem. Skal familier og støttemedlemmer, der melder sig ind fra 1. august, også have en halvsæsonpris? Og skal en familie, der vokser fra 2 til 3 personer sent i sæsonen, betale fuld familiepris minus det betalte (som nu)?
+
+- **Afklares:** kontingent for en sæson dækker to regnskabsår (maj–december og januar–april). I proof of concept bogføres det, når det betales. Skal det fordeles (periodiseres) på de to regnskabsår? Bør afklares med revisor.
+
+- **Senere:** rabatter og særtilbud (fx søskendekontingent).
 
 - **Afklares:** hvad sker der ved manglende betaling? Fx rykker efter 14 dage, spærring for tilmelding efter 30 dage, udmeldelse efter en så lang tid? Det skal bestyrelsen beslutte, systemet kan så udføre det.
 
@@ -237,10 +248,12 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 | Eksempel på produkt | Betalingsform | Bemærkning |
 | - | - | - |
-| Leje af udstyr (bræt, sejl, vådragt) | Pr. gang, dag eller sæson | Evt. dækket af kontingent for visse medlemstyper |
+| Udstyrsleje i træningssæsonen (bræt, sejl, våddragt) | Pr. sæson | Enkelt medlem 1.500 kr., familie 4.000 kr. (op til 3 personer) + 1.000 kr. pr. ekstra person |
+| Dagsleje af udstyr | Pr. gang | Foreløbig pris – ikke fastsat |
+| Prøvetræning | Engangsbetaling | 400 kr. |
 | Opbevaring af udstyr (plads, rack, container) | Pr. sæson eller år | Kræver en plads, der kan være optaget |
 | Deltagelse i aktivitet/kursus | Pr. aktivitet | Se tilmelding |
-| Nøgle/adgangsbrik, depositum | Engangsbetaling | Depositum skal kunne refunderes |
+| Nøgle/adgangsbrik, depositum | Engangsbetaling | 100 kr. Depositum skal kunne refunderes |
 | Klubtøj, merchandise | Pr. stk. | Senere, kun hvis klubben sælger |
 
 
@@ -250,6 +263,12 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 - **Kerne:** medlemmet kan tilvælge produkter i profilen og se, hvad det koster.
 
 - **Kerne:** hvert tilkøb bliver en regning med betalingsstatus, på samme måde som kontingent.
+
+- **Kerne:** udstyrsleje bestilles for én eller flere i husstanden og prissættes samlet: 1–2 personer betaler enkeltpris hver, 3 personer familiepris, derover + pr. ekstra person. Lejen gælder sæsonen ud (30. april).
+
+- **Afklares:** priser for opbevaring (rackplads, skab) og dagsleje er ikke fastsat; proof of concept bruger foreløbige priser.
+
+- **Afklares:** prøvetræning er typisk for ikke-medlemmer. Hvordan skal de booke og betale – som gæst uden login, eller via en træner? Skal prisen modregnes, hvis de melder sig ind?
 
 - **Kerne:** opbevaringspladser og lejeudstyr registreres, så samme plads eller samme bræt ikke bliver udlejet to gange.
 

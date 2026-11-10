@@ -48,21 +48,23 @@ class DatabaseSeeder extends Seeder
             $this->acc[$n] = Account::create(['number' => $n, 'name' => $name, 'type' => $type])->id;
         }
 
-        $types = collect([
-            ['adult', 'Voksen', 120000, null], ['youth', 'Barn/ung (under 18)', 60000, 17],
-            ['family', 'Familie', 220000, null], ['trainer', 'Træner', 30000, null], ['passive', 'Passiv/støtte', 25000, null],
-        ])->mapWithKeys(fn ($t) => [$t[0] => MembershipType::create(['code' => $t[0], 'name' => $t[1], 'annual_fee' => $t[2], 'max_age' => $t[3]])]);
+        // Medlemstyper – priserne ligger i pristabellen (prices) med "gælder fra"-dato
+        $types = collect([['single', 'Enkelt medlem', 100000], ['family', 'Familie', 250000], ['passive', 'Støttemedlem', 40000]])
+            ->mapWithKeys(fn ($t) => [$t[0] => MembershipType::create(['code' => $t[0], 'name' => $t[1], 'annual_fee' => $t[2], 'max_age' => null])]);
+        $typeMap = ['adult' => 'single', 'youth' => 'single', 'trainer' => 'single'];
+        $season = \App\Support\Season::label($this->now);
+        $seasonStart = \App\Support\Season::start($this->now);
 
         $cats = collect([
             ['Windsurf', '#0e7490'], ['Kite', '#b45309'], ['SUP', '#15803d'], ['Wingfoil', '#7c3aed'], ['Klubliv og teori', '#be185d'],
         ])->mapWithKeys(fn ($c) => [$c[0] => Category::create(['name' => $c[0], 'color' => $c[1]])]);
 
         // --- Demo-brugere ---
-        $mk = function (array $a, string $type, ?string $hh = null, ?User $payer = null) use ($types) {
+        $mk = function (array $a, string $type, ?string $hh = null, ?User $payer = null) use ($types, $typeMap) {
             $u = User::create($a + [
                 'password' => isset($a['email']) ? $this->pw : null, 'status' => $a['status'] ?? 'active',
                 'joined_on' => $a['joined_on'] ?? $this->now->copy()->subYears(mt_rand(1, 8))->subDays(mt_rand(0, 300)),
-                'membership_type_id' => $types[$type]->id, 'consent_at' => $this->now->copy()->subYear(),
+                'membership_type_id' => $types[$typeMap[$type] ?? $type]->id, 'consent_at' => $this->now->copy()->subYear(),
                 'city' => $a['city'] ?? 'Aarhus', 'postal_code' => $a['postal_code'] ?? '8000',
             ]);
             if ($payer) {
@@ -113,7 +115,7 @@ class DatabaseSeeder extends Seeder
             $u = $mk([
                 'name' => $n, 'email' => 'medlem'.($i + 1).'@demo.dk', 'phone' => mt_rand(20, 61).' '.mt_rand(10, 99).' '.mt_rand(10, 99).' '.mt_rand(10, 99),
                 'address' => $streets[$i % 7].' '.mt_rand(1, 80), 'birthdate' => $this->now->copy()->subYears(mt_rand(19, 64))->subDays(mt_rand(0, 360))->toDateString(),
-                'status' => $status, 'joined_on' => $status === 'pending' ? null : ($i % 5 === 1 ? Carbon::create($this->now->year, mt_rand(4, 7), mt_rand(1, 28)) : null),
+                'status' => $status, 'joined_on' => $status === 'pending' ? null : ($i % 5 === 1 ? $seasonStart->copy()->addDays(mt_rand(5, 80)) : null),
                 'resigned_on' => $status === 'resigned' ? $this->now->copy()->subMonths(4) : null,
             ], $status === 'passive' ? 'passive' : ($family ? 'family' : 'adult'));
             if ($status === 'pending') $u->update(['joined_on' => null]);
@@ -131,19 +133,29 @@ class DatabaseSeeder extends Seeder
         $birgitte->refresh();
         $members->push($birgitte);
 
-        // --- Kontingent indeværende år (de fleste betalt i januar–marts) ---
+        // --- Kontingent for indeværende sæson: én regning pr. husstand (1–2 pers.: enkelt pr. person, 3: familie, 4+: familie 4+) ---
         $unpaidPayers = [];
-        foreach ($members->unique('id') as $m) {
-            $m->refresh();
-            if (! in_array($m->status, ['active', 'passive']) || ! $m->membership_type_id) continue;
-            $type = $m->membershipType;
-            $payer = $m->payer();
-            if ($type->code === 'family' && $payer->id !== $m->id) continue;
-            $paidDate = Carbon::create($year, mt_rand(1, 3), mt_rand(1, 28));
-            if ($m->joined_on && $m->joined_on->year === $year) $paidDate = $m->joined_on->copy()->addDays(3);
-            $unpaid = count($unpaidPayers) < 4 && $m->id % 7 === 3 && ! in_array($m->email, array_keys(config('app.demo_accounts')));
+        $payersAll = $members->unique('id')->map(fn ($m) => $m->fresh())->filter(fn ($m) => in_array($m->status, ['active', 'passive']))
+            ->map(fn ($m) => $m->payer())->unique('id');
+        foreach ($payersAll as $payer) {
+            \App\Support\Memberships::syncHouseholdTypes($payer);
+            $hh = User::where('household_id', $payer->household_id)->whereIn('status', ['active', 'passive'])->with('membershipType')->get();
+            $regular = $hh->filter(fn ($m) => $m->membershipType->code !== 'passive');
+            $paidDate = $seasonStart->copy()->addDays(mt_rand(0, 45))->setTime(mt_rand(7, 21), mt_rand(0, 59));
+            $joined = $regular->first()?->joined_on;
+            if ($joined && $joined->gte($seasonStart)) $paidDate = $joined->copy()->addDays(1)->setTime(mt_rand(7, 21), mt_rand(0, 59));
+            $unpaid = count($unpaidPayers) < 4 && $payer->id % 7 === 3 && ! in_array($payer->email, array_keys(config('app.demo_accounts')));
             if ($unpaid) $unpaidPayers[] = $payer->id;
-            $this->invoice($payer, $type->code === 'family' ? null : $m, 'membership', "Kontingent $year – ".$type->name.($type->code === 'family' ? ' ('.$m->household->name.')' : ' – '.$m->name), $type->annual_fee, '1000', $paidDate, $unpaid ? null : $paidDate, (string) $year, method: mt_rand(0, 9) ? 'mobilepay' : 'bank');
+            if ($n = $regular->count()) {
+                $amount = \App\Support\Prices::membership($n, $paidDate);
+                $half = $n <= 2 && \App\Support\Season::isHalf($paidDate);
+                $this->invoice($payer, $n === 1 ? $regular->first() : null, 'membership',
+                    "Kontingent $season – ".\App\Support\Memberships::householdLabel($n).($half ? ' (halv sæson)' : '').' – '.($n === 1 ? $regular->first()->name : $payer->household->name),
+                    $amount, '1000', $paidDate, $unpaid ? null : $paidDate, $season, method: mt_rand(0, 9) ? 'mobilepay' : 'bank');
+            }
+            foreach ($hh->filter(fn ($m) => $m->membershipType->code === 'passive') as $pm) {
+                $this->invoice($payer, $pm, 'membership', "Kontingent $season – Støttemedlem – {$pm->name}", \App\Support\Prices::get('membership.passive'), '1000', $paidDate, $paidDate, $season, method: 'mobilepay');
+            }
         }
 
         // Indmeldt men ikke betalt
@@ -257,29 +269,39 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // --- Produkter og opbevaring ---
-        $rack = Product::create(['name' => 'Opbevaring: plads i boardrack', 'description' => 'Plads til ét board og rig i klubhusets rack. Gælder kalenderåret.', 'price' => 60000, 'billing' => 'year', 'needs_resource' => true]);
+        // --- Produkter (priser fra pristabellen; opbevaring og dagsleje har foreløbige priser) ---
+        $sEnd = \App\Support\Season::end($this->now);
+        $rack = Product::create(['name' => 'Opbevaring: plads i boardrack', 'description' => 'Plads til ét board og rig i klubhusets rack. Gælder sæsonen (1. maj – 30. april). Foreløbig pris.', 'price' => 60000, 'billing' => 'season', 'needs_resource' => true]);
         foreach (range(1, 16) as $n) $rack->resources()->create(['label' => 'Rack '.chr(65 + intdiv($n - 1, 8)).(($n - 1) % 8 + 1)]);
-        $cont = Product::create(['name' => 'Opbevaring: skab i container', 'description' => 'Aflåst skab til våddragt og småudstyr.', 'price' => 40000, 'billing' => 'year', 'needs_resource' => true]);
+        $cont = Product::create(['name' => 'Opbevaring: skab i container', 'description' => 'Aflåst skab til våddragt og småudstyr. Gælder sæsonen. Foreløbig pris.', 'price' => 40000, 'billing' => 'season', 'needs_resource' => true]);
         foreach (range(1, 10) as $n) $cont->resources()->create(['label' => 'Skab '.$n]);
-        $season = Product::create(['name' => 'Sæsonleje af klubudstyr', 'description' => 'Fri brug af klubbens boards og sejl i hele sæsonen.', 'price' => 80000, 'billing' => 'season']);
-        $day = Product::create(['name' => 'Dagsleje af board og sejl', 'description' => 'Til medlemmer uden sæsonleje.', 'price' => 10000, 'guest_price' => 20000, 'billing' => 'once']);
-        $key = Product::create(['name' => 'Nøglebrik til klubhuset (depositum)', 'description' => 'Depositum refunderes ved aflevering.', 'price' => 20000, 'billing' => 'once']);
+        $rental = Product::create(['name' => 'Udstyrsleje i sæsonen', 'description' => 'Fri brug af klubbens boards, sejl og våddragter hele sæsonen (1. maj – 30. april). Enkelt medlem 1.500 kr., familie 4.000 kr. (op til 3 personer) + 1.000 kr. pr. ekstra person.', 'price' => 150000, 'pricing' => 'household', 'billing' => 'season']);
+        $day = Product::create(['name' => 'Dagsleje af board og sejl', 'description' => 'Til medlemmer uden sæsonleje. Foreløbig pris.', 'price' => 10000, 'guest_price' => 20000, 'billing' => 'once']);
+        $key = Product::create(['name' => 'Nøglebrik til klubhuset (depositum)', 'description' => 'Depositum refunderes ved aflevering.', 'price' => 10000, 'price_code' => 'key_deposit', 'billing' => 'once']);
+        Product::create(['name' => 'Prøvetræning', 'description' => 'Én træning med instruktør og udstyr – for dig, der vil prøve, før du melder dig ind.', 'price' => 40000, 'price_code' => 'trial', 'billing' => 'once']);
 
         $payers = $adults->filter(fn ($m) => $m->payer()->id === $m->id)->values();
         foreach ($payers->random(18)->values() as $k => $m) {
-            $prod = $k < 11 ? $rack : ($k < 15 ? $cont : $season);
-            $res = $prod->needs_resource ? $prod->resources->values()[$k < 11 ? $k : $k - 11] : null;
-            $at = Carbon::create($year, mt_rand(3, 5), mt_rand(1, 28));
-            $inv = $this->invoice($m, $m, 'product', $prod->name.($res ? ' ('.$res->label.')' : '').' – '.$m->name, $prod->price, $prod->needs_resource ? '1300' : '1200', $at, $k === 7 ? null : $at, (string) $year, productId: $prod->id);
-            ProductOrder::create(['user_id' => $m->id, 'product_id' => $prod->id, 'resource_id' => $res?->id, 'invoice_id' => $inv->id, 'valid_from' => $at, 'valid_to' => Carbon::create($year)->endOfYear()]);
+            $at = $seasonStart->copy()->addDays(mt_rand(0, 60))->setTime(mt_rand(8, 21), mt_rand(0, 59));
+            if ($k < 15) {
+                $prod = $k < 11 ? $rack : $cont;
+                $res = $prod->resources->values()[$k < 11 ? $k : $k - 11];
+                $inv = $this->invoice($m, $m, 'product', $prod->name.' ('.$res->label.") $season – ".$m->name, $prod->price, '1300', $at, $k === 7 ? null : $at, $season, productId: $prod->id);
+                ProductOrder::create(['user_id' => $m->id, 'product_id' => $prod->id, 'resource_id' => $res->id, 'invoice_id' => $inv->id, 'valid_from' => $at, 'valid_to' => $sEnd]);
+            } else { // udstyrsleje for husstanden
+                $hh = User::where('household_id', $m->household_id)->where('status', 'active')->get();
+                $amount = \App\Support\Prices::rental($hh->count());
+                $inv = $this->invoice($m, $hh->count() === 1 ? $m : null, 'product', "Udstyrsleje i sæsonen $season – ".($hh->count() === 1 ? $m->name : $hh->count().' personer'), $amount, '1200', $at, $at, $season, productId: $rental->id);
+                foreach ($hh as $p) ProductOrder::create(['user_id' => $p->id, 'product_id' => $rental->id, 'invoice_id' => $inv->id, 'valid_from' => $at, 'valid_to' => $sEnd]);
+            }
         }
-        $order = ProductOrder::create(['user_id' => $sofie->id, 'product_id' => $rack->id, 'resource_id' => $rack->resources->last()->id, 'valid_from' => Carbon::create($year, 4, 2), 'valid_to' => Carbon::create($year)->endOfYear()]);
-        $order->update(['invoice_id' => $this->invoice($sofie, $sofie, 'product', $rack->name.' ('.$rack->resources->last()->label.') – Sofie Mikkelsen', 60000, '1300', Carbon::create($year, 4, 2), Carbon::create($year, 4, 2), (string) $year, productId: $rack->id)->id]);
-        $keyInv = $this->invoice($sofie, $freja, 'product', $key->name.' – Freja Mikkelsen', $key->price, '1200', $this->now->copy()->subDays(3), null, (string) $year, productId: $key->id);
+        $at = $seasonStart->copy()->addDays(3)->setTime(19, 12);
+        $order = ProductOrder::create(['user_id' => $sofie->id, 'product_id' => $rack->id, 'resource_id' => $rack->resources->last()->id, 'valid_from' => $at, 'valid_to' => $sEnd]);
+        $order->update(['invoice_id' => $this->invoice($sofie, $sofie, 'product', $rack->name.' ('.$rack->resources->last()->label.") $season – Sofie Mikkelsen", 60000, '1300', $at, $at, $season, productId: $rack->id)->id]);
+        $keyInv = $this->invoice($sofie, $freja, 'product', $key->name.' – Freja Mikkelsen', \App\Support\Prices::get('key_deposit'), '1200', $this->now->copy()->subDays(3), null, (string) $year, productId: $key->id);
         ProductOrder::create(['user_id' => $freja->id, 'product_id' => $key->id, 'invoice_id' => $keyInv->id, 'valid_from' => $this->now->copy()->subDays(3)]);
         foreach ($payers->random(12) as $m) {
-            $at = Carbon::create($year, mt_rand(5, 9), mt_rand(1, 28));
+            $at = Carbon::create($year, mt_rand(5, 9), mt_rand(1, 28), mt_rand(9, 18));
             $this->invoice($m, $m, 'product', $day->name.' – '.$m->name, $day->price, '1200', $at, $at, null, productId: $day->id);
         }
 

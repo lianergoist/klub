@@ -30,7 +30,10 @@ class ProfileController extends Controller
                 'invoice_id' => $inv->id, 'amount_fmt' => Money::fmt($inv->amount),
                 'members' => array_column($inv->payload['members'] ?? [], 'name'),
             ] : null,
-            'upgrade_price_fmt' => $u->membershipType?->code !== 'family' ? Money::fmt(Memberships::upgradePrice($u)) : null,
+            'season' => \App\Support\Season::label(),
+            'household_count' => Memberships::householdCount($u),
+            'add_quote_fmt' => $u->household?->payer_id === $u->id && $u->status !== 'pending' ? Money::fmt(Memberships::addQuote($u, 1 + count((Memberships::openUpgrade($u)?->payload['members'] ?? [])))) : null,
+            'add_quote' => $u->household?->payer_id === $u->id && $u->status !== 'pending' ? Memberships::addQuote($u, 1 + count((Memberships::openUpgrade($u)?->payload['members'] ?? []))) : null,
             'signup_invoice_id' => $u->status === 'pending' ? Invoice::where('member_id', $u->id)->where('kind', 'membership')->where('status', 'open')->value('id') : null,
             'roles' => $u->roleAssignments->sortByDesc('starts_on')->map(fn ($ra) => [
                 'role' => $ra->role, 'label' => User::ROLE_LABELS[$ra->role] ?? $ra->role,
@@ -96,13 +99,9 @@ class ProfileController extends Controller
 
         $data['consent_at'] = now()->toIso8601String();
 
-        if ($u->membershipType?->code === 'family' && $u->hasValidMembership()) {
-            $m = User::create(collect($data)->except('consent_at')->all() + [
-                'household_id' => $u->household_id, 'status' => 'active', 'joined_on' => now(), 'consent_at' => now(),
-                'membership_type_id' => $u->membership_type_id,
-                'address' => $u->address, 'postal_code' => $u->postal_code, 'city' => $u->city, 'notify_email' => false,
-            ]);
-            Audit::log('member.added_to_household', $m, ['by_parent' => $u->id]);
+        // Koster det ikke ekstra (fx 5. person på familiekontingent), tilføjes personen med det samme
+        if (! Memberships::openUpgrade($u) && $u->hasValidMembership() && Memberships::addQuote($u, 1) === 0) {
+            $m = Memberships::addToHousehold($u, [$data])[0];
 
             return ['added' => true, 'member' => self::profile($m)];
         }
@@ -179,19 +178,35 @@ class ProfileController extends Controller
         ], 200, ['Content-Disposition' => 'attachment; filename="mine-data.json"'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
+    /** Aktuel pris for et produkt (fra pristabellen, hvis produktet har en priskode). */
+    public static function productPrice(Product $p, int $persons = 1): int
+    {
+        if ($p->pricing === 'household') return \App\Support\Prices::rental($persons);
+
+        return $p->price_code ? \App\Support\Prices::get($p->price_code) : $p->price;
+    }
+
     public function products(Request $r)
     {
         $u = $r->user();
-        $mine = ProductOrder::with('product', 'resource', 'invoice')->whereIn('user_id', $u->managedMembers()->pluck('id'))->get();
+        $managed = $u->managedMembers();
+        $mine = ProductOrder::with('product', 'resource', 'invoice', 'user')->whereIn('user_id', $managed->pluck('id'))
+            ->where(fn ($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()))->get();
 
         return [
-            'catalog' => Product::where('active', true)->with('resources')->get()->map(function ($p) {
+            'season' => \App\Support\Season::label(),
+            'season_end' => \App\Support\Season::end()->toDateString(),
+            'catalog' => Product::where('active', true)->with('resources')->get()->map(function ($p) use ($managed) {
                 $taken = ProductOrder::where('product_id', $p->id)->whereNotNull('resource_id')
                     ->where(fn ($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()))->pluck('resource_id');
+                $price = self::productPrice($p);
 
                 return [
-                    'id' => $p->id, 'name' => $p->name, 'description' => $p->description, 'price' => $p->price,
-                    'price_fmt' => Money::fmt($p->price), 'billing' => $p->billing, 'needs_resource' => $p->needs_resource,
+                    'id' => $p->id, 'name' => $p->name, 'description' => $p->description, 'price' => $price,
+                    'price_fmt' => ($p->pricing === 'household' ? 'fra ' : '').Money::fmt($price), 'billing' => $p->billing,
+                    'needs_resource' => $p->needs_resource, 'household' => $p->pricing === 'household',
+                    // pris for 1, 2, 3 … personer i husstanden (udstyrsleje)
+                    'tiers' => $p->pricing === 'household' ? collect(range(1, max(1, $managed->count())))->mapWithKeys(fn ($n) => [$n => \App\Support\Prices::rental($n)]) : null,
                     'free_resources' => $p->resources->whereNotIn('id', $taken)->map->only('id', 'label')->values(),
                 ];
             }),
@@ -203,13 +218,21 @@ class ProfileController extends Controller
         ];
     }
 
+    /** Bestil et tilkøb for én eller flere i husstanden (udstyrsleje prissættes samlet for husstanden). */
     public function order(Request $r, Product $product)
     {
         $u = $r->user();
-        $data = $r->validate(['member_id' => 'required|integer', 'resource_id' => 'nullable|integer']);
-        abort_unless($u->managedMembers()->pluck('id')->contains($data['member_id']), 403);
+        $data = $r->validate(['member_ids' => 'required_without:member_id|array|min:1', 'member_ids.*' => 'integer', 'member_id' => 'nullable|integer', 'resource_id' => 'nullable|integer']);
+        $ids = array_values(array_unique($data['member_ids'] ?? [$data['member_id']]));
+        $allowed = $u->managedMembers()->pluck('id');
+        abort_if(collect($ids)->diff($allowed)->isNotEmpty(), 403);
+        abort_if(($product->needs_resource || $product->pricing !== 'household') && count($ids) > 1, 422, 'Vælg én person.');
+        if ($product->billing === 'season') {
+            $has = ProductOrder::where('product_id', $product->id)->whereIn('user_id', $ids)->where('valid_to', '>=', now())->with('user')->get();
+            if ($has->isNotEmpty()) abort(422, $has->first()->user->name.' har allerede '.mb_strtolower($product->name).' for sæson '.\App\Support\Season::label().'.');
+        }
 
-        return DB::transaction(function () use ($u, $product, $data) {
+        return DB::transaction(function () use ($u, $product, $data, $ids) {
             $resourceId = null;
             if ($product->needs_resource) {
                 abort_unless($data['resource_id'] ?? null, 422, 'Vælg en plads.');
@@ -218,18 +241,23 @@ class ProfileController extends Controller
                 abort_if($busy, 422, 'Pladsen er desværre lige blevet optaget.');
                 $resourceId = $res->id;
             }
-            $member = User::find($data['member_id']);
+            $members = User::whereIn('id', $ids)->get();
+            $amount = self::productPrice($product, count($ids));
+            $validTo = match ($product->billing) { 'once' => null, 'season' => \App\Support\Season::end(), default => now()->endOfYear() };
+            $who = $members->count() === 1 ? $members->first()->name : $members->count().' personer ('.$members->map(fn ($m) => explode(' ', $m->name)[0])->join(', ', ' og ').')';
             $invoice = Invoice::create([
-                'payer_id' => $u->id, 'member_id' => $member->id, 'kind' => 'product',
-                'description' => $product->name.($resourceId ? ' ('.$product->resources->find($resourceId)->label.')' : '').' – '.$member->name,
-                'amount' => $product->price, 'due_on' => now()->addDays(14), 'period' => (string) now()->year,
+                'payer_id' => $u->id, 'member_id' => $members->count() === 1 ? $members->first()->id : null, 'kind' => 'product',
+                'description' => $product->name.($resourceId ? ' ('.$product->resources->find($resourceId)->label.')' : '').($product->billing === 'season' ? ' '.\App\Support\Season::label() : '').' – '.$who,
+                'amount' => $amount, 'due_on' => now()->addDays(14), 'period' => $product->billing === 'season' ? \App\Support\Season::label() : (string) now()->year,
                 'product_id' => $product->id, 'account_id' => FinanceController::accountId($product->needs_resource ? '1300' : '1200'),
             ]);
-            $order = ProductOrder::create([
-                'user_id' => $member->id, 'product_id' => $product->id, 'resource_id' => $resourceId, 'invoice_id' => $invoice->id,
-                'valid_from' => now(), 'valid_to' => $product->billing === 'once' ? null : now()->endOfYear(),
-            ]);
-            Audit::log('product.ordered', $order);
+            foreach ($members as $m) {
+                $order = ProductOrder::create([
+                    'user_id' => $m->id, 'product_id' => $product->id, 'resource_id' => $resourceId, 'invoice_id' => $invoice->id,
+                    'valid_from' => now(), 'valid_to' => $validTo,
+                ]);
+            }
+            Audit::log('product.ordered', $order, ['persons' => count($ids), 'amount' => $amount]);
 
             return ['invoice_id' => $invoice->id];
         });

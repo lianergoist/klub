@@ -122,50 +122,13 @@ class FinanceController extends Controller
         return ['ok' => true];
     }
 
-    /** Opret kontingentopkrævning for et år til alle aktive/passive medlemmer (familie = én regning). */
+    /** Opkræv kontingent for en træningssæson (1. maj – 30. april). year = sæsonens startår. */
     public function generateMembership(Request $r)
     {
         $this->write($r);
-        $d = $r->validate(['year' => 'required|integer|min:2020|max:2100', 'prorate' => 'boolean']);
-        $year = (string) $d['year'];
-        $account = self::accountId('1000');
-        $created = 0;
-        $sum = 0;
+        $d = $r->validate(['year' => 'required|integer|min:2020|max:2100']);
 
-        DB::transaction(function () use ($d, $year, $account, &$created, &$sum) {
-            $members = User::with('membershipType', 'household')->whereIn('status', ['active', 'passive'])->whereNotNull('membership_type_id')->get();
-            foreach ($members as $m) {
-                $type = $m->membershipType;
-                $isFamily = $type->code === 'family';
-                $payer = $m->payer();
-                // Familiekontingent: kun én regning pr. husstand (til betaleren)
-                if ($isFamily && $payer->id !== $m->id) continue;
-                if ($m->household && $m->household->payer?->membershipType?->code === 'family' && $payer->id !== $m->id) continue;
-
-                $exists = Invoice::where('kind', 'membership')->where('period', $year)
-                    ->where($isFamily ? fn ($q) => $q->whereNull('member_id')->where('payer_id', $payer->id) : fn ($q) => $q->where('member_id', $m->id))->exists();
-                if ($exists) continue;
-
-                $amount = $type->annual_fee;
-                $note = '';
-                if (($d['prorate'] ?? false) && $m->joined_on && $m->joined_on->year == $year) {
-                    $months = 12 - $m->joined_on->month + 1;
-                    $amount = (int) round($amount * $months / 12);
-                    $note = " ($months/12)";
-                }
-                Invoice::create([
-                    'payer_id' => $payer->id, 'member_id' => $isFamily ? null : $m->id, 'kind' => 'membership',
-                    'description' => "Kontingent $year – ".$type->name.($isFamily ? ' ('.$m->household->name.')' : ' – '.$m->name).$note,
-                    'amount' => $amount, 'due_on' => now()->addDays(14), 'period' => $year, 'account_id' => $account,
-                ]);
-                $payer->notify(new ClubMessage("Kontingent $year", 'Der er oprettet en opkrævning på '.Money::fmt($amount).' med betaling senest '.now()->addDays(14)->format('d.m.Y').'.', '/profil/regninger'));
-                $created++;
-                $sum += $amount;
-            }
-        });
-        Audit::log('membership.generated', null, ['year' => $year, 'count' => $created]);
-
-        return ['created' => $created, 'total' => Money::fmt($sum)];
+        return \App\Support\Memberships::generateSeason((int) $d['year']);
     }
 
     /* ---------- Regnskab ---------- */
@@ -419,13 +382,28 @@ class FinanceController extends Controller
         ]);
     }
 
+    /** Til indmeldelse og visning: medlemstyper og aktuelle priser. */
     public function membershipTypes(Request $r)
     {
-        return MembershipType::all()->map(fn ($t) => $t->only('id', 'name', 'code', 'annual_fee', 'max_age') + [
-            'fee_fmt' => Money::fmt($t->annual_fee),
-            'prorated' => \App\Support\Memberships::prorate($t->annual_fee),
-            'prorated_fmt' => Money::fmt(\App\Support\Memberships::prorate($t->annual_fee)),
-            'months_left' => \App\Support\Memberships::monthsLeft(),
-        ]);
+        $half = \App\Support\Season::isHalf();
+        $P = fn ($c) => \App\Support\Prices::get($c);
+
+        return [
+            'season' => \App\Support\Season::label(),
+            'season_end' => \App\Support\Season::end()->toDateString(),
+            'half' => $half,
+            'single' => ['price' => $P($half ? 'membership.single_half' : 'membership.single'), 'full' => $P('membership.single')],
+            'passive' => ['price' => $P('membership.passive')],
+            'family3' => $P('membership.family3'),
+            'family4' => $P('membership.family4'),
+        ];
+    }
+
+    /** Pristabel med "gælder fra" (læsning for alle i bestyrelse/økonomi). */
+    public function prices(Request $r)
+    {
+        abort_unless($r->user()->canReadFinance() || $r->user()->isBoard(), 403);
+
+        return \App\Support\Prices::table();
     }
 }

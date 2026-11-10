@@ -99,11 +99,12 @@ class User extends Authenticatable
         return $this;
     }
 
-    public function hasValidMembership(?int $year = null): bool
+    /** Betalt kontingent for træningssæsonen (1. maj – 30. april), fx "2026/27". */
+    public function hasValidMembership(?string $season = null): bool
     {
-        $year = (string) ($year ?? now()->year);
+        $season ??= \App\Support\Season::label();
 
-        return Invoice::where('kind', 'membership')->where('period', $year)->where('status', 'paid')
+        return Invoice::where('kind', 'membership')->where('period', $season)->where('status', 'paid')
             ->where(function ($q) {
                 $q->where('member_id', $this->id);
                 if ($this->household_id) {

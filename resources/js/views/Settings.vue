@@ -18,17 +18,24 @@
             </form>
         </div>
         <div class="card">
-            <h2>Kontingentsatser</h2>
-            <table><tbody><tr v-for="t in types" :key="t.id"><td>{{ t.name }}</td><td class="num">{{ t.fee_fmt }}</td></tr></tbody></table>
-            <p class="small muted" style="margin-top:8px">Satserne kan redigeres i næste fase.</p>
+            <h2>Priser</h2>
+            <p class="small muted">Træningssæsonen løber 1. maj – 30. april. Regnskabsåret er kalenderåret. Hver pris har en dato, den gælder fra, så nye priser kan lægges ind på forhånd uden at ændre det, der allerede er opkrævet.</p>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Pris</th><th class="num">Beløb</th><th>Gælder fra</th></tr></thead>
+                <tbody><tr v-for="p in prices" :key="p.code">
+                    <td>{{ p.label }}</td><td class="num">{{ p.amount_fmt }}</td>
+                    <td class="small">{{ p.valid_from ? dato(p.valid_from) : '–' }}<div v-for="u in p.upcoming" :key="u.valid_from" class="tag info" style="margin-top:4px">{{ u.amount_fmt }} fra {{ dato(u.valid_from) }}</div></td>
+                </tr></tbody>
+            </table></div>
+            <p class="small muted" style="margin-top:8px">Redigering af priser (med virkning fra en valgt dato) kommer i en senere version. Opbevaring og dagsleje har foreløbige priser, der ikke er fastsat af bestyrelsen.</p>
         </div>
     </div>
 </template>
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { api, toast } from '../api';
-const cats = ref([]); const types = ref([]); const nc = reactive({ name: '', color: '#0f7c8c' });
-onMounted(async () => { cats.value = await api('categories'); types.value = await api('membership-types'); });
+import { api, toast, dato } from '../api';
+const cats = ref([]); const prices = ref([]); const nc = reactive({ name: '', color: '#0f7c8c' });
+onMounted(async () => { cats.value = await api('categories'); prices.value = await api('finance/prices'); });
 async function save(c) { try { await api(`categories/${c.id}`, { method: 'PUT', body: c }); toast('Gemt'); } catch (e) { toast(e.message, 'error'); } }
 async function add() { try { cats.value.push(await api('categories', { method: 'POST', body: nc })); nc.name = ''; toast('Tilføjet'); } catch (e) { toast(e.message, 'error'); } }
 </script>

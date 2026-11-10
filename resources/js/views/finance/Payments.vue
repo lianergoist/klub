@@ -56,9 +56,8 @@
         </Modal>
         <Modal v-if="showGen" title="Opkræv kontingent" @close="showGen = false">
             <div class="stack">
-                <label class="field"><span>År</span><input type="number" v-model.number="gYear"></label>
-                <label class="check"><input type="checkbox" v-model="gProrate"> Forholdsmæssigt kontingent for medlemmer, der er indmeldt i løbet af året</label>
-                <p class="small muted">Der oprettes én regning pr. medlem, og én pr. husstand ved familiekontingent. Medlemmer, der allerede har en regning for året, springes over. Alle får besked.</p>
+                <label class="field"><span>Sæson (1. maj – 30. april)</span><select v-model.number="gYear"><option v-for="y in seasons" :key="y" :value="y">{{ y }}/{{ String(y + 1).slice(2) }}</option></select></label>
+                <p class="small muted">Der oprettes én regning pr. husstand: 1–2 personer betaler enkeltkontingent hver, 3 personer familiekontingent og 4 eller flere familiekontingent for store familier. Støttemedlemmer får hver deres regning. Priserne er dem, der gælder ved sæsonstart. Husstande, der allerede har en regning for sæsonen, springes over. Alle får besked.</p>
                 <button class="btn primary block" @click="generate">Opret opkrævninger</button>
             </div>
         </Modal>
@@ -72,12 +71,14 @@ const canWrite = computed(() => store.user.can.finance_write);
 const d = ref(null); const q = ref(''); const status = ref(''); const kind = ref('');
 const manual = ref(null); const mMethod = ref('bank'); const mRef = ref('');
 const refund = ref(null); const rAmount = ref(0); const rReason = ref('');
-const showGen = ref(false); const gYear = ref(new Date().getFullYear() + 1); const gProrate = ref(true);
+const showGen = ref(false);
+const seasonStartYear = new Date().getMonth() >= 4 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+const seasons = [seasonStartYear, seasonStartYear + 1]; const gYear = ref(seasonStartYear + 1);
 async function load() { d.value = await api(`finance/invoices?q=${encodeURIComponent(q.value)}&status=${status.value}&kind=${kind.value}`); }
 let t; const debounced = () => { clearTimeout(t); t = setTimeout(load, 250); };
 watch([status, kind], load); onMounted(load);
 async function doManual() { try { await api(`finance/invoices/${manual.value.id}/manual`, { method: 'POST', body: { method: mMethod.value, reference: mRef.value } }); manual.value = null; mRef.value = ''; toast('Betaling registreret og bogført'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function doRefund() { try { await api(`finance/invoices/${refund.value.id}/refund`, { method: 'POST', body: { amount: Math.round(rAmount.value * 100), reason: rReason.value } }); refund.value = null; rReason.value = ''; toast('Refusion godkendt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function remind(i) { await api(`finance/invoices/${i.id}/remind`, { method: 'POST' }); toast(`Påmindelse sendt til ${i.payer}`); }
-async function generate() { try { const r = await api('finance/membership/generate', { method: 'POST', body: { year: gYear.value, prorate: gProrate.value } }); showGen.value = false; toast(`${r.created} opkrævninger oprettet (${r.total})`); load(); } catch (e) { toast(e.message, 'error'); } }
+async function generate() { try { const r = await api('finance/membership/generate', { method: 'POST', body: { year: gYear.value } }); showGen.value = false; toast(`Sæson ${r.season}: ${r.created} opkrævninger oprettet (${r.total})`); load(); } catch (e) { toast(e.message, 'error'); } }
 </script>

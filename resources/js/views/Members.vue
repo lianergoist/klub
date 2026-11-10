@@ -15,7 +15,7 @@
                 <select v-model="f.age"><option value="">Alle aldre</option><option value="adult">Voksne (18+)</option><option value="youth">Børn og unge</option></select>
                 <select v-model="f.role"><option value="">Alle roller</option><option value="trainer">Trænere</option><option value="board">Bestyrelse</option></select>
             </div>
-            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="f.unpaid"> Kun med ubetalt kontingent {{ year }}</label>
+            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="f.unpaid"> Kun med ubetalt kontingent {{ store.user.season }}</label>
         </div>
         <p class="small muted">{{ list.length }} medlemmer</p>
         <div class="card" style="padding:0 16px">
@@ -41,7 +41,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
 import { api, download, roleLabel } from '../api';
-const year = new Date().getFullYear();
+import { store } from '../api';
 const f = reactive({ q: '', status: '', age: '', role: '', unpaid: false });
 const list = ref([]); const pending = ref([]);
 const qs = computed(() => new URLSearchParams(Object.fromEntries(Object.entries(f).filter(([, v]) => v).map(([k, v]) => [k, v === true ? 1 : v]))).toString());

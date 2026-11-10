@@ -18,8 +18,8 @@ For en lille frivillig klub uden moms og løn er det sandsynligvis nok. Så snar
 
 | Funktion | I proof of concept | Bemærkning |
 |---|---|---|
-| Kontingent pr. medlemstype, familiekontingent, forholdsmæssigt kontingent | Ja | Indmeldelse kræver betaling; skift til familie opkræver forskellen |
-| Opkrævning af kontingent for et helt år til alle medlemmer | Ja | Én knap; én regning pr. medlem/husstand |
+| Kontingent pr. sæson (1. maj – 30. april) beregnet pr. husstand, halv sæson fra 1. august | Ja | Indmeldelse kræver betaling; tilføjes personer, opkræves forskellen. Priser har en "gælder fra"-dato |
+| Opkrævning af kontingent for en hel sæson til alle medlemmer | Ja | Én knap; én regning pr. husstand og pr. støttemedlem |
 | Betaling for aktiviteter og tilkøb (leje, opbevaring, depositum) | Ja | Pladsen reserveres, mens man betaler |
 | MobilePay og kort | Simuleret | Vipps MobilePay-aftale kræves i drift |
 | Manuel registrering af kontant- og bankbetaling | Ja | |
@@ -52,7 +52,7 @@ For en lille frivillig klub uden moms og løn er det sandsynligvis nok. Så snar
 | **Ingen moms** | Ingen momskoder, intet momsregnskab, ingen momsindberetning. |
 | **Ingen løn eller honorarer** | Kan ikke beregne skat og AM-bidrag eller indberette til eIndkomst. |
 | **Ingen automatisk bankforbindelse** | Kontoudtog skal hentes som CSV og uploades. Regnskabsprogrammer kan typisk hente bankposteringer automatisk. |
-| **Ingen periodisering eller afskrivninger** | Fx kontingent betalt i december for næste år, eller nyt udstyr der skal afskrives over flere år. |
+| **Ingen periodisering eller afskrivninger** | Træningssæsonen (1. maj – 30. april) går på tværs af regnskabsåret (kalenderåret). Kontingent og udstyrsleje bogføres, når de betales, og fordeles ikke på de to regnskabsår. Nyt udstyr kan heller ikke afskrives over flere år. |
 | **Ingen e-faktura** | Kan ikke sende eller modtage elektroniske fakturaer (fx til og fra kommunen). |
 | **Ingen godkendt standard** | Systemet er ikke anmeldt som "digitalt standard bogføringssystem" efter bogføringsloven. Det kræver bl.a. godkendelse hos Erhvervsstyrelsen og vil være et større projekt. |
 
