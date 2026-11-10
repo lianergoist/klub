@@ -16,7 +16,7 @@
             <div v-else-if="!acts.length" class="card empty">Ingen aktiviteter.</div>
             <div v-else class="card" style="padding:0">
                 <RouterLink v-for="a in acts" :key="a.id" :to="`/aktiviteter/${a.id}`" class="act">
-                    <div class="when"><div class="d">{{ new Date(a.starts_at).getDate() }}</div><div class="m">{{ new Date(a.starts_at).toLocaleDateString('da-DK', { month: 'short' }) }}</div></div>
+                    <div class="when"><div class="d">{{ dagNr(a.starts_at) }}</div><div class="m">{{ maanedKort(a.starts_at) }}</div></div>
                     <div style="flex:1">
                         <div class="t">{{ a.title }}</div>
                         <div class="meta">kl. {{ klok(a.starts_at) }} · {{ a.signed_up_count }}<span v-if="a.max_participants">/{{ a.max_participants }}</span> tilmeldt<span v-if="a.trainers.length > 1"> · med {{ a.trainers.filter(t => t.id !== store.user.id).map(t => t.name.split(' ')[0]).join(', ') }}</span></div>
@@ -78,7 +78,7 @@
 <script setup>
 import { ref, reactive, watch, onMounted } from 'vue';
 import CatTags from '../components/CatTags.vue';
-import { api, store, klok, dato, toast } from '../api';
+import { api, store, klok, dato, toast, dagNr, maanedKort } from '../api';
 
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);

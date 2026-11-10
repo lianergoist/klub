@@ -30,7 +30,7 @@
                 <h3 style="margin:18px 4px 8px">{{ g.month }}</h3>
                 <div class="card" style="padding:0">
                     <RouterLink v-for="a in g.items" :key="a.id" :to="`/aktiviteter/${a.id}`" :class="['act', { cancelled: a.cancelled }]">
-                        <div class="when"><div class="d">{{ new Date(a.starts_at).getDate() }}</div><div class="m">{{ wd(a.starts_at) }}</div></div>
+                        <div class="when"><div class="d">{{ dagNr(a.starts_at) }}</div><div class="m">{{ ugedagKort(a.starts_at) }}</div></div>
                         <div style="flex:1;min-width:0">
                             <div class="t">{{ a.title }}</div>
                             <div class="meta">kl. {{ klok(a.starts_at) }}–{{ klok(a.ends_at) }}<span v-if="a.location"> · {{ a.location }}</span><span v-if="a.trainers.length"> · {{ a.trainers.map(t => t.name.split(' ')[0]).join(', ') }}</span></div>
@@ -56,7 +56,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
 import CatTags from '../components/CatTags.vue';
-import { api, store, klok, toast } from '../api';
+import { api, store, klok, toast, dagNr, ugedagKort, maanedAar } from '../api';
 
 const tabs = [{ id: 'upcoming', label: 'Kommende' }, { id: 'mine', label: 'Tilmeldt' }, { id: 'attended', label: 'Deltaget' }];
 const tab = ref(sessionStorage.getItem('actTab') || 'upcoming');
@@ -64,12 +64,11 @@ const cats = ref([]); const list = ref([]); const loading = ref(true); const dir
 const household = ref({}); const signupInvoice = ref(null);
 
 const emptyText = computed(() => ({ upcoming: 'Ingen kommende aktiviteter i de valgte kategorier.', mine: 'Du er ikke tilmeldt nogen kommende aktiviteter.', attended: 'Ingen registreret deltagelse endnu.' })[tab.value]);
-const wd = (iso) => new Date(iso).toLocaleDateString('da-DK', { weekday: 'short' }).replace('.', '');
 
 const grouped = computed(() => {
     const out = [];
     for (const a of list.value) {
-        const m = new Date(a.starts_at).toLocaleDateString('da-DK', { month: 'long', year: 'numeric' });
+        const m = maanedAar(a.starts_at);
         let g = out.find(x => x.month === m);
         if (!g) out.push(g = { month: m, items: [] });
         g.items.push(a);

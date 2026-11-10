@@ -6,7 +6,7 @@
                 <div class="okdot"><Icon name="check" style="width:30px" /></div>
                 <h1>Du er tilmeldt, {{ s.name.split(' ')[0] }}!</h1>
                 <ul class="list" style="text-align:left;margin:14px 0">
-                    <li v-for="(b, i) in s.bookings" :key="i"><strong>{{ b.title }}</strong><div class="small muted" style="text-transform:capitalize">{{ datoLang(b.starts_at) }} kl. {{ klok(b.starts_at) }}<span v-if="b.location"> · {{ b.location }}</span></div></li>
+                    <li v-for="(b, i) in s.bookings" :key="i"><strong>{{ b.title }}</strong><div class="small muted">{{ datoLang(b.starts_at) }} kl. {{ klok(b.starts_at) }}<span v-if="b.location"> · {{ b.location }}</span></div></li>
                 </ul>
                 <p class="small muted">Du har fået en bekræftelse på {{ s.email }}.</p>
             </div>

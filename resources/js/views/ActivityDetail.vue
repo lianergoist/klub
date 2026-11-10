@@ -13,7 +13,7 @@
 
         <div class="card" style="margin-top:14px">
             <div class="stack">
-                <div class="inf"><Icon name="cal" /><span><span style="text-transform:capitalize">{{ datoLang(a.starts_at) }}</span>, kl. {{ klok(a.starts_at) }}–{{ klok(a.ends_at) }}</span></div>
+                <div class="inf"><Icon name="cal" /><span><span>{{ datoLang(a.starts_at) }}</span>, kl. {{ klok(a.starts_at) }}–{{ klok(a.ends_at) }}</span></div>
                 <div v-if="a.location" class="inf"><Icon name="pin" /><span>{{ a.location }}</span></div>
                 <div class="inf"><Icon name="whistle" /><span>{{ a.trainers.length ? a.trainers.map(t => t.name).join(', ') : 'Træner ikke fundet endnu' }}</span></div>
                 <div v-if="a.signup_deadline" class="inf"><Icon name="clock" /><span>Svarfrist {{ tidspunkt(a.signup_deadline) }}<br><span class="small muted">Afmelding senest {{ a.cancel_hours }} timer før start</span></span></div>

@@ -16,7 +16,7 @@
                 </div>
                 <ul class="list" style="margin-top:10px">
                     <li v-for="a in o.activities" :key="a.id" class="row between" style="flex-wrap:nowrap">
-                        <div><strong style="text-transform:capitalize">{{ datoLang(a.starts_at) }}</strong> kl. {{ klok(a.starts_at) }}<div class="small muted">{{ a.title }}<span v-if="a.location"> · {{ a.location }}</span></div></div>
+                        <div><strong>{{ datoLang(a.starts_at) }}</strong> kl. {{ klok(a.starts_at) }}<div class="small muted">{{ a.title }}<span v-if="a.location"> · {{ a.location }}</span></div></div>
                         <button class="btn small primary" :disabled="a.full" @click="pick(o, a)">{{ a.full ? 'Fuldt' : 'Vælg' }}</button>
                     </li>
                     <li v-if="!o.activities.length" class="muted small">Ingen datoer lige nu – kig forbi igen senere.</li>
@@ -29,7 +29,7 @@
             <a href="#" class="small" @click.prevent="picked = null">‹ Vælg en anden dato</a>
             <div class="banner info" style="margin:0">
                 <strong>{{ picked.offer.label }}</strong>: {{ picked.activity.title }}<br>
-                <span style="text-transform:capitalize">{{ datoLang(picked.activity.starts_at) }}</span> kl. {{ klok(picked.activity.starts_at) }}–{{ klok(picked.activity.ends_at) }} · <strong>{{ picked.offer.price_fmt }}</strong>
+                <span>{{ datoLang(picked.activity.starts_at) }}</span> kl. {{ klok(picked.activity.starts_at) }}–{{ klok(picked.activity.ends_at) }} · <strong>{{ picked.offer.price_fmt }}</strong>
             </div>
             <label class="field"><span>Fulde navn</span><input v-model="f.name" required autocomplete="name"></label>
             <div class="grid c2">

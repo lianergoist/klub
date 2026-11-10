@@ -59,8 +59,16 @@ export async function refreshMe() {
 /* ---- formattering ---- */
 export const kr = (ore) => (ore / 100).toLocaleString('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kr.';
 export const krRound = (ore) => Math.round(ore / 100).toLocaleString('da-DK') + ' kr.';
-export const dato = (iso) => iso ? new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-export const datoLang = (iso) => new Date(iso).toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
-export const klok = (iso) => new Date(iso).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+// Alle tider vises i klubbens tid (dansk tid), uanset hvor brugeren befinder sig
+const TZ = 'Europe/Copenhagen';
+const fmt = (iso, o) => new Date(iso).toLocaleString('da-DK', { timeZone: TZ, ...o });
+const stort = (s) => s.charAt(0).toUpperCase() + s.slice(1); // kun første bogstav (dansk: "Lørdag 1. maj")
+export const dato = (iso) => iso ? fmt(iso, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+export const datoLang = (iso) => stort(fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' }));
+export const klok = (iso) => fmt(iso, { hour: '2-digit', minute: '2-digit' });
+export const dagNr = (iso) => fmt(iso, { day: 'numeric' });
+export const ugedagKort = (iso) => fmt(iso, { weekday: 'short' }).replace('.', '');
+export const maanedKort = (iso) => fmt(iso, { month: 'short' });
+export const maanedAar = (iso) => fmt(iso, { month: 'long', year: 'numeric' });
 export const tidspunkt = (iso) => iso ? `${dato(iso)} kl. ${klok(iso)}` : '';
 export const roleLabel = { member: 'Medlem', trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', auditor: 'Revisor', admin: 'Administrator' };
