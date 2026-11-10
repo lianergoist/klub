@@ -1,6 +1,6 @@
 # Klubsystem
 
-Se README.md for arkitektur, demo og drift. Funktionsbeskrivelsen ligger uden for repoet (Funktionsoversigt.md).
+Se README.md for arkitektur, demo og drift. Funktionsbeskrivelsen ligger i `docs/Funktionsoversigt.md`. Nye spørgsmål, bestyrelsen skal tage stilling til, tilføjes dér som **Afklares:**-punkter i det relevante afsnit.
 
 - Forretningslogik hører til i API'et (`app/Http/Controllers/Api`, `app/Support`), ikke i Vue-frontenden – appen skal senere pakkes med Capacitor og genbruge samme API.
 - UI-tekster er på dansk. Beløb gemmes i øre (heltal).
