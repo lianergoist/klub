@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "556161169050",
+    "project_id": "surfhorsens-klub",
+    "storage_bucket": "surfhorsens-klub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556161169050:android:029acd3780ab6f1aa6d123",
+        "android_client_info": {
+          "package_name": "dk.surfhorsens.klub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_tFxSJQMOMsLYe3negTPrNHMmYNmNoQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
