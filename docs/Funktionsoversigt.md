@@ -12,6 +12,8 @@ Hver funktion er markeret, så bestyrelsen kan prioritere:
 
 - **Afklares** – bestyrelsen skal tage stilling, før vi kan beskrive den.
 
+  Alle Afklares-punkter er samlet i oversigten [Klubsystem – beslutninger til bestyrelsen](https://claude.ai/artifact/86rV28YF85roQiNpJvRL8s), hvor bestyrelsen kan skrive sine beslutninger. Når et punkt er besluttet, skrives beslutningen ind her.
+
 Kommentér gerne direkte i teksten, ret og tilføj. Afsnittet om økonomi er skrevet med forklaringer, da det er der, der er flest valg at tage stilling til.
 
 ## Roller og rettigheder
