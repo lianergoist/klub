@@ -5,7 +5,8 @@
             <ul class="list">
                 <li v-if="can.trainer"><RouterLink to="/traener" class="row"><Icon name="whistle" style="width:20px" /> Trænerportal</RouterLink></li>
                 <li v-if="can.members"><RouterLink to="/medlemmer" class="row"><Icon name="users" style="width:20px" /> Medlemmer</RouterLink></li>
-                <li v-if="can.finance_read"><RouterLink to="/okonomi" class="row"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(bedst på computer)</span></RouterLink></li>
+                <li v-if="can.finance_read && IS_APP"><a href="#" class="row" @click.prevent="openFinance"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(åbner i browseren)</span></a></li>
+                <li v-else-if="can.finance_read"><RouterLink to="/okonomi" class="row"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(bedst på computer)</span></RouterLink></li>
                 <li v-if="can.board"><RouterLink to="/indstillinger" class="row"><Icon name="gear" style="width:20px" /> Indstillinger</RouterLink></li>
             </ul>
         </div>
@@ -19,7 +20,8 @@ import { computed } from 'vue';
 import Icon from '../components/Icon.vue';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { useRouter } from 'vue-router';
-import { api, store, roleLabel, setSession } from '../api';
+import { api, store, roleLabel, setSession, IS_APP } from '../api';
+async function openFinance() { (await import('../native')).openWeb('/okonomi'); }
 const can = computed(() => store.user.can);
 const router = useRouter();
 async function logout() { try { await api('logout', { method: 'POST' }); } catch {} setSession(null, null); router.push('/login'); }

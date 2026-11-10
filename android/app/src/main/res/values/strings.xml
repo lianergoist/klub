@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SurfHorsens</string>
+    <string name="title_activity_main">SurfHorsens</string>
+    <string name="package_name">dk.surfhorsens.klub</string>
+    <string name="custom_url_scheme">dk.surfhorsens.klub</string>
+</resources>

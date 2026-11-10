@@ -59,6 +59,16 @@ Kun en bcrypt-hash ligger i `.env` (`SITE_ACCESS_HASH`).
 
 Kør kommandoen som root (den skriver i `.env`), og kør derefter `chown -R www-data:www-data bootstrap/cache`.
 
+## Mobilapp (Capacitor)
+
+Appen er den samme Vue-app pakket med Capacitor (`android/`, `ios/`, `capacitor.config.json`). Den bygges med `npm run build:app` (indgang `resources/app/`, output `dist-app/`) og er **uden økonomi og gæstesider** – kassereren får et link, der åbner økonomien i browseren.
+
+- API-adresse: `KLUB_API=https://klub.rpix.dk npm run build:app` (standard: testserveren).
+- Sitets adgangskode (proof of concept) sendes som headeren `X-Site-Access` (hentes via `POST /api/site-access`), da appen ikke kan bruge sitets cookie. CORS tillader kun appens adresser (`config/cors.php`).
+- `npm run app:sync` = byg + kopiér til de indbyggede projekter. Ikoner og opstartsskærm er lavet ud fra `assets/` (klubbens logo).
+- Codemagic: `codemagic.yaml` har en Android-testudgave (debug-APK) og en iOS-testudgave (TestFlight).
+- Mangler før udgivelse: push-beskeder (Firebase), universal/app links, sikker opbevaring af login, MobilePay-retur til appen og sletning af konto i appen (Apple-krav).
+
 ## Testmiljø
 
 Nye funktioner kan afprøves på **https://test.klub.rpix.dk** før de kommer på klub.rpix.dk:

@@ -1,0 +1,9 @@
+{
+    "appId": "dk.surfhorsens.klub",
+    "appName": "SurfHorsens",
+    "webDir": "dist-app",
+    "plugins": {
+        "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#e3d8d3", "showSpinner": false },
+        "StatusBar": { "style": "LIGHT", "backgroundColor": "#7e5a8c" }
+    }
+}

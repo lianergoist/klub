@@ -16,5 +16,5 @@ export function setTheme(t) {
 /** ?tema=klub eller ?tema=standard i adressen vælger tema (praktisk til at dele et link). */
 export function initTheme() {
     const fromUrl = new URLSearchParams(location.search).get('tema');
-    setTheme(THEMES[fromUrl] ? fromUrl : read() || 'standard');
+    setTheme(THEMES[fromUrl] ? fromUrl : read() || (__APP__ ? 'klub' : 'standard')); // eslint-disable-line no-undef
 }

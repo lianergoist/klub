@@ -1,20 +1,26 @@
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
-import { store, refreshMe } from './api';
+import { store, refreshMe, IS_APP, siteAccess } from './api';
 import { initTheme } from './theme';
 
 initTheme();
 
-const views = import.meta.glob('./views/**/*.vue');
+// Appen bygges uden økonomi- og gæstesider (de bruges på weben)
+/* global __APP__ */
+const views = __APP__
+    ? import.meta.glob(['./views/**/*.vue', '!./views/finance/**', '!./views/Guest*.vue'])
+    : import.meta.glob('./views/**/*.vue');
 const v = (name) => views[`./views/${name}.vue`];
 
 const routes = [
     { path: '/', redirect: '/aktiviteter' },
     { path: '/login', component: v('Login'), meta: { public: true } },
     { path: '/bliv-medlem', component: v('Register'), meta: { public: true } },
-    { path: '/prov', component: v('Guest'), meta: { public: true } },
-    { path: '/prov/tak', component: v('GuestThanks'), meta: { guest: true } },
+    ...(__APP__ ? [{ path: '/adgang', component: v('AppGate'), meta: { public: true } }] : [
+        { path: '/prov', component: v('Guest'), meta: { public: true } },
+        { path: '/prov/tak', component: v('GuestThanks'), meta: { guest: true } },
+    ]),
     { path: '/aktiviteter', component: v('Activities') },
     { path: '/aktiviteter/ny', component: v('ActivityForm'), meta: { can: 'trainer' } },
     { path: '/aktiviteter/:id', component: v('ActivityDetail'), props: true },
@@ -30,6 +36,7 @@ const routes = [
     { path: '/medlemmer', component: v('Members'), meta: { can: 'members', wide: true } },
     { path: '/medlemmer/:id', component: v('MemberDetail'), props: true, meta: { can: 'members' } },
     { path: '/indstillinger', component: v('Settings'), meta: { can: 'board' } },
+    ...(__APP__ ? [] : [
     {
         path: '/okonomi', component: v('finance/FinanceLayout'), meta: { can: 'finance_read', wide: true },
         children: [
@@ -43,12 +50,14 @@ const routes = [
             { path: 'aarsregnskab', component: v('finance/Report') },
         ],
     },
+    ]),
     { path: '/:pathMatch(.*)*', redirect: '/aktiviteter' },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: (to, from, saved) => saved || { top: 0 } });
 
 router.beforeEach(async (to) => {
+    if (IS_APP && !siteAccess() && to.path !== '/adgang') return '/adgang';
     if (to.meta.public) return true;
     if (!store.token) return '/login';
     if (!store.user) { try { await refreshMe(); } catch { return '/login'; } }
@@ -60,6 +69,8 @@ router.beforeEach(async (to) => {
 
 createApp(App).use(router).mount('#app');
 
-if ('serviceWorker' in navigator) {
+if (__APP__) {
+    import('./native').then((m) => m.initNative(router));
+} else if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
