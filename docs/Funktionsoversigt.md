@@ -392,6 +392,12 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 - **Kerne:** regler for sletning: udmeldte medlemmers oplysninger fjernes eller anonymiseres efter en fastsat frist, men regnskabsbilag gemmes så længe, som reglerne kræver.
 
+- **Kerne:** medlemmer kan selv melde sig ud og få slettet deres data – både i appen og på weben. Apple kræver, at en konto oprettet i appen kan slettes i appen. Da konto og medlemskab er det samme, betyder det udmeldelse plus sletning/anonymisering af persondata; regninger og betalinger bevares i den lovpligtige periode.
+
+- **Afklares:** én samlet knap ("Meld dig ud og slet mine data") eller to ("Meld dig ud" med data gemt en periode, og "Slet mine data")?
+
+- **Afklares:** hvad sker der med børn og partner, når husstandens betaler melder sig ud? Hvad med refusion af kontingent midt i sæsonen og ubetalte regninger? Skal opslag og beskeder slettes eller stå som "Tidligere medlem"?
+
 - **Kerne:** ændringslog over, hvem der har rettet i medlemsdata, roller og regnskab.
 
 - **Kerne:** automatisk sikkerhedskopi og en plan for, hvem der kan genskabe systemet.
@@ -407,6 +413,8 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 - **Senere:** video fra aktiviteter, kun med samtykke fra de afbildede.
 
 - **Afklares:** hvor længe skal backup gemmes for hvert område? Forslag: regnskab og bilag 5 år efter regnskabsårets udløb (bogføringslovens frist – bekræft med revisor), medlemsdata efter slettereglerne, opslag/billeder/beskeder fx 3 måneder.
+
+- **Kerne:** driften varetages af et eksternt firma efter kontrakt med klubben. Klubben er dataansvarlig og firmaet databehandler, så der skal være en databehandleraftale (GDPR art. 28) om bl.a. sikkerhed, backup, underleverandører (VPS-udbyder, GitHub) og data ved ophør.
 
 - **Afklares:** hvem er "dataansvarlig" i foreningen, og hvor længe skal medlemsdata gemmes? Hvor skal systemet køre (egen server eller hosting), og hvem har ansvar for drift og opdateringer?
 
