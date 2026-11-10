@@ -1,8 +1,9 @@
 <template>
     <div class="login-wrap">
         <div class="login-hero">
-            <img src="/icon.svg" alt="" width="64" height="64">
-            <h1>Klubben</h1>
+            <img class="brand-default" src="/icon.svg" alt="" width="64" height="64">
+            <img class="brand-logo" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:200px;height:auto;margin:0 auto 6px">
+            <h1>{{ store.tema === 'klub' ? 'Medlemsportal' : 'Klubben' }}</h1>
             <p>Aktiviteter, medlemskab og betaling samlet ét sted.</p>
         </div>
         <div class="card login-card">
@@ -23,13 +24,15 @@
                 </button>
             </div>
         </div>
+        <div class="row" style="justify-content:center;margin-top:8px;color:var(--ink-2)"><ThemeSwitch /></div>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { api, setSession } from '../api';
+import { api, setSession, store } from '../api';
+import ThemeSwitch from '../components/ThemeSwitch.vue';
 
 const router = useRouter();
 const email = ref(''); const password = ref(''); const error = ref(''); const busy = ref(false);

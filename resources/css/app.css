@@ -1,3 +1,8 @@
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+
 :root {
     color-scheme: light;
     --bg: #f4f6f5;
@@ -36,8 +41,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
 a { color: var(--accent); text-decoration: none; }
-h1 { font-size: 1.55rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
-h2 { font-size: 1.1rem; margin: 0 0 .75rem; }
+h1 { color: var(--heading, var(--ink)); font-size: 1.55rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+h2 { color: var(--heading, var(--ink)); font-size: 1.1rem; margin: 0 0 .75rem; }
 h3 { font-size: .95rem; margin: 0 0 .5rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
 p { margin: 0 0 .75rem; }
 .muted { color: var(--ink-3); }
@@ -72,6 +77,61 @@ p { margin: 0 0 .75rem; }
     .tabbar, .mobile-only { display: none !important; }
     .main { padding: 28px 32px 48px; }
 }
+
+
+/* ===== Tema: SurfHorsens (farver fra surfhorsens.dk) =====
+   sand #e3d8d3 · lilla #7e5a8c · pink #e665a1 · orange #ff9933 · petrol #65a4a3 · Poppins */
+html[data-tema=klub] {
+    --bg: #e3d8d3;
+    --surface: #fbf7f5;
+    --surface-2: #efe6e2;
+    --line: #d6c8c2;
+    --ink: #33243a;
+    --ink-2: #5e4a66;
+    --ink-3: #85728b;
+    --heading: #7e5a8c;
+    --brand: #7e5a8c;
+    --accent: #7e5a8c;
+    --accent-soft: #ece1f0;
+    --sand: #ffe2c2;
+    --pink: #e665a1;
+    --orange: #ff9933;
+    --teal: #65a4a3;
+    --series-1: #7a4a96;
+    --series-2: #d4700c;
+    --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+    html[data-tema=klub] {
+        --bg: #1d1520; --surface: #291f2e; --surface-2: #33283a; --line: #45364c;
+        --ink: #f3ebef; --ink-2: #cbbcd0; --ink-3: #a090a6;
+        --heading: #d9b8e6; --brand: #4f3559; --accent: #c49ad6; --accent-soft: #3a2a43; --sand: #3a2a18;
+        --series-1: #a274c0; --series-2: #d9781a;
+    }
+}
+html[data-tema=klub] body { letter-spacing: -.005em; }
+html[data-tema=klub] h1 { font-weight: 600; letter-spacing: -.015em; }
+html[data-tema=klub] h3 { color: var(--ink-3); }
+html[data-tema=klub] .sidebar { background: var(--brand); color: #f4ebf6; }
+html[data-tema=klub] .sidebar nav a { color: #eadcef; }
+html[data-tema=klub] .sidebar nav a.router-link-active { background: rgba(255,255,255,.16); box-shadow: inset 3px 0 0 var(--orange); }
+html[data-tema=klub] .sidebar .sect { color: #f5c9de; }
+html[data-tema=klub] .btn.primary { background: var(--accent); border-color: var(--accent); }
+html[data-tema=klub] .btn.primary:hover { filter: brightness(1.08); }
+html[data-tema=klub] .tabbar a.router-link-active { color: var(--accent); }
+html[data-tema=klub] .act .when { background: #ffe8cf; color: #4a2c0a; }
+html[data-tema=klub] .act .when .m { color: #9a5a12; }
+html[data-tema=klub] .capacity > i { background: var(--teal); }
+html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
+@media (prefers-color-scheme: dark) {
+    html[data-tema=klub] .act .when { background: #3a2a18; color: #ffd9ae; }
+    html[data-tema=klub] .act .when .m { color: #f0b46e; }
+    html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #3d2231; color: #f7cfe1; }
+}
+.sidebar .theme-switch > span:first-child { width: 100%; }
+.brand-logo { display: none; }
+html[data-tema=klub] .brand-logo { display: block; }
+html[data-tema=klub] .brand-default { display: none; }
 
 /* Komponenter */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }

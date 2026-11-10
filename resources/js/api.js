@@ -2,7 +2,7 @@ import { reactive } from 'vue';
 
 function readToken() { try { return localStorage.getItem('token'); } catch { return null; } }
 
-export const store = reactive({ user: null, token: readToken(), toast: null });
+export const store = reactive({ user: null, token: readToken(), toast: null, tema: 'standard' });
 
 export function setSession(token, user) {
     store.token = token; store.user = user;

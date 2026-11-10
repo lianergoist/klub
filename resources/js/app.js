@@ -2,6 +2,9 @@ import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
 import { store, refreshMe } from './api';
+import { initTheme } from './theme';
+
+initTheme();
 
 const views = import.meta.glob('./views/**/*.vue');
 const v = (name) => views[`./views/${name}.vue`];

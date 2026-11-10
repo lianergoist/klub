@@ -8,12 +8,14 @@
                 <li v-if="can.board"><RouterLink to="/indstillinger" class="row"><Icon name="gear" style="width:20px" /> Indstillinger</RouterLink></li>
             </ul>
         </div>
+        <div class="card"><ThemeSwitch /></div>
         <p class="small muted">Logget ind som {{ store.user.name }} ({{ store.user.roles.map(r => roleLabel[r]).join(', ') }})</p>
     </div>
 </template>
 <script setup>
 import { computed } from 'vue';
 import Icon from '../components/Icon.vue';
+import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { store, roleLabel } from '../api';
 const can = computed(() => store.user.can);
 </script>

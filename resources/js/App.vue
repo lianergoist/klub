@@ -1,7 +1,8 @@
 <template>
     <div v-if="store.user && !route.meta.public" class="shell">
         <aside class="sidebar">
-            <div class="brandmark"><img src="/icon.svg" alt=""> Klubben</div>
+            <div class="brandmark brand-default"><img src="/icon.svg" alt=""> Klubben</div>
+            <div class="brand-logo" style="padding:0 10px 18px"><img src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
@@ -17,6 +18,7 @@
             <div class="who">
                 <div><strong>{{ store.user.name }}</strong></div>
                 <div class="small" style="opacity:.8">{{ store.user.roles.map(r => roleLabel[r]).join(' · ') }}</div>
+                <ThemeSwitch style="margin:10px 0 2px" />
                 <button class="btn small" @click="logout"><Icon name="logout" style="width:16px" /> Log ud</button>
             </div>
         </aside>
@@ -39,6 +41,7 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
+import ThemeSwitch from './components/ThemeSwitch.vue';
 import { store, api, setSession, roleLabel } from './api';
 
 const route = useRoute();

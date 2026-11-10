@@ -118,6 +118,7 @@
                 <ul class="list"><li v-for="(r, i) in p.roles" :key="i" class="row between"><span>{{ r.label }}</span><span class="small muted">{{ dato(r.starts_on) }} – {{ r.ends_on ? dato(r.ends_on) : 'nu' }}</span></li>
                     <li v-if="!p.roles.length" class="muted">Medlem</li></ul>
             </div>
+            <div class="card"><h2>Udseende</h2><ThemeSwitch /></div>
             <button class="btn danger mobile-only" @click="logout">Log ud</button>
         </div>
 
@@ -137,6 +138,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
+import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { api, store, dato, toast, download, setSession } from '../api';
 
 const props = defineProps({ tab: String });

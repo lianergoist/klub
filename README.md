@@ -22,6 +22,17 @@ Nulstil demodata:
 
     cd /var/www/klub && php artisan migrate:fresh --seed --force && chown -R www-data:www-data storage
 
+## Farvetemaer
+
+Appen har to temaer, som kan skiftes på login-siden, i sidemenuen (computer), under Profil → Mine data og under Mere (mobil):
+
+- **Standard**: neutral blågrøn.
+- **SurfHorsens**: farver, logo og skrifttype (Poppins) fra surfhorsens.dk. Sand `#e3d8d3`, lilla `#7e5a8c`, pink `#e665a1`, orange `#ff9933`, petrol `#65a4a3`.
+
+Valget huskes pr. enhed. Et link med `?tema=klub` eller `?tema=standard` vælger tema direkte.
+Temaet er defineret som CSS-variabler i `resources/css/app.css` (`html[data-tema=klub]`). Poppins er installeret lokalt (`@fontsource/poppins`), så der ikke hentes noget fra Google.
+Diagramfarverne i klubtemaet er justeret en smule (mættere lilla, mørkere orange), så de kan skelnes af farveblinde.
+
 ## Adgangskode til sitet
 
 Hele sitet (webapp og API) ligger bag en fælles adgangskode (`app/Http/Middleware/SiteGate.php`). Koden huskes i en cookie i 90 dage pr. enhed.
