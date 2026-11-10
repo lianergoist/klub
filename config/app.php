@@ -21,6 +21,7 @@ return [
     'access_hash' => env('SITE_ACCESS_HASH'),
     'demo_accounts' => [
         'medlem@demo.dk' => 'Medlem (forælder med to børn)',
+        'enkelt@demo.dk' => 'Medlem (alene – prøv at tilføje familie)',
         'traener@demo.dk' => 'Træner',
         'formand@demo.dk' => 'Bestyrelse (formand)',
         'kasserer@demo.dk' => 'Kasserer',

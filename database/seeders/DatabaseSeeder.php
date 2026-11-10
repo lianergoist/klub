@@ -83,6 +83,7 @@ class DatabaseSeeder extends Seeder
         $mette = $mk(['name' => 'Mette Kjær', 'email' => 'formand@demo.dk', 'phone' => '40 11 22 33', 'address' => 'Kystvej 3', 'birthdate' => '1975-02-21'], 'adult');
         $henrik = $mk(['name' => 'Henrik Dahl', 'email' => 'kasserer@demo.dk', 'phone' => '26 77 88 99', 'address' => 'Mølleparken 7', 'birthdate' => '1968-11-30'], 'adult');
         $birgitte = $mk(['name' => 'Birgitte Lund', 'email' => 'revisor@demo.dk', 'phone' => '51 23 45 67', 'address' => 'Skovgade 19', 'birthdate' => '1962-07-08'], 'passive');
+        $rasmus = $mk(['name' => 'Rasmus Krogh', 'email' => 'enkelt@demo.dk', 'phone' => '31 42 53 64', 'address' => 'Østergade 14', 'birthdate' => '1990-10-03', 'joined_on' => Carbon::create($this->now->year, 9, 2)], 'adult');
         $anders = $mk(['name' => 'Anders Vestergaard', 'email' => 'admin@demo.dk', 'phone' => '28 90 12 34', 'address' => 'Bakkevej 41', 'birthdate' => '1988-03-17'], 'adult');
 
         $trainers = collect([$lars]);
@@ -103,7 +104,7 @@ class DatabaseSeeder extends Seeder
         $first = ['Mads', 'Line', 'Rasmus', 'Julie', 'Mikkel', 'Anne', 'Nikolaj', 'Signe', 'Frederik', 'Maja', 'Christian', 'Louise', 'Søren', 'Katrine', 'Martin', 'Pernille', 'Jakob', 'Rikke', 'Simon', 'Helle', 'Thomas', 'Nanna', 'Peter', 'Cecilie'];
         $last = ['Jensen', 'Nielsen', 'Hansen', 'Pedersen', 'Andersen', 'Christensen', 'Larsen', 'Sørensen', 'Rasmussen', 'Jørgensen', 'Madsen', 'Kristensen', 'Olsen', 'Poulsen', 'Knudsen'];
         $kidNames = ['Oliver', 'Alma', 'William', 'Ella', 'Noah', 'Clara', 'Lucas', 'Agnes', 'Malthe', 'Karla'];
-        $members = collect([$sofie, $emil, $freja, $lars, $mette, $henrik, $anders])->merge($trainers)->unique('id');
+        $members = collect([$sofie, $emil, $freja, $lars, $mette, $henrik, $anders, $rasmus])->merge($trainers)->unique('id');
         $streets = ['Havnegade', 'Bøgevej', 'Lærkevej', 'Engvej', 'Fjordvej', 'Klitvej', 'Rønnebærvej'];
         for ($i = 0; $i < 26; $i++) {
             $n = $first[$i % count($first)].' '.$last[mt_rand(0, count($last) - 1)];
@@ -115,7 +116,7 @@ class DatabaseSeeder extends Seeder
                 'status' => $status, 'joined_on' => $status === 'pending' ? null : ($i % 5 === 1 ? Carbon::create($this->now->year, mt_rand(4, 7), mt_rand(1, 28)) : null),
                 'resigned_on' => $status === 'resigned' ? $this->now->copy()->subMonths(4) : null,
             ], $status === 'passive' ? 'passive' : ($family ? 'family' : 'adult'));
-            if ($status === 'pending') $u->update(['membership_type_id' => null, 'joined_on' => null]);
+            if ($status === 'pending') $u->update(['joined_on' => null]);
             $members->push($u);
             if ($family) {
                 foreach (range(1, mt_rand(1, 2)) as $k) {
@@ -143,6 +144,11 @@ class DatabaseSeeder extends Seeder
             $unpaid = count($unpaidPayers) < 4 && $m->id % 7 === 3 && ! in_array($m->email, array_keys(config('app.demo_accounts')));
             if ($unpaid) $unpaidPayers[] = $payer->id;
             $this->invoice($payer, $type->code === 'family' ? null : $m, 'membership', "Kontingent $year – ".$type->name.($type->code === 'family' ? ' ('.$m->household->name.')' : ' – '.$m->name), $type->annual_fee, '1000', $paidDate, $unpaid ? null : $paidDate, (string) $year, method: mt_rand(0, 9) ? 'mobilepay' : 'bank');
+        }
+
+        // Indmeldt men ikke betalt
+        foreach ($members->where('status', 'pending') as $p) {
+            \App\Support\Memberships::signupInvoice($p->fresh());
         }
 
         // --- Fravær ---
@@ -314,9 +320,53 @@ class DatabaseSeeder extends Seeder
         @mkdir(storage_path('app/private/bilag'), 0775, true);
         file_put_contents(storage_path('app/private/bilag/demo-bilag.pdf'), $this->demoPdf());
 
+        $this->seedFeed($members->unique('id')->values(), compact('sofie', 'freja', 'lars', 'mette', 'rasmus') + ['camilla' => $trainers[2], 'ida' => $trainers[4], 'jonas' => $trainers[1]]);
+
         // Indbakke til demo-medlemmet
         $sofie->notify(new ClubMessage('Ny aktivitet: Vinter-SUP i tørdragt', 'Om 3 dage kl. 18, Slipwayen.', '/aktiviteter/'.Activity::where('title', 'Vinter-SUP i tørdragt')->value('id')));
         $sofie->notify(new ClubMessage('Tilmeldt: Juniortræning – indendørs balance', 'Emil Mikkelsen er tilmeldt.', '/aktiviteter/'.Activity::where('title', 'like', 'Juniortræning – indendørs%')->value('id')));
+    }
+
+    private function seedFeed($members, array $p): void
+    {
+        $others = $members->filter(fn ($m) => $m->email && $m->status === 'active')->values();
+        $img = function (string $name) {
+            $path = 'feed/demo/'.$name.'.jpg';
+            \Illuminate\Support\Facades\Storage::put($path, file_get_contents(database_path('seeders/demo-images/'.$name.'.jpg')));
+            [$w, $h] = getimagesize(database_path('seeders/demo-images/'.$name.'.jpg'));
+
+            return ['path' => $path, 'width' => $w, 'height' => $h];
+        };
+        $make = function (User $author, string $body, $ago, array $images = [], int $likes = 0, array $comments = []) use ($others, $img) {
+            $at = $this->now->copy()->sub($ago);
+            $post = \App\Models\Post::create(['user_id' => $author->id, 'body' => $body, 'created_at' => $at, 'updated_at' => $at]);
+            foreach ($images as $i => $n) $post->images()->create($img($n) + ['position' => $i]);
+            foreach ($others->where('id', '!=', $author->id)->random(min($likes, $others->count() - 1)) as $u) {
+                \App\Models\PostLike::create(['post_id' => $post->id, 'user_id' => $u->id, 'created_at' => $at->copy()->addMinutes(mt_rand(5, 600))]);
+            }
+            foreach ($comments as $k => [$who, $text]) {
+                $t = $at->copy()->addMinutes(20 + $k * 47);
+                $post->comments()->create(['user_id' => $who->id, 'body' => $text, 'created_at' => $t, 'updated_at' => $t]);
+            }
+
+            return $post;
+        };
+        $x = fn ($i) => $others[$i % $others->count()];
+
+        $make($p['mette'], "Tak til alle der hjalp på arbejdsdagen! Racket i klubhuset er repareret, og sejlene er lagt i vinterhi. 🙌\nNæste gang: udstyrsværksted d. 19. – kom og lær at lappe et sejl.", '3 days', [], 9, [[$x(3), 'Det var en god dag! Tak for kaffen ☕'], [$p['lars'], 'Jeg tager lappegrej med til værkstedet.']]);
+        $make($p['camilla'], "Gem datoen! Camp i uge 27 i Ringkøbing 🏄‍♀️ Tilmelding åbner i marts – sig til, hvis I vil hjælpe med at planlægge.", '1 day', ['camp'], 22, [[$p['sofie'], 'Vi er med! Begge børn har allerede spurgt 😄'], [$x(5), 'Bliver der også wingfoil?'], [$p['camilla'], 'Ja, vi har to instruktører på wing i år.']]);
+        $make($p['sofie'], "Freja stod op på boardet for første gang i weekenden 🥹 Kæmpe tak til Ida for tålmodigheden!", '2 days', ['strand'], 18, [[$p['ida'], 'Hun var SÅ sej! 💪'], [$p['mette'], 'Fedt! Velkommen til sporten, Freja.']]);
+        $make($x(7), "Nogen der har et 5,3 m² sejl til salg? Gerne camber-free, til en let øvet.", '4 days', [], 2, [[$p['lars'], 'Prøv at spørge i værkstedet d. 19. – der plejer at være noget brugt.']]);
+        $make($p['rasmus'], "Ny i klubben – hej allesammen! 👋 Glæder mig til teoriaftenen på lørdag.", '5 days', [], 6, [[$p['mette'], 'Velkommen, Rasmus!']]);
+        $make($p['lars'], "Sikke en aften på fjorden i går 🌅 Blankt vand inde ved Husodde og 10–12 m/s fra vest. Hvem tager med næste gang?", '6 hours', ['aften'], 14, [[$p['jonas'], 'Ærgerligt jeg missede den!'], [$x(9), 'Jeg er klar 🙋']]);
+
+        // Eksempel til moderering: et anmeldt opslag
+        $spam = $make($x(11), "Sælger billige sejl og boards – skriv privat, kun kontant 😉 Se mere på billigsejl-xyz.dk", '10 hours', [], 0);
+        foreach ([$x(2), $x(4)] as $u) \App\Models\PostReport::create(['post_id' => $spam->id, 'user_id' => $u->id, 'reason' => 'Ligner reklame/spam']);
+
+        // Og et opslag, en moderator har skjult
+        $hidden = $make($x(13), 'Billeder fra juniortræningen i dag!', '8 days', [], 1);
+        $hidden->update(['hidden_at' => $this->now->copy()->subDays(7), 'hidden_by' => $p['mette']->id, 'hidden_reason' => 'Billeder af børn kræver samtykke fra forældrene – del dem gerne igen uden genkendelige ansigter.']);
     }
 
     private function activity(array $tpl, Carbon $start, $cats, array $trainerIds, User $creator, ?string $desc = null): Activity

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\ProfileController;
@@ -14,6 +15,7 @@ Route::post('register', [AuthController::class, 'register'])->middleware('thrott
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
 Route::get('membership-types', [FinanceController::class, 'membershipTypes']);
+Route::get('feed/images/{image}', [FeedController::class, 'image'])->name('feed.image')->middleware('signed');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'show']);
@@ -22,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/household', [ProfileController::class, 'addMember']);
+    Route::delete('profile/household/upgrade', [ProfileController::class, 'cancelUpgrade']);
     Route::get('profile/categories', [ProfileController::class, 'categories']);
     Route::put('profile/categories', [ProfileController::class, 'saveCategories']);
     Route::get('profile/invoices', [ProfileController::class, 'invoices']);
@@ -29,6 +32,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile/products', [ProfileController::class, 'products']);
     Route::post('products/{product}/order', [ProfileController::class, 'order']);
     Route::get('notifications', [ProfileController::class, 'notifications']);
+
+    Route::get('feed', [FeedController::class, 'index']);
+    Route::post('feed', [FeedController::class, 'store'])->middleware('throttle:20,1');
+    Route::delete('feed/{post}', [FeedController::class, 'destroy']);
+    Route::post('feed/{post}/like', [FeedController::class, 'like']);
+    Route::post('feed/{post}/comments', [FeedController::class, 'comment'])->middleware('throttle:30,1');
+    Route::post('feed/{post}/report', [FeedController::class, 'report']);
+    Route::put('feed/{post}/moderate', [FeedController::class, 'moderate']);
+    Route::post('feed/{post}/dismiss', [FeedController::class, 'dismissReports']);
+    Route::delete('feed-comments/{comment}', [FeedController::class, 'deleteComment']);
+    Route::put('feed-comments/{comment}/moderate', [FeedController::class, 'moderateComment']);
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::post('categories', [CategoryController::class, 'store']);

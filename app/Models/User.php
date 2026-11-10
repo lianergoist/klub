@@ -25,7 +25,7 @@ class User extends Authenticatable
     ];
 
     public const STATUS_LABELS = [
-        'pending' => 'Afventer',
+        'pending' => 'Afventer betaling',
         'active' => 'Aktiv',
         'passive' => 'Passiv',
         'resigned' => 'Udmeldt',

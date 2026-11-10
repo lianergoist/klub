@@ -4,10 +4,11 @@
         <template v-else-if="done">
             <div class="card" style="text-align:center;padding:32px 20px">
                 <div style="width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin:0 auto 14px"><Icon name="check" style="width:34px" /></div>
-                <h1>Betaling gennemført</h1>
+                <h1>{{ isSignup ? 'Velkommen i klubben!' : isUpgrade ? 'I er nu en familie i klubben' : 'Betaling gennemført' }}</h1>
                 <p class="muted">{{ kr(total) }} er betalt. Du har fået en kvittering i din indbakke<span v-if="store.user.email"> og på mail</span>.</p>
                 <p class="small muted">Regningen er automatisk markeret som betalt og bogført i klubbens regnskab.</p>
-                <RouterLink :to="activityId ? `/aktiviteter/${activityId}` : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
+                <p v-if="isSignup" class="small">Du er nu aktivt medlem og kan tilmelde dig aktiviteter med det samme.</p>
+                <RouterLink :to="activityId ? `/aktiviteter/${activityId}` : isSignup ? '/aktiviteter' : isUpgrade ? '/profil/familie' : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
             </div>
         </template>
         <template v-else>
@@ -36,6 +37,8 @@ import Icon from '../components/Icon.vue';
 import { api, store, kr, toast, refreshMe } from '../api';
 const props = defineProps({ id: String });
 const invs = ref(null); const busy = ref(false); const done = ref(false); const activityId = ref(null);
+const isSignup = computed(() => invs.value?.some(i => i.kind === 'membership' && i.member_id_pending));
+const isUpgrade = computed(() => invs.value?.some(i => i.is_upgrade));
 const payable = computed(() => invs.value.filter(i => ['open', 'overdue'].includes(i.status)));
 const frozen = ref(null);
 const total = computed(() => frozen.value ?? (payable.value.length ? payable.value : invs.value).reduce((s, i) => s + i.amount, 0));

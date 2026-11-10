@@ -5,6 +5,7 @@
             <div class="brand-logo" style="padding:0 10px 18px"><img src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
+                <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
                 <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
                 <RouterLink to="/indbakke"><Icon name="inbox" /> Indbakke <span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
@@ -27,10 +28,10 @@
         </main>
         <nav class="tabbar">
             <RouterLink to="/aktiviteter"><Icon name="cal" />Aktiviteter</RouterLink>
-            <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" />Træner</RouterLink>
+            <RouterLink to="/opslag"><Icon name="chat" />Opslag</RouterLink>
             <RouterLink to="/indbakke"><Icon name="inbox" />Indbakke<span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
             <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
-            <RouterLink v-if="can.members || can.finance_read || can.board" to="/mere"><Icon name="more" />Mere</RouterLink>
+            <RouterLink to="/mere"><Icon name="more" />Mere</RouterLink>
         </nav>
     </div>
     <RouterView v-else />

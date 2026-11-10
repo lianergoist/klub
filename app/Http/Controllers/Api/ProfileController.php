@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Models\User;
 use App\Support\Audit;
+use App\Support\Memberships;
 use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,12 @@ class ProfileController extends Controller
             'profile' => self::profile($u),
             'household' => $u->managedMembers()->map(fn ($m) => self::profile($m))->values(),
             'membership_valid' => $u->hasValidMembership(),
+            'pending_upgrade' => ($inv = Memberships::openUpgrade($u)) ? [
+                'invoice_id' => $inv->id, 'amount_fmt' => Money::fmt($inv->amount),
+                'members' => array_column($inv->payload['members'] ?? [], 'name'),
+            ] : null,
+            'upgrade_price_fmt' => $u->membershipType?->code !== 'family' ? Money::fmt(Memberships::upgradePrice($u)) : null,
+            'signup_invoice_id' => $u->status === 'pending' ? Invoice::where('member_id', $u->id)->where('kind', 'membership')->where('status', 'open')->value('id') : null,
             'roles' => $u->roleAssignments->sortByDesc('starts_on')->map(fn ($ra) => [
                 'role' => $ra->role, 'label' => User::ROLE_LABELS[$ra->role] ?? $ra->role,
                 'starts_on' => $ra->starts_on->toDateString(), 'ends_on' => $ra->ends_on?->toDateString(),
@@ -66,11 +73,16 @@ class ProfileController extends Controller
         return self::profile($u->fresh());
     }
 
-    /** Forælder tilføjer barn/partner til husstanden. */
+    /**
+     * Betaleren tilføjer barn/partner til husstanden.
+     * Er husstanden allerede på familiekontingent, tilføjes personen med det samme.
+     * Ellers oprettes en opgraderingsregning; personen oprettes først, når den er betalt.
+     */
     public function addMember(Request $r)
     {
         $u = $r->user();
         abort_unless($u->household?->payer_id === $u->id, 403, 'Kun husstandens betaler kan tilføje medlemmer.');
+        abort_if($u->status === 'pending', 422, 'Betal først dit eget kontingent – derefter kan du tilføje familiemedlemmer.');
         $data = $r->validate([
             'name' => 'required|string|max:120',
             'birthdate' => 'required|date|before:today',
@@ -78,14 +90,37 @@ class ProfileController extends Controller
             'emergency_name' => 'nullable|string|max:120',
             'emergency_phone' => 'nullable|string|max:30',
         ]);
-        $m = User::create($data + [
-            'household_id' => $u->household_id, 'status' => 'pending', 'consent_at' => now(),
-            'address' => $u->address, 'postal_code' => $u->postal_code, 'city' => $u->city,
-            'notify_email' => false,
-        ]);
-        Audit::log('member.added_to_household', $m, ['by_parent' => $u->id]);
+        abort_if(Invoice::where('payer_id', $u->id)->where('kind', 'membership')->where('status', 'open')->whereNull('payload')->exists(), 422,
+            'Du har en ubetalt kontingentregning. Betal den først under Regninger.');
 
-        return self::profile($m);
+        $data['consent_at'] = now()->toIso8601String();
+
+        if ($u->membershipType?->code === 'family' && $u->hasValidMembership()) {
+            $m = User::create(collect($data)->except('consent_at')->all() + [
+                'household_id' => $u->household_id, 'status' => 'active', 'joined_on' => now(), 'consent_at' => now(),
+                'membership_type_id' => $u->membership_type_id,
+                'address' => $u->address, 'postal_code' => $u->postal_code, 'city' => $u->city, 'notify_email' => false,
+            ]);
+            Audit::log('member.added_to_household', $m, ['by_parent' => $u->id]);
+
+            return ['added' => true, 'member' => self::profile($m)];
+        }
+
+        $inv = Memberships::requestFamilyUpgrade($u, $data);
+        Audit::log('household.upgrade_requested', $u, ['invoice_id' => $inv->id, 'name' => $data['name']]);
+
+        return ['added' => false, 'invoice_id' => $inv->id];
+    }
+
+    /** Fortryd en ikke-betalt familieopgradering. Ingen personer er oprettet endnu. */
+    public function cancelUpgrade(Request $r)
+    {
+        $inv = Memberships::openUpgrade($r->user());
+        abort_unless($inv, 404);
+        $inv->update(['status' => 'cancelled']);
+        Audit::log('household.upgrade_cancelled', $r->user(), ['invoice_id' => $inv->id]);
+
+        return ['ok' => true];
     }
 
     public function categories(Request $r)

@@ -7,6 +7,7 @@ use App\Models\Household;
 use App\Models\User;
 use App\Notifications\ClubMessage;
 use App\Support\Audit;
+use App\Support\Memberships;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -60,18 +61,19 @@ class AuthController extends Controller
             'city' => 'nullable|string|max:100',
             'birthdate' => 'required|date|before:today',
             'consent' => 'accepted',
+            'passive' => 'boolean',
         ], ['consent.accepted' => 'Du skal give samtykke for at kunne melde dig ind.']);
 
-        unset($data['consent']);
-        $user = User::create($data + ['status' => 'pending', 'consent_at' => now()]);
+        $type = Memberships::typeFor($data['birthdate'], (bool) ($data['passive'] ?? false));
+        unset($data['consent'], $data['passive']);
+        // Medlemmet er "afventer betaling", indtil kontingentet er betalt (se Memberships::onPaid)
+        $user = User::create($data + ['status' => 'pending', 'consent_at' => now(), 'membership_type_id' => $type->id]);
         $hh = Household::create(['name' => 'Husstand '.$user->name, 'payer_id' => $user->id]);
         $user->update(['household_id' => $hh->id]);
         Audit::log('member.registered', $user);
+        $invoice = Memberships::signupInvoice($user->fresh());
 
-        User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['board', 'treasurer'])->whereNull('ends_on'))->get()
-            ->each->notify(new ClubMessage('Nyt medlem afventer godkendelse', $user->name.' har meldt sig ind.', '/medlemmer/'.$user->id));
-
-        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user->fresh())];
+        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user->fresh()), 'invoice_id' => $invoice->id];
     }
 
     public function logout(Request $r)

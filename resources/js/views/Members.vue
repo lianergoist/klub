@@ -5,7 +5,7 @@
             <button class="btn small" @click="download('members/export?' + qs, 'medlemsliste.csv')"><Icon name="download" style="width:16px" /> Eksportér</button>
         </div>
         <div v-if="pending.length" class="banner warn">
-            <strong>{{ pending.length }} afventer godkendelse:</strong>
+            <strong>{{ pending.length }} har meldt sig ind, men ikke betalt:</strong>
             <RouterLink v-for="m in pending" :key="m.id" :to="`/medlemmer/${m.id}`" style="margin-left:8px">{{ m.name }}</RouterLink>
         </div>
         <div class="card flat" style="padding:12px">

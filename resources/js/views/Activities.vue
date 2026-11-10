@@ -5,7 +5,10 @@
             <RouterLink v-if="store.user.can.trainer" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
         </div>
 
-        <div v-if="store.user.status === 'pending'" class="banner warn">Din indmeldelse afventer godkendelse fra bestyrelsen.</div>
+        <div v-if="store.user.status === 'pending'" class="banner warn row between">
+            <span>Din indmeldelse er ikke betalt endnu. Du bliver medlem, så snart kontingentet er betalt.</span>
+            <RouterLink v-if="signupInvoice" :to="`/betal/${signupInvoice}`" class="btn small primary">Betal nu</RouterLink>
+        </div>
 
         <div class="tabs" role="tablist">
             <button v-for="t in tabs" :key="t.id" :class="{ on: tab === t.id }" @click="tab = t.id">{{ t.label }}</button>
@@ -58,7 +61,7 @@ import { api, store, klok, toast } from '../api';
 const tabs = [{ id: 'upcoming', label: 'Kommende' }, { id: 'mine', label: 'Tilmeldt' }, { id: 'attended', label: 'Deltaget' }];
 const tab = ref(sessionStorage.getItem('actTab') || 'upcoming');
 const cats = ref([]); const list = ref([]); const loading = ref(true); const dirty = ref(false);
-const household = ref({});
+const household = ref({}); const signupInvoice = ref(null);
 
 const emptyText = computed(() => ({ upcoming: 'Ingen kommende aktiviteter i de valgte kategorier.', mine: 'Du er ikke tilmeldt nogen kommende aktiviteter.', attended: 'Ingen registreret deltagelse endnu.' })[tab.value]);
 const wd = (iso) => new Date(iso).toLocaleDateString('da-DK', { weekday: 'short' }).replace('.', '');
@@ -101,6 +104,7 @@ async function saveFilter() {
 onMounted(async () => {
     const [c, p] = await Promise.all([api('profile/categories'), api('profile')]);
     cats.value = c;
+    signupInvoice.value = p.signup_invoice_id;
     household.value = Object.fromEntries(p.household.map(m => [m.id, m.name.split(' ')[0]]));
     await load();
 });

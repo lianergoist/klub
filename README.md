@@ -22,6 +22,17 @@ Nulstil demodata:
 
     cd /var/www/klub && php artisan migrate:fresh --seed --force && chown -R www-data:www-data storage
 
+## Medlemskab og betaling
+
+- **Indmeldelse** (`/bliv-medlem`): medlemstype vælges ud fra alder (eller passiv), prisen er forholdsmæssig for resten af året. Medlemmet oprettes som *afventer betaling* og sendes direkte til betaling. Betalt => aktivt medlem (`App\Support\Memberships::onPaid`).
+- **Skift til familie**: tilføjer et enkeltmedlem et barn/en partner, oprettes en regning på forskellen til familiekontingent for resten af året. Personerne gemmes på regningen (`invoices.payload`) og oprettes først, når den er betalt. Kan fortrydes, så længe den ikke er betalt.
+- Manuel betaling registreret af kassereren aktiverer på samme måde.
+
+## Opslagstavle
+
+`/opslag`: aktive medlemmer deler tekst og op til 4 billeder, liker og kommenterer. Trænere og bestyrelse modererer (skjul/vis, afvis anmeldelser).
+Billeder skaleres på telefonen og igen på serveren (max 1600 px, EXIF/GPS fjernes) og ligger i `storage/app/private/feed`. De vises via tidsbegrænsede signerede links.
+
 ## Farvetemaer
 
 Appen har to temaer, som kan skiftes på login-siden, i sidemenuen (computer), under Profil → Mine data og under Mere (mobil):
@@ -62,7 +73,7 @@ PHP under Apache kører med `pcre.jit=0` (`/etc/php/8.5/apache2/conf.d/99-klub.i
 
 `/usr/local/sbin/klub-db-backup` tager et konsistent `mysqldump` hver 6. time (cron: `/etc/cron.d/klub-db-backup`, kl. 00:15, 06:15, 12:15, 18:15 UTC).
 Dumps gemmes i `/var/backups/klub` (kun root) og kommer med i udbyderens daglige serverbackup. Dumps ældre end 14 dage slettes automatisk.
-Bilag ligger i `storage/app/private` og er dækket af serverbackuppen.
+Bilag og billeder fra opslagstavlen ligger i `storage/app/private` og er dækket af serverbackuppen.
 
 Se seneste kørsler: `journalctl -t klub-db-backup`
 

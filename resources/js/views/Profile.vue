@@ -41,8 +41,22 @@
                 </ul>
             </div>
             <p class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
-            <form v-if="store.user.is_payer" class="card stack" @submit.prevent="addChild">
+            <div v-if="p.pending_upgrade" class="card" style="border-color:var(--warn)">
+                <h2>Afventer betaling</h2>
+                <p>Skiftet til familiekontingent og tilføjelsen af <strong>{{ p.pending_upgrade.members.join(', ') }}</strong> træder i kraft, når betalingen på <strong>{{ p.pending_upgrade.amount_fmt }}</strong> er gennemført.</p>
+                <div class="row">
+                    <RouterLink :to="`/betal/${p.pending_upgrade.invoice_id}`" class="btn primary">Betal nu</RouterLink>
+                    <button class="btn" @click="cancelUpgrade">Fortryd</button>
+                </div>
+            </div>
+            <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget kontingent. Derefter kan du tilføje familiemedlemmer.</div>
+            <form v-else-if="store.user.is_payer" class="card stack" @submit.prevent="addChild">
                 <h2>Tilføj barn eller partner</h2>
+                <p v-if="p.upgrade_price_fmt" class="banner info small" style="margin:0">
+                    Du har i dag <strong>{{ p.profile.membership_type }}</strong>. Når du tilføjer et familiemedlem, skifter husstanden til <strong>familiekontingent</strong>, og du betaler forskellen for resten af året: <strong>{{ p.upgrade_price_fmt }}</strong>.
+                    Personen bliver først tilføjet, når betalingen er gennemført. Flere personer kan tilføjes på samme betaling.
+                </p>
+                <p v-else class="small muted" style="margin:0">I har familiekontingent, så det koster ikke ekstra at tilføje flere i husstanden.</p>
                 <div class="grid c2">
                     <label class="field"><span>Navn</span><input v-model="child.name" required></label>
                     <label class="field"><span>Fødselsdato</span><input v-model="child.birthdate" type="date" required></label>
@@ -53,7 +67,7 @@
                     <label class="field"><span>Nødkontakt, telefon</span><input v-model="child.emergency_phone" :placeholder="p.profile.phone"></label>
                 </div>
                 <label class="check small"><input type="checkbox" v-model="child.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
-                <button class="btn primary">Tilføj</button>
+                <button class="btn primary">{{ p.upgrade_price_fmt ? (p.pending_upgrade ? 'Tilføj til samme betaling' : 'Tilføj og gå til betaling') : 'Tilføj' }}</button>
             </form>
         </div>
 
@@ -161,11 +175,13 @@ async function saveProfile() {
 async function saveCats() { await api('profile/categories', { method: 'PUT', body: { items: cats.value } }); toast('Gemt'); }
 async function addChild() {
     try {
-        await api('profile/household', { method: 'POST', body: { ...child, email: child.email || null, emergency_name: child.emergency_name || p.value.profile.name, emergency_phone: child.emergency_phone || p.value.profile.phone } });
+        const r = await api('profile/household', { method: 'POST', body: { ...child, email: child.email || null, emergency_name: child.emergency_name || p.value.profile.name, emergency_phone: child.emergency_phone || p.value.profile.phone } });
         Object.assign(child, { name: '', birthdate: '', email: '', emergency_name: '', emergency_phone: '', consent: false });
-        toast('Tilføjet. Bestyrelsen godkender medlemskabet.'); load();
+        if (!r.added) return router.push(`/betal/${r.invoice_id}`);
+        toast(`${r.member.name} er tilføjet til husstanden`); load();
     } catch (e) { toast(e.message, 'error'); }
 }
+async function cancelUpgrade() { await api('profile/household/upgrade', { method: 'DELETE' }); toast('Tilføjelsen er annulleret'); load(); }
 async function order() {
     try { const r = await api(`products/${buy.value.id}/order`, { method: 'POST', body: { member_id: buyMember.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
     catch (e) { toast(e.message, 'error'); }

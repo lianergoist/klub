@@ -43,6 +43,9 @@ class FinanceController extends Controller
             'due_on' => $i->due_on->toDateString(), 'paid_at' => $i->paid_at?->toIso8601String(),
             'payer' => $i->payer?->name, 'payer_id' => $i->payer_id, 'member' => $i->member?->name, 'period' => $i->period,
             'method' => ($m = $i->payments->firstWhere('amount', '>', 0)?->method) ? Payments::methodLabel($m) : null,
+            'member_id_pending' => $i->kind === 'membership' && $i->member?->status === 'pending',
+            'is_upgrade' => ($i->payload['action'] ?? null) === 'family_upgrade',
+            'upgrade_members' => ($i->payload['action'] ?? null) === 'family_upgrade' ? array_column($i->payload['members'] ?? [], 'name') : null,
         ];
     }
 
@@ -345,6 +348,11 @@ class FinanceController extends Controller
 
     public function membershipTypes(Request $r)
     {
-        return MembershipType::all()->map(fn ($t) => $t->only('id', 'name', 'code', 'annual_fee', 'max_age') + ['fee_fmt' => Money::fmt($t->annual_fee)]);
+        return MembershipType::all()->map(fn ($t) => $t->only('id', 'name', 'code', 'annual_fee', 'max_age') + [
+            'fee_fmt' => Money::fmt($t->annual_fee),
+            'prorated' => \App\Support\Memberships::prorate($t->annual_fee),
+            'prorated_fmt' => Money::fmt(\App\Support\Memberships::prorate($t->annual_fee)),
+            'months_left' => \App\Support\Memberships::monthsLeft(),
+        ]);
     }
 }

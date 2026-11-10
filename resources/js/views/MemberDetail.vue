@@ -12,10 +12,11 @@
         </div>
 
         <div v-if="m.profile.status === 'pending' && (can.board || store.user.roles.includes('treasurer'))" class="card" style="border-color:var(--warn)">
-            <h2>Godkend medlem</h2>
+            <h2>Afventer betaling</h2>
+            <p class="small muted">Medlemmet bliver aktivt automatisk, når kontingentet er betalt. Har medlemmet betalt kontant eller skal være gratis (fx æresmedlem), kan du aktivere manuelt. Ved kontant betaling: brug hellere <em>Økonomi → Betalinger → Registrér betaling</em>, så pengene også bliver bogført.</p>
             <div class="row" style="flex-wrap:nowrap">
                 <select v-model="approveType"><option v-for="t in m.types" :key="t.id" :value="t.id">{{ t.name }}</option></select>
-                <button class="btn primary" @click="approve">Godkend</button>
+                <button class="btn" @click="approve">Aktivér uden betaling</button>
             </div>
         </div>
 
@@ -98,7 +99,7 @@ const m = ref(null); const approveType = ref(null); const showRole = ref(false);
 const nr = reactive({ role: 'trainer', starts_on: today });
 async function load() { m.value = await api(`members/${props.id}`); approveType.value = m.value.types[0]?.id; }
 onMounted(load); watch(() => props.id, load);
-async function approve() { await api(`members/${props.id}/approve`, { method: 'POST', body: { membership_type_id: approveType.value } }); toast('Medlemmet er godkendt og har fået besked'); load(); }
+async function approve() { await api(`members/${props.id}/approve`, { method: 'POST', body: { membership_type_id: approveType.value } }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rollen er afsluttet'); load(); }
 async function saveEdit() { try { await api(`members/${props.id}`, { method: 'PUT', body: edit.value }); edit.value = null; toast('Gemt'); load(); } catch (e) { toast(e.message, 'error'); } }

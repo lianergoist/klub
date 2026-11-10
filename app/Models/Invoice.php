@@ -8,7 +8,7 @@ class Invoice extends Model
 {
     protected $guarded = ["id"];
 
-    protected $casts = ["due_on" => "date", "paid_at" => "datetime"];
+    protected $casts = ["due_on" => "date", "paid_at" => "datetime", "payload" => "array"];
     public function payer() { return $this->belongsTo(User::class, "payer_id"); }
     public function member() { return $this->belongsTo(User::class, "member_id"); }
     public function activity() { return $this->belongsTo(Activity::class); }

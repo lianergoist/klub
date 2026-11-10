@@ -47,6 +47,8 @@ class Payments
                 $reg->log('paid', $by);
             }
 
+            Memberships::onPaid($invoice->fresh());
+
             Audit::log('payment.registered', $invoice, ['method' => $method, 'amount' => $invoice->amount]);
 
             $invoice->payer->notify(new ClubMessage(
