@@ -119,6 +119,10 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Senere:** mærkning af udeblivelser uden afbud (nyttigt, hvis aktiviteten har begrænsede pladser eller koster klubben penge).
 
+- **Kerne:** trænere på en aktivitet tilmeldes ikke selv som deltagere. De kan dog tilmelde deres familiemedlemmer.
+
+- **Afklares:** må trænere deltage gratis i andre træneres aktiviteter, eller betaler de som alle andre?
+
 - **Afklares:** hvad sker der med betalingen, hvis man melder fra? Refunderes ved frameldingen før en bestemt frist, ellers ikke? (se afsnittet om betaling)
 
 ## Trænerportal og tilgængelighed
@@ -128,6 +132,8 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 - **Kerne:** træneren kan se historikken for, hvem der har været træner på hver aktivitet, hvis der er sket ændringer siden oprettelsen.
 
 - **Kerne:** træneren kan angive dage eller perioder, hvor hun/han ikke er til rådighed (ferie, arbejde, skade).
+
+- **Kerne:** nye aktiviteter oprettes fra Trænerportalen, som også bestyrelsen har adgang til.
 
 - **Kerne:** trænere og bestyrelse kan se en samlet kalender over, hvem der er til rådighed hvornår, når nye aktiviteter skal planlægges.
 
