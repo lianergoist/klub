@@ -2,7 +2,6 @@
     <div>
         <div class="topbar">
             <div><h1>Aktiviteter</h1><p class="muted small" style="margin:0">Hej {{ store.user.name.split(' ')[0] }} 👋</p></div>
-            <RouterLink v-if="store.user.can.trainer" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
         </div>
 
         <div v-if="store.user.status === 'pending'" class="banner warn row between">

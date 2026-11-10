@@ -1,9 +1,12 @@
 <template>
     <div>
-        <h1 style="margin-bottom:14px">Trænerportal</h1>
+        <div class="topbar">
+            <h1>Trænerportal</h1>
+            <RouterLink to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
+        </div>
         <div class="tabs">
             <button :class="{ on: tab === 'mine' }" @click="tab = 'mine'">Mine aktiviteter</button>
-            <button :class="{ on: tab === 'off' }" @click="tab = 'off'">Fravær</button>
+            <button v-if="isTrainer" :class="{ on: tab === 'off' }" @click="tab = 'off'">Fravær</button>
             <button :class="{ on: tab === 'cal' }" @click="tab = 'cal'">Tilgængelighed</button>
         </div>
 
@@ -81,6 +84,7 @@ import CatTags from '../components/CatTags.vue';
 import Icon from '../components/Icon.vue';
 import { api, store, klok, dato, toast, dagNr, maanedKort } from '../api';
 
+const isTrainer = store.user.roles.includes('trainer');
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);
 const cal = ref(null); const detail = ref('');

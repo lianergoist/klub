@@ -252,6 +252,7 @@ class ActivityController extends Controller
             Activity::whereKey($activity->id)->lockForUpdate()->first();
             foreach ($data['member_ids'] as $mid) {
                 $m = $allowed[$mid] ?? abort(403, 'Du kan kun tilmelde dig selv og din husstand.');
+                abort_if($activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner på aktiviteten og skal ikke tilmeldes.');
                 if ($activity->members_only && ! $m->hasValidMembership()) {
                     abort(422, $m->name.' har ikke betalt kontingent for sæson '.\App\Support\Season::label().'.');
                 }
