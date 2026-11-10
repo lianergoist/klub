@@ -40,6 +40,8 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+/* Ingen sidelæns scroll og ingen "elastik"-effekt, når siden trækkes ud over kanten (iOS) */
+html, body { overflow-x: clip; overscroll-behavior: none; }
 a { color: var(--accent); text-decoration: none; }
 h1 { color: var(--heading, var(--ink)); font-size: 1.55rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
 h2 { color: var(--heading, var(--ink)); font-size: 1.1rem; margin: 0 0 .75rem; }
@@ -154,6 +156,8 @@ html[data-tema=klub] .brand-default { display: none; }
 label.field { display: block; }
 label.field > span { display: block; font-size: .82rem; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
 input, select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-height: 42px; }
+/* iOS zoomer ind på felter med under 16px skrift og zoomer ikke ud igen */
+input, select, textarea { font-size: 16px; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 input[type=checkbox] { width: 20px; height: 20px; min-height: 0; accent-color: var(--accent); }
 textarea { min-height: 90px; }
