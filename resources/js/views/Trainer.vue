@@ -78,6 +78,7 @@
 <script setup>
 import { ref, reactive, watch, onMounted } from 'vue';
 import CatTags from '../components/CatTags.vue';
+import Icon from '../components/Icon.vue';
 import { api, store, klok, dato, toast, dagNr, maanedKort } from '../api';
 
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
