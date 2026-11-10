@@ -273,6 +273,8 @@ Betaling sker via en ekstern betalingsudbyder. Systemet gemmer ikke kortnumre; d
 
 - **Kerne:** oversigt for kassereren over åbne, betalte og forfaldne betalinger, pr. medlem og pr. produkt.
 
+- **Kerne:** automatisk afstemning af MobilePay-udbetalinger: klubsystemet henter Vipps MobilePays afregningsrapport, kobler hver samlet udbetaling i banken til de enkelte betalinger og bogfører gebyrerne. (Hver betaling kobles allerede til sin regning via betalingens id – det er kun den samlede udbetaling til banken, der skal afstemmes.)
+
 - **Kerne:** kassereren kan registrere en betaling manuelt (kontant eller bankoverførsel), så de, der ikke bruger MobilePay, også kan betale.
 
 - **Kerne:** refusion (helt eller delvist), fx ved aflyst aktivitet. Refusionen kræver, at kassereren eller en anden med tilladelse godkender, og logges.
