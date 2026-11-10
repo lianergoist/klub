@@ -174,6 +174,22 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Afklares:** skal alle trænere kunne moderere, eller kun udvalgte personer? Hvor længe gemmes opslag og billeder, og skal de slettes, når et medlem melder sig ud?
 
+## Beskeder mellem medlemmer (testudgave)
+
+Private beskeder mellem to medlemmer, fx forælder og træner eller to medlemmer, der vil aftale at tage på vandet. Kan afprøves på **test.klub.rpix.dk** (adskilt fra den almindelige demo).
+
+- **Testudgave:** samtaler mellem to voksne medlemmer (18+) med eget login. Man finder hinanden ved navn (ingen kontaktoplysninger vises) eller via "Skriv" på et opslag. Ulæste beskeder vises i Indbakke, og der sendes højst én mail pr. samtale, indtil beskederne er læst.
+
+- **Testudgave:** man kan slå beskeder fra, blokere enkelte medlemmer og anmelde en besked. Ved anmeldelse får bestyrelsen den anmeldte besked; ellers kan ingen andre end de to parter læse beskederne.
+
+- **Senere:** gruppebeskeder (fx alle tilmeldte på en aktivitet), billeder i beskeder, push-besked på telefonen.
+
+- **Afklares:** skal beskeder med i det endelige system, eller er opslagstavlen og notifikationer nok?
+
+- **Afklares:** må børn og unge under 18 bruge beskeder? I testen kan de hverken skrive eller modtage. Alternativ: trænere skriver til forældrene, ikke til barnet direkte.
+
+- **Afklares:** hvor længe gemmes beskeder, og skal de slettes, når et medlem melder sig ud? Hvem i bestyrelsen modtager anmeldte beskeder?
+
 ## Kontingent og medlemstyper
 
 Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og følge op på det uden manuel regnearksstyring. 
