@@ -289,14 +289,14 @@ class DatabaseSeeder extends Seeder
         $gReg = Registration::create(['activity_id' => $gAct->id, 'user_id' => $guest->id, 'status' => 'signed_up', 'invoice_id' => $gInv->id, 'created_at' => $gAt, 'updated_at' => $gAt]);
         $this->ev($gReg, 'reserved', $guest, $gAt); $this->ev($gReg, 'paid', $guest, $gAt->copy()->addMinute());
 
-        // --- Produkter (priser fra pristabellen; opbevaring og dagsleje har foreløbige priser) ---
+        // --- Produkter (alle priser fra pristabellen – kan redigeres under Indstillinger) ---
         $sEnd = \App\Support\Season::end($this->now);
-        $rack = Product::create(['name' => 'Opbevaring: plads i boardrack', 'description' => 'Plads til ét board og rig i klubhusets rack. Gælder sæsonen (1. maj – 30. april). Foreløbig pris.', 'price' => 60000, 'billing' => 'season', 'needs_resource' => true]);
+        $rack = Product::create(['name' => 'Opbevaring: plads i boardrack', 'description' => 'Plads til ét board og rig i klubhusets rack. Gælder sæsonen (1. maj – 30. april).', 'price' => 60000, 'price_code' => 'storage.rack', 'billing' => 'season', 'needs_resource' => true]);
         foreach (range(1, 16) as $n) $rack->resources()->create(['label' => 'Rack '.chr(65 + intdiv($n - 1, 8)).(($n - 1) % 8 + 1)]);
-        $cont = Product::create(['name' => 'Opbevaring: skab i container', 'description' => 'Aflåst skab til våddragt og småudstyr. Gælder sæsonen. Foreløbig pris.', 'price' => 40000, 'billing' => 'season', 'needs_resource' => true]);
+        $cont = Product::create(['name' => 'Opbevaring: skab i container', 'description' => 'Aflåst skab til våddragt og småudstyr. Gælder sæsonen.', 'price' => 40000, 'price_code' => 'storage.locker', 'billing' => 'season', 'needs_resource' => true]);
         foreach (range(1, 10) as $n) $cont->resources()->create(['label' => 'Skab '.$n]);
-        $rental = Product::create(['name' => 'Udstyrsleje i sæsonen', 'description' => 'Fri brug af klubbens boards, sejl og våddragter hele sæsonen (1. maj – 30. april). Enkelt medlem 1.500 kr., familie 4.000 kr. (op til 3 personer) + 1.000 kr. pr. ekstra person.', 'price' => 150000, 'pricing' => 'household', 'billing' => 'season']);
-        $day = Product::create(['name' => 'Dagsleje af board og sejl', 'description' => 'Til medlemmer uden sæsonleje. Foreløbig pris.', 'price' => 10000, 'guest_price' => 20000, 'billing' => 'once']);
+        $rental = Product::create(['name' => 'Udstyrsleje i sæsonen', 'description' => 'Fri brug af klubbens boards, sejl og våddragter hele sæsonen (1. maj – 30. april). Familiepris fra 3 personer.', 'price' => 150000, 'price_code' => 'rental.single', 'pricing' => 'household', 'billing' => 'season']);
+        $day = Product::create(['name' => 'Dagsleje af board og sejl', 'description' => 'Til medlemmer uden sæsonleje.', 'price' => 10000, 'price_code' => 'rental.day', 'guest_price' => 20000, 'billing' => 'once']);
         $key = Product::create(['name' => 'Nøglebrik til klubhuset (depositum)', 'description' => 'Depositum refunderes ved aflevering.', 'price' => 10000, 'price_code' => 'key_deposit', 'billing' => 'once']);
 
         $payers = $adults->filter(fn ($m) => $m->payer()->id === $m->id)->values();

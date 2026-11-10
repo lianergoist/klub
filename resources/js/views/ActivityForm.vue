@@ -29,7 +29,7 @@
                 <label class="check" style="margin-top:22px"><input type="checkbox" v-model="f.members_only"> Kræver betalt kontingent</label>
             </div>
             <label class="field"><span>Åben for ikke-medlemmer</span>
-                <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning (400 kr.)</option><option value="sup_course">Ja, som SUP-kursus (500 kr.)</option></select>
+                <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning</option><option value="sup_course">Ja, som SUP-kursus</option></select>
             </label>
             <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
             <div>

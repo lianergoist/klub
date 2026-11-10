@@ -111,6 +111,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('entries/{entry}/attachment', [FinanceController::class, 'attachment']);
         Route::post('reconcile', [FinanceController::class, 'reconcile']);
         Route::get('prices', [FinanceController::class, 'prices']);
+        Route::post('prices', [FinanceController::class, 'setPrice']);
+        Route::delete('prices/{price}', [FinanceController::class, 'deletePrice']);
         Route::get('payouts', [FinanceController::class, 'payouts']);
         Route::post('payouts/fetch', [FinanceController::class, 'fetchPayouts']);
         Route::get('payouts/{payout}', [FinanceController::class, 'payout']);

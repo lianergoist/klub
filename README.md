@@ -25,7 +25,7 @@ Nulstil demodata:
 ## Medlemskab og betaling
 
 - **Sæson**: træningssæsonen løber 1. maj – 30. april (`App\Support\Season`); regnskabsåret er kalenderåret. Kontingent og sæsonprodukter har perioden fx `2026/27`.
-- **Priser** ligger i tabellen `prices` med `valid_from` (`App\Support\Prices`). En ny pris = en ny række med senere dato.
+- **Priser** ligger i tabellen `prices` med `valid_from` (`App\Support\Prices`). Bestyrelse/kasserer redigerer dem under Indstillinger: en ny pris = en ny række med dato i dag eller senere; kommende priser kan slettes. Produkter peger på en priskode (`products.price_code`).
 - **Kontingent pr. husstand** (`Prices::membership`): 1–2 personer enkeltkontingent hver (halv pris fra 1. august), 3 personer familie, 4+ familie (stor). Støttemedlemmer betaler for sig.
 - **Indmeldelse** (`/bliv-medlem`): medlemmet oprettes som *afventer betaling* og sendes til betaling. Betalt => aktivt medlem (`App\Support\Memberships::onPaid`).
 - **Tilføjelse af barn/partner**: der oprettes en regning på forskellen mellem den nye husstandspris og det betalte. Personerne gemmes på regningen (`invoices.payload`) og oprettes først ved betaling. Koster det intet ekstra, tilføjes de med det samme.

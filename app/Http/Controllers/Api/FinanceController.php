@@ -399,11 +399,44 @@ class FinanceController extends Controller
         ];
     }
 
-    /** Pristabel med "gælder fra" (læsning for alle i bestyrelse/økonomi). */
+    /** Pristabel med "gælder fra" og historik (læsning for bestyrelse og økonomi). */
     public function prices(Request $r)
     {
         abort_unless($r->user()->canReadFinance() || $r->user()->isBoard(), 403);
 
-        return \App\Support\Prices::table();
+        return ['groups' => \App\Support\Prices::table(), 'can_edit' => $r->user()->canEditPrices(), 'today' => now()->toDateString()];
+    }
+
+    /** Ny pris med virkning fra en dato. Kan ikke tilbagedateres – allerede opkrævede regninger ændres aldrig. */
+    public function setPrice(Request $r)
+    {
+        abort_unless($r->user()->canEditPrices(), 403, 'Kun bestyrelse og kasserer kan ændre priser.');
+        $d = $r->validate([
+            'code' => 'required|in:'.implode(',', array_keys(\App\Support\Prices::LABELS)),
+            'amount' => 'required|numeric|min:0|max:100000',
+            'valid_from' => 'required|date|after_or_equal:today',
+        ], ['valid_from.after_or_equal' => 'En ny pris kan tidligst gælde fra i dag.', 'amount.max' => 'Beløbet er for stort.']);
+        $ore = (int) round($d['amount'] * 100);
+        $date = \Illuminate\Support\Carbon::parse($d['valid_from'])->toDateString();
+        $old = \App\Support\Prices::get($d['code'], $date);
+        \App\Support\Prices::set($d['code'], $ore, $date, $r->user()->id);
+        Audit::log('price.set', null, ['code' => $d['code'], 'label' => \App\Support\Prices::LABELS[$d['code']],
+            'from' => Money::fmt($old), 'to' => Money::fmt($ore), 'valid_from' => $date]);
+
+        return $this->prices($r);
+    }
+
+    /** Slet en kommende pris (der endnu ikke er trådt i kraft). */
+    public function deletePrice(Request $r, int $price)
+    {
+        abort_unless($r->user()->canEditPrices(), 403, 'Kun bestyrelse og kasserer kan ændre priser.');
+        $row = DB::table('prices')->find($price);
+        abort_unless($row, 404);
+        abort_if($row->valid_from <= now()->toDateString(), 422, 'Prisen er allerede trådt i kraft og kan ikke slettes. Læg i stedet en ny pris ind.');
+        DB::table('prices')->delete($price);
+        \App\Support\Prices::flush();
+        Audit::log('price.deleted', null, ['code' => $row->code, 'amount' => Money::fmt($row->amount), 'valid_from' => $row->valid_from]);
+
+        return $this->prices($r);
     }
 }

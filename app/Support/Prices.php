@@ -19,8 +19,20 @@ class Prices
         'rental.single' => 'Udstyrsleje i sæsonen, enkelt medlem',
         'rental.family' => 'Udstyrsleje i sæsonen, familie (op til 3 personer)',
         'rental.extra' => 'Udstyrsleje, pr. ekstra person ud over 3',
-        'trial' => 'Prøvetræning',
+        'rental.day' => 'Dagsleje af board og sejl',
+        'storage.rack' => 'Opbevaring: plads i boardrack, pr. sæson',
+        'storage.locker' => 'Opbevaring: skab i container, pr. sæson',
+        'trial' => 'Prøvetræning (ikke-medlemmer)',
+        'sup_course' => 'SUP-kursus',
         'key_deposit' => 'Depositum for nøglebrik',
+    ];
+
+    /** Grupper til visning */
+    public const GROUPS = [
+        'Kontingent' => ['membership.single', 'membership.single_half', 'membership.family3', 'membership.family4', 'membership.passive'],
+        'Udstyrsleje' => ['rental.single', 'rental.family', 'rental.extra', 'rental.day'],
+        'Opbevaring' => ['storage.rack', 'storage.locker'],
+        'Kurser og andet' => ['trial', 'sup_course', 'key_deposit'],
     ];
 
     private static array $cache = [];
@@ -59,21 +71,39 @@ class Prices
         return self::get('rental.family', $date) + max(0, $n - 3) * self::get('rental.extra', $date);
     }
 
-    /** Alle priser med historik (til visning). */
+    /** Alle priser med historik, grupperet (til visning og redigering). */
     public static function table(): array
     {
-        $rows = DB::table('prices')->orderBy('code')->orderByDesc('valid_from')->get();
+        $rows = DB::table('prices')->leftJoin('users', 'users.id', '=', 'prices.created_by')
+            ->select('prices.*', 'users.name as by')->orderByDesc('valid_from')->get();
         $today = now()->toDateString();
+        $row = fn ($r) => ['id' => $r->id, 'amount' => (int) $r->amount, 'amount_fmt' => Money::fmt($r->amount),
+            'valid_from' => $r->valid_from, 'by' => $r->by, 'created_at' => $r->created_at];
         $out = [];
-        foreach (self::LABELS as $code => $label) {
-            $hist = $rows->where('code', $code)->values();
-            $current = $hist->first(fn ($r) => $r->valid_from <= $today);
-            $out[] = ['code' => $code, 'label' => $label, 'amount' => $current?->amount, 'amount_fmt' => $current ? Money::fmt($current->amount) : '–',
-                'valid_from' => $current?->valid_from,
-                'upcoming' => $hist->filter(fn ($r) => $r->valid_from > $today)->map(fn ($r) => ['amount_fmt' => Money::fmt($r->amount), 'valid_from' => $r->valid_from])->values()];
+        foreach (self::GROUPS as $group => $codes) {
+            $items = [];
+            foreach ($codes as $code) {
+                $hist = $rows->where('code', $code)->values();
+                $current = $hist->first(fn ($r) => $r->valid_from <= $today);
+                $items[] = [
+                    'code' => $code, 'label' => self::LABELS[$code],
+                    'current' => $current ? $row($current) : null,
+                    'upcoming' => $hist->filter(fn ($r) => $r->valid_from > $today)->sortBy('valid_from')->map($row)->values(),
+                    'previous' => $hist->filter(fn ($r) => $r->valid_from <= $today && $r->id !== $current?->id)->map($row)->values(),
+                ];
+            }
+            $out[] = ['group' => $group, 'items' => $items];
         }
 
         return $out;
+    }
+
+    /** Ny pris med virkning fra en dato (i dag eller senere). Samme kode og dato overskriver en kommende pris. */
+    public static function set(string $code, int $amount, string $validFrom, ?int $userId): void
+    {
+        DB::table('prices')->updateOrInsert(['code' => $code, 'valid_from' => $validFrom],
+            ['amount' => $amount, 'created_by' => $userId, 'created_at' => now(), 'updated_at' => now()]);
+        self::flush();
     }
 
     public static function flush(): void { self::$cache = []; }

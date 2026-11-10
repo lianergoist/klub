@@ -216,9 +216,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** medlemstyperne er *enkelt medlem*, *familie* og *støttemedlem*. Kontingentet beregnes pr. husstand ud fra antallet af aktive medlemmer (støttemedlemmer tæller ikke med): 1–2 personer betaler enkeltkontingent hver, 3 personer familiekontingent, 4 eller flere familiekontingent for store familier.
 
-- **Kerne:** priser gemmes med en dato, de gælder fra, så nye priser kan lægges ind på forhånd uden at ændre det, der allerede er opkrævet. (I proof of concept kan priserne ses under Indstillinger.)
-
-- **Senere:** bestyrelse/kasserer kan selv ændre priserne med virkning fra en valgt dato.
+- **Kerne (i proof of concept):** alle priser (kontingent, udstyrsleje, opbevaring, prøvetræning, SUP-kursus, depositum) ligger samlet under Indstillinger, hvor bestyrelse og kasserer selv kan lægge en ny pris ind med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Alle ændringer skrives i ændringsloggen.
 
 - **Kerne:** kassereren opretter kontingentopkrævning for en sæson med ét tryk: én regning pr. husstand og én pr. støttemedlem, sendt til husstandens betaler.
 
@@ -266,7 +264,7 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Kerne:** udstyrsleje bestilles for én eller flere i husstanden og prissættes samlet: 1–2 personer betaler enkeltpris hver, 3 personer familiepris, derover + pr. ekstra person. Lejen gælder sæsonen ud (30. april).
 
-- **Afklares:** priser for opbevaring (rackplads, skab) og dagsleje er ikke fastsat; proof of concept bruger foreløbige priser.
+- **Afklares:** priserne for opbevaring (rackplads 600 kr., skab 400 kr.) og dagsleje (100 kr.) er foreløbige. Bestyrelsen kan selv rette dem under Indstillinger.
 
 - **Kerne (i proof of concept):** ikke-medlemmer kan på siden "Prøv SurfHorsens" købe en **prøvetræning (400 kr.)** eller et **SUP-kursus (500 kr.)**. De vælger en dato blandt de aktiviteter, trænerne har åbnet for gæster, udfylder navn, kontaktoplysninger og fødselsdato (under 18: forælders navn og telefon) og betaler med MobilePay. De står derefter på deltagerlisten mærket "Gæst", men har ikke adgang til medlemsdelen.
 

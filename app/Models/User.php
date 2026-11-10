@@ -74,6 +74,7 @@ class User extends Authenticatable
     public function isBoard(): bool { return $this->hasRole('board', 'admin'); }
     public function canReadFinance(): bool { return $this->hasRole('treasurer', 'auditor', 'board'); }
     public function canWriteFinance(): bool { return $this->hasRole('treasurer'); }
+    public function canEditPrices(): bool { return $this->hasRole('board', 'treasurer', 'admin'); }
     public function canSeeMembers(): bool { return $this->hasRole('board', 'treasurer', 'admin'); }
 
     public function age(): ?int
