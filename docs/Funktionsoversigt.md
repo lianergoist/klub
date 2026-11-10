@@ -322,6 +322,10 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 - **Senere:** Registrering af kommunale tilskud og tilskud fra forbund samt de medlemsdata, de kræver.
 
 
+- **Afklares:** skal bogføringen ske i klubsystemet, eller i et eksternt regnskabsprogram (fx Dinero eller e-conomic), som klubsystemet sender betalingerne til? Klubsystemet fører et enkelt indtægts- og udgiftsregnskab og kan ikke moms, løn eller dobbelt bogholderi. Se [Oekonomi.md](Oekonomi.md) for hvad økonomidelen kan og ikke kan, og hvornår et regnskabsprogram er tilrådeligt eller nødvendigt.
+
+- **Afklares:** har klubben (eller forventer den) momspligtigt salg eller lønnede trænere/honorarer? Så er et regnskabsprogram sandsynligvis nødvendigt.
+
 **Emner bestyrelsen bør afklare med en revisor eller fagperson**
 
 - Hvilke dokumentations- og opbevaringskrav der gælder for bilag.
@@ -363,9 +367,17 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 - **Kerne:** automatisk sikkerhedskopi og en plan for, hvem der kan genskabe systemet.
 
+- **Kerne:** backup opdelt pr. område med hver sin opbevaringstid: regnskab og bilag (længst), medlemsdata (efter slettereglerne) og opslag, billeder og beskeder (kortest). Data ligger fortsat i én database – opdelingen sker i backuppen.
+
+- **Kerne:** krypteret kopi af backuppen uden for serveren, og en gendannelsestest mindst én gang om året.
+
+- **Kerne:** begrænsede databaserettigheder. Appens databasebruger kan oprette posteringer og logposter, men ikke rette eller slette dem, så regnskab og ændringslog ikke kan manipuleres, selv hvis appen kompromitteres. Ændringer af databasens struktur køres med en separat bruger, som appen ikke kender. (Opdeling i flere databaser frarådes: data hænger sammen – en betaling skal på én gang markere regningen betalt, bogføre og aktivere medlemmet – og appen skulle alligevel kende alle adgangskoder.)
+
 - **Kerne:** billeder på opslagstavlen kun med samtykke fra de afbildede (se Opslagstavle).
 
 - **Senere:** video fra aktiviteter, kun med samtykke fra de afbildede.
+
+- **Afklares:** hvor længe skal backup gemmes for hvert område? Forslag: regnskab og bilag 5 år efter regnskabsårets udløb (bogføringslovens frist – bekræft med revisor), medlemsdata efter slettereglerne, opslag/billeder/beskeder fx 3 måneder.
 
 - **Afklares:** hvem er "dataansvarlig" i foreningen, og hvor længe skal medlemsdata gemmes? Hvor skal systemet køre (egen server eller hosting), og hvem har ansvar for drift og opdateringer?
 

@@ -1,7 +1,7 @@
 # Klubsystem – proof of concept
 
 Klubsystem til windsurfingklubben: medlemmer, aktiviteter, trænere, betaling og regnskab.
-Funktionerne og de åbne spørgsmål til bestyrelsen er beskrevet i [`docs/Funktionsoversigt.md`](docs/Funktionsoversigt.md).
+Funktionerne og de åbne spørgsmål til bestyrelsen er beskrevet i [`docs/Funktionsoversigt.md`](docs/Funktionsoversigt.md). Økonomidelens muligheder og begrænsninger – og hvornår et eksternt regnskabsprogram er nødvendigt – står i [`docs/Oekonomi.md`](docs/Oekonomi.md).
 
 ## Arkitektur
 
