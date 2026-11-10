@@ -3,6 +3,38 @@ import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
+import { FirebaseMessaging } from '@capacitor-firebase/messaging';
+import { watch } from 'vue';
+import { api, store, toast, refreshMe } from './api';
+
+let pushToken = null;
+
+/** Registrér telefonen til push, når nogen er logget ind (beder om tilladelse første gang). */
+async function registerPush() {
+    try {
+        if (Capacitor.getPlatform() === 'android') {
+            await FirebaseMessaging.createChannel({ id: 'klub', name: 'Klubben', description: 'Aktiviteter, beskeder og betalinger', importance: 4, visibility: 1, vibration: true });
+        }
+        let perm = await FirebaseMessaging.checkPermissions();
+        if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') perm = await FirebaseMessaging.requestPermissions();
+        if (perm.receive !== 'granted') return;
+        const { token } = await FirebaseMessaging.getToken();
+        if (token && token !== pushToken) {
+            pushToken = token;
+            await api('devices', { method: 'POST', body: { token, platform: Capacitor.getPlatform() } });
+        }
+    } catch (e) {
+        // Fx Firebase ikke sat op i denne build (mangler google-services.json / GoogleService-Info.plist)
+        console.warn('Push ikke tilgængelig:', e?.message || e);
+    }
+}
+
+/** Ved logud: telefonen skal ikke længere modtage beskeder til denne bruger. */
+export async function unregisterPush() {
+    if (!pushToken) return;
+    try { await api('devices', { method: 'DELETE', body: { token: pushToken } }); } catch {}
+    pushToken = null;
+}
 
 export function initNative(router) {
     document.documentElement.classList.add('native', `native-${Capacitor.getPlatform()}`);
@@ -16,6 +48,22 @@ export function initNative(router) {
         if (canGoBack && router.currentRoute.value.path !== '/aktiviteter') router.back();
         else App.exitApp();
     });
+
+    // Push: registrér når en bruger er logget ind
+    watch(() => store.user?.id, (id) => { if (id) registerPush(); }, { immediate: true });
+    FirebaseMessaging.addListener('tokenReceived', ({ token }) => {
+        if (store.user && token !== pushToken) { pushToken = token; api('devices', { method: 'POST', body: { token, platform: Capacitor.getPlatform() } }).catch(() => {}); }
+    }).catch(() => {});
+    // Tryk på en notifikation: åbn det rigtige sted i appen
+    FirebaseMessaging.addListener('notificationActionPerformed', ({ notification }) => {
+        const link = notification?.data?.link;
+        if (link) router.push(link);
+    }).catch(() => {});
+    // Besked mens appen er åben: vis den kort og opdatér tællerne
+    FirebaseMessaging.addListener('notificationReceived', ({ notification }) => {
+        if (notification?.title) toast(notification.title);
+        refreshMe().catch(() => {});
+    }).catch(() => {});
 
     // Links ind i appen (fx fra mails: https://klub.rpix.dk/beskeder/12) – kræver universal/app links i næste trin
     App.addListener('appUrlOpen', ({ url }) => {

@@ -20,9 +20,9 @@ import { computed } from 'vue';
 import Icon from '../components/Icon.vue';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { useRouter } from 'vue-router';
-import { api, store, roleLabel, setSession, IS_APP } from '../api';
+import { store, roleLabel, IS_APP, logout as doLogout } from '../api';
 async function openFinance() { (await import('../native')).openWeb('/okonomi'); }
 const can = computed(() => store.user.can);
 const router = useRouter();
-async function logout() { try { await api('logout', { method: 'POST' }); } catch {} setSession(null, null); router.push('/login'); }
+async function logout() { await doLogout(); router.push('/login'); }
 </script>

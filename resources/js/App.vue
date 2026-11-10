@@ -44,7 +44,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
-import { store, api, setSession, roleLabel, IS_APP } from './api';
+import { store, api, roleLabel, IS_APP, logout as doLogout } from './api';
 
 const route = useRoute();
 const router = useRouter();
@@ -60,8 +60,7 @@ onMounted(() => { poll = setInterval(async () => {
 onUnmounted(() => clearInterval(poll));
 
 async function logout() {
-    try { await api('logout', { method: 'POST' }); } catch {}
-    setSession(null, null);
+    await doLogout();
     router.push('/login');
 }
 defineExpose({ logout });

@@ -67,7 +67,11 @@ Appen er den samme Vue-app pakket med Capacitor (`android/`, `ios/`, `capacitor.
 - Sitets adgangskode (proof of concept) sendes som headeren `X-Site-Access` (hentes via `POST /api/site-access`), da appen ikke kan bruge sitets cookie. CORS tillader kun appens adresser (`config/cors.php`).
 - `npm run app:sync` = byg + kopiér til de indbyggede projekter. Ikoner og opstartsskærm er lavet ud fra `assets/` (klubbens logo).
 - Codemagic: `codemagic.yaml` har en Android-testudgave (debug-APK) og en iOS-testudgave (TestFlight).
-- Mangler før udgivelse: push-beskeder (Firebase), universal/app links, sikker opbevaring af login, MobilePay-retur til appen og sletning af konto i appen (Apple-krav).
+- **Push-beskeder** (Firebase Cloud Messaging, `@capacitor-firebase/messaging`): appen registrerer telefonen efter login (`POST /api/devices`), og alle notifikationer (`ClubMessage`, nye beskeder) sendes også som push via `PushChannel` → `App\Support\Push\Fcm`, hvis medlemmet har push slået til. Tryk på en besked åbner det rigtige sted. Kræver:
+  - `android/app/google-services.json` og `ios/App/App/GoogleService-Info.plist` (fra Firebase, må gerne i git)
+  - APNs-nøgle uploadet i Firebase, og Push Notifications slået til på app-id'et hos Apple
+  - servicekonto-nøgle på serveren (**ikke i git**), sti i `.env`: `FCM_CREDENTIALS=/var/www/klub/storage/app/private/firebase.json`
+- Mangler før udgivelse: universal/app links, sikker opbevaring af login, MobilePay-retur til appen og sletning af konto i appen (Apple-krav).
 
 ## Testmiljø
 

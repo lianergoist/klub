@@ -61,6 +61,13 @@ export function toast(text, kind = 'ok') {
     clearTimeout(t); t = setTimeout(() => (store.toast = null), 3500);
 }
 
+/** Log ud overalt (i appen afmeldes telefonen også push). */
+export async function logout() {
+    if (IS_APP) { try { await (await import('./native')).unregisterPush(); } catch {} }
+    try { await api('logout', { method: 'POST' }); } catch {}
+    setSession(null, null);
+}
+
 export async function refreshMe() {
     if (!store.token) return null;
     store.user = await api('me');

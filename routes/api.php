@@ -33,6 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Resten kun for medlemmer
     Route::middleware(\App\Http\Middleware\EnsureMember::class)->group(function () {
 
+    Route::post('devices', [\App\Http\Controllers\Api\DeviceController::class, 'store']);
+    Route::delete('devices', [\App\Http\Controllers\Api\DeviceController::class, 'destroy']);
+
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/household', [ProfileController::class, 'addMember']);

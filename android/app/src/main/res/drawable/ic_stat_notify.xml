@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notifikationsikon (statuslinjen): klubbens sejl, ensfarvet hvid som Android kræver -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="512" android:viewportHeight="512">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M262,92 C330,170 352,260 340,352 L262,352 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M248,120 C200,190 176,270 182,352 L248,352 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M120,384 h272 a12,12 0 0,1 -12,16 h-248 a12,12 0 0,1 -12,-16z"/>
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="14" android:fillColor="#00000000" android:strokeLineCap="round" android:pathData="M64,432 q32,-22 64,0 t64,0 t64,0 t64,0 t64,0 t64,0"/>
+</vector>
