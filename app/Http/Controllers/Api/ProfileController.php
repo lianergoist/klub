@@ -127,7 +127,7 @@ class ProfileController extends Controller
     {
         $settings = $r->user()->categorySettings->keyBy('id');
 
-        return Category::orderBy('name')->get()->map(fn ($c) => [
+        return Category::whereNull('archived_at')->orderBy('name')->get()->map(fn ($c) => [
             'id' => $c->id, 'name' => $c->name, 'color' => $c->color,
             'show' => (bool) ($settings[$c->id]->pivot->show ?? true),
             'notify' => (bool) ($settings[$c->id]->pivot->notify ?? true),

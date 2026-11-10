@@ -1,5 +1,5 @@
 # Codemagic: byg mobilappen fra dette repo.
-# Testudgaven peger på https://test.klub.rpix.dk (KLUB_API). Til drift: sæt KLUB_API=https://klub.rpix.dk.
+# Appen peger på https://klub.rpix.dk (KLUB_API). Til test mod testserveren: sæt KLUB_API=https://test.klub.rpix.dk.
 # Første gang: forbind repoet i Codemagic og opret en App Store Connect API-nøgle (Teams → Integrations) med navnet i
 # integrations.app_store_connect nedenfor. Android-testudgaven kræver ingen signering (debug-APK).
 
@@ -12,7 +12,7 @@ workflows:
       node: 22
       java: 21
       vars:
-        KLUB_API: https://test.klub.rpix.dk
+        KLUB_API: https://klub.rpix.dk
     scripts:
       - name: Installer afhængigheder
         script: npm ci
@@ -40,7 +40,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: dk.surfhorsens.klub
       vars:
-        KLUB_API: https://test.klub.rpix.dk
+        KLUB_API: https://klub.rpix.dk
     scripts:
       - name: Installer afhængigheder
         script: npm ci

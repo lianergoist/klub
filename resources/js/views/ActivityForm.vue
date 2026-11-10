@@ -7,7 +7,7 @@
             <div>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Kategorier</span>
                 <div class="chips" style="margin-top:6px">
-                    <button v-for="c in cats" :key="c.id" type="button" :class="['chip', { on: f.category_ids.includes(c.id) }]" @click="toggle(f.category_ids, c.id)"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</button>
+                    <button v-for="c in cats.filter(c => !c.archived || f.category_ids.includes(c.id))" :key="c.id" type="button" :class="['chip', { on: f.category_ids.includes(c.id) }]" @click="toggle(f.category_ids, c.id)"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</button>
                 </div>
             </div>
             <div class="grid c2">
