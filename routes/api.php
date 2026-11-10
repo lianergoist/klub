@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('site-access', [\App\Http\Controllers\GateController::class, 'appToken'])->middleware('throttle:10,1');
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
@@ -31,6 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Resten kun for medlemmer
     Route::middleware(\App\Http\Middleware\EnsureMember::class)->group(function () {
+
+    Route::post('devices', [\App\Http\Controllers\Api\DeviceController::class, 'store']);
+    Route::delete('devices', [\App\Http\Controllers\Api\DeviceController::class, 'destroy']);
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);

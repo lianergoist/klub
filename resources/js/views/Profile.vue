@@ -75,7 +75,7 @@
             <h2>Hvordan vil du have besked?</h2>
             <div class="stack">
                 <label class="check"><input type="checkbox" v-model="f.notify_email" @change="saveProfile"> E-mail</label>
-                <label class="check"><input type="checkbox" v-model="f.notify_push" @change="saveProfile"> Push-besked på telefonen <span class="tag">næste fase</span></label>
+                <label class="check"><input type="checkbox" v-model="f.notify_push" @change="saveProfile"> Push-besked på telefonen <span class="small muted">(kræver appen)</span></label>
             </div>
             <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
@@ -162,7 +162,7 @@ import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
-import { api, store, dato, kr, toast, download, setSession } from '../api';
+import { api, store, dato, kr, toast, download, logout as doLogout } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();
@@ -194,7 +194,7 @@ async function order() {
     try { const r = await api(`products/${buy.value.id}/order`, { method: 'POST', body: buy.value.household ? { member_ids: buyMembers.value } : { member_id: buyMember.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
     catch (e) { toast(e.message, 'error'); }
 }
-async function logout() { try { await api('logout', { method: 'POST' }); } catch {} setSession(null, null); router.push('/login'); }
+async function logout() { await doLogout(); router.push('/login'); }
 
 async function onTab(t) {
     if (t === 'beskeder' && !cats.value.length) cats.value = await api('profile/categories');

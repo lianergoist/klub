@@ -29,6 +29,16 @@ class GateController extends Controller
         );
     }
 
+    /** Mobilappen: byt adgangskoden til et token, der sendes i headeren X-Site-Access. */
+    public function appToken(Request $r)
+    {
+        if (! password_verify((string) $r->input('code'), (string) config('app.access_hash'))) {
+            return response()->json(['message' => 'Forkert adgangskode.'], 422);
+        }
+
+        return ['token' => SiteGate::token()];
+    }
+
     private function target(Request $r): string
     {
         $to = (string) $r->input('til', '/');

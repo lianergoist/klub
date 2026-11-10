@@ -69,7 +69,8 @@ class ActivityController extends Controller
         $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator');
         $isStaff = $u->isTrainer();
         $regs = $activity->registrations()->with('user', 'events.by')->get();
-        $managed = $u->managedMembers();
+        // Trænere på aktiviteten tilmeldes ikke som deltagere
+        $managed = $u->managedMembers()->reject(fn ($m) => $activity->trainers->contains('id', $m->id))->values();
 
         return self::row($activity) + [
             'description' => $activity->description,
@@ -107,6 +108,7 @@ class ActivityController extends Controller
             'registration_log' => $isStaff ? $regs->flatMap(fn ($reg) => collect(self::history($reg))->map(fn ($h) => $h + ['member' => $reg->user->name]))
                 ->sortBy('at')->values() : [],
             'can_edit' => $isStaff,
+            'is_leader' => $activity->trainers->contains('id', $u->id),
         ];
     }
 

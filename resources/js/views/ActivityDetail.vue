@@ -26,8 +26,10 @@
         <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
 
         <!-- Tilmelding -->
+        <div v-else-if="!a.is_past && a.is_leader && !a.household.length" class="banner info"><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</div>
         <div v-else-if="!a.is_past" class="card">
-            <div class="row between"><h2 style="margin:0">Tilmelding</h2>
+            <p v-if="a.is_leader" class="small muted" style="margin:0 0 8px">Du er træner på denne aktivitet. Her kan du tilmelde dine familiemedlemmer.</p>
+            <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
             <div v-if="a.deadline_passed" class="banner warn" style="margin-top:12px">Svarfristen er overskredet. Kontakt træneren, hvis du vil med.</div>
@@ -36,8 +38,8 @@
                 <li v-for="m in a.household" :key="m.id">
                     <div class="row between">
                         <label class="check" :style="{ opacity: canPick(m) ? 1 : .9 }">
-                            <input v-if="canPick(m)" type="checkbox" v-model="picked" :value="m.id">
-                            <span><strong>{{ m.name }}</strong> <span v-if="m.age !== null && a.household.length > 1" class="muted small">({{ m.age }} år)</span></span>
+                            <input v-if="canPick(m) && !solo" type="checkbox" v-model="picked" :value="m.id">
+                            <span><strong>{{ solo && m.id === store.user.id ? 'Dig' : m.name }}</strong> <span v-if="m.age !== null && a.household.length > 1" class="muted small">({{ m.age }} år)</span></span>
                         </label>
                         <div class="row" style="gap:6px">
                             <span v-if="m.status === 'signed_up'" class="tag ok"><Icon name="check" style="width:12px" /> Tilmeldt</span>
@@ -46,7 +48,7 @@
                                 <RouterLink :to="`/betal/${m.invoice_id}`" class="btn small primary">Betal</RouterLink>
                             </template>
                             <span v-else-if="a.members_only && !m.membership_valid" class="tag bad">Kontingent ikke betalt</span>
-                            <button v-if="m.status === 'signed_up' || m.status === 'pending_payment'" class="btn small" :disabled="a.cancel_locked && !store.user.can.trainer" @click="unsign(m)">Afmeld</button>
+                            <button v-if="m.status === 'signed_up' || m.status === 'pending_payment'" class="btn small" :disabled="a.cancel_locked && !store.user.can.trainer" @click="unsign(m)">{{ solo && m.id === store.user.id ? 'Afmeld mig' : 'Afmeld' }}</button>
                         </div>
                     </div>
                     <details v-if="m.history.length" class="small" style="margin-top:6px">
@@ -59,7 +61,7 @@
             </ul>
             <p v-if="a.cancel_locked" class="small muted" style="margin-top:8px">Afmelding er lukket, fordi der er under {{ a.cancel_hours }} timer til start.</p>
             <button v-if="pickable.length" class="btn primary block" style="margin-top:10px" :disabled="!picked.length || busy" @click="signup">
-                {{ !picked.length ? 'Vælg hvem der skal med' : a.price ? `Tilmeld og betal ${kr(a.price * picked.length)}` : picked.length > 1 ? `Tilmeld ${picked.length} personer` : 'Tilmeld' }}
+                {{ btnLabel }}
             </button>
         </div>
 
@@ -148,6 +150,16 @@ const showCancel = ref(false); const cancelReason = ref('');
 const started = computed(() => a.value && new Date(a.value.starts_at) < new Date());
 const canPick = (m) => !['signed_up', 'pending_payment'].includes(m.status) && !(a.value.members_only && !m.membership_valid) && (!a.value.deadline_passed || store.user.can.trainer) && !a.value.is_full;
 const pickable = computed(() => a.value ? a.value.household.filter(canPick) : []);
+// Kun én person at vælge (typisk én selv): ingen tjekboks, bare "Tilmeld mig"
+const solo = computed(() => a.value && a.value.household.length === 1);
+watch([solo, pickable], () => { if (solo.value) picked.value = pickable.value.map(m => m.id); });
+const btnLabel = computed(() => {
+    const n = picked.value.length;
+    if (!n) return 'Vælg hvem der skal med';
+    const self = solo.value && picked.value[0] === store.user.id;
+    const who = self ? 'Tilmeld mig' : n > 1 ? `Tilmeld ${n} personer` : 'Tilmeld';
+    return a.value.price ? `${who} og betal ${kr(a.value.price * n)}` : who;
+});
 const warnUnavailable = computed(() => trainerOpts.value.filter(t => t.unavailable && selTrainers.value.includes(t.id)).map(t => t.name).join(', '));
 
 async function load() { a.value = await api(`activities/${props.id}`); picked.value = []; att.value = false; }

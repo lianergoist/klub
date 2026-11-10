@@ -2,6 +2,10 @@
 
 return [
 
+    // Push-beskeder: sti til Firebase-servicekontoens JSON-nøgle (uden for git), fx storage/app/private/firebase.json
+    'fcm' => ['credentials' => env('FCM_CREDENTIALS')],
+
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

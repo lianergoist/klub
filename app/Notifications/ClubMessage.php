@@ -15,7 +15,10 @@ class ClubMessage extends Notification
 
     public function via(object $notifiable): array
     {
-        return $notifiable->notify_email && $notifiable->email ? ['database', 'mail'] : ['database'];
+        $via = $notifiable->notify_email && $notifiable->email ? ['database', 'mail'] : ['database'];
+        if (PushChannel::wants($notifiable)) $via[] = PushChannel::class;
+
+        return $via;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -26,6 +29,11 @@ class ClubMessage extends Notification
         }
 
         return $m;
+    }
+
+    public function toPush(object $notifiable): array
+    {
+        return ['title' => $this->title, 'body' => $this->body, 'link' => $this->link];
     }
 
     public function toArray(object $notifiable): array

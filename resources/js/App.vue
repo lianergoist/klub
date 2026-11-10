@@ -12,7 +12,8 @@
                 <template v-if="can.members || can.finance_read || can.board">
                     <div class="sect">Administration</div>
                     <RouterLink v-if="can.members" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
-                    <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
+                    <a v-if="can.finance_read && IS_APP" href="#" @click.prevent="openFinance"><Icon name="money" /> Økonomi ↗</a>
+                    <RouterLink v-else-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
                     <RouterLink v-if="can.board" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
                 </template>
             </nav>
@@ -43,11 +44,12 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
-import { store, api, setSession, roleLabel } from './api';
+import { store, api, roleLabel, IS_APP, logout as doLogout } from './api';
 
 const route = useRoute();
 const router = useRouter();
 const can = computed(() => store.user?.can || {});
+async function openFinance() { (await import('./native')).openWeb('/okonomi'); }
 const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
 // Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
 let poll;
@@ -58,8 +60,7 @@ onMounted(() => { poll = setInterval(async () => {
 onUnmounted(() => clearInterval(poll));
 
 async function logout() {
-    try { await api('logout', { method: 'POST' }); } catch {}
-    setSession(null, null);
+    await doLogout();
     router.push('/login');
 }
 defineExpose({ logout });

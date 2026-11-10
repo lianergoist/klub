@@ -1,0 +1,64 @@
+# Codemagic: byg mobilappen fra dette repo.
+# Testudgaven peger på https://test.klub.rpix.dk (KLUB_API). Til drift: sæt KLUB_API=https://klub.rpix.dk.
+# Første gang: forbind repoet i Codemagic og opret en App Store Connect API-nøgle (Teams → Integrations) med navnet i
+# integrations.app_store_connect nedenfor. Android-testudgaven kræver ingen signering (debug-APK).
+
+workflows:
+  android-test:
+    name: Android – testudgave (APK)
+    max_build_duration: 30
+    instance_type: mac_mini_m2   # gratisplanen har kun macOS-maskiner (Android bygger fint her)
+    environment:
+      node: 22
+      java: 21
+      vars:
+        KLUB_API: https://test.klub.rpix.dk
+    scripts:
+      - name: Installer afhængigheder
+        script: npm ci
+      - name: Byg app-udgaven af webappen
+        script: npm run build:app
+      - name: Kopiér til Android-projektet
+        script: npx cap sync android
+      - name: Byg APK
+        script: |
+          cd android
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+
+  ios-test:
+    name: iOS – testudgave (TestFlight)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Klubsystem   # navnet på API-nøglen i Codemagic
+    environment:
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: dk.surfhorsens.klub
+      vars:
+        KLUB_API: https://test.klub.rpix.dk
+    scripts:
+      - name: Installer afhængigheder
+        script: npm ci
+      - name: Byg app-udgaven af webappen
+        script: npm run build:app
+      - name: Kopiér til iOS-projektet
+        script: npx cap sync ios
+      - name: Signering
+        script: xcode-project use-profiles
+      - name: Byggenummer
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+      - name: Byg IPA
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

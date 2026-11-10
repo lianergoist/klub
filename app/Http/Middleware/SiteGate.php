@@ -17,7 +17,10 @@ class SiteGate
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! self::enabled() || $request->is('adgang', 'up') || self::valid($request)) {
+        // Signerede billedlinks (opslagstavlen) er allerede udstedt til en indlogget bruger og udløber selv. <img> kan ikke sende appens token.
+        $signedImage = $request->is('api/feed/images/*') && $request->hasValidSignature();
+
+        if (! self::enabled() || $request->isMethod('OPTIONS') || $request->is('adgang', 'up', 'api/site-access') || $signedImage || self::valid($request)) {
             return $next($request);
         }
 
@@ -39,10 +42,13 @@ class SiteGate
         return hash_hmac('sha256', 'site-access|'.config('app.access_hash'), config('app.key'));
     }
 
+    /** Gyldig via cookie (web) eller headeren X-Site-Access (mobilappen, som ikke kan bruge sitets cookie). */
     public static function valid(Request $request): bool
     {
-        $c = $request->cookie(self::COOKIE);
+        foreach ([$request->cookie(self::COOKIE), $request->header('X-Site-Access')] as $c) {
+            if (is_string($c) && hash_equals(self::token(), $c)) return true;
+        }
 
-        return is_string($c) && hash_equals(self::token(), $c);
+        return false;
     }
 }
