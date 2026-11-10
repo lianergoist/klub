@@ -99,6 +99,8 @@ class AuthController extends Controller
             'status' => $u->status,
             'roles' => $u->roles(),
             'unread' => $u->unreadNotifications()->count(),
+            'unread_messages' => $u->canUseMessages() ? $u->unreadMessages() : 0,
+            'can_message' => (bool) $u->canUseMessages(),
             'is_payer' => $u->household?->payer_id === $u->id,
             'can' => [
                 'trainer' => $u->isTrainer(),

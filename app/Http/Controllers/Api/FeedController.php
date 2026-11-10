@@ -46,7 +46,7 @@ class FeedController extends Controller
         $isMod = $u->isTrainer();
         $filter = $isMod ? $r->query('filter', 'all') : 'all';
 
-        $q = Post::with(['user:id,name', 'images', 'comments.user:id,name'])
+        $q = Post::with(['user', 'images', 'comments.user:id,name'])
             ->withCount(['likes', 'reports as open_reports_count' => fn ($q) => $q->whereNull('resolved_at')])
             ->latest('id');
         match ($filter) {
@@ -74,6 +74,7 @@ class FeedController extends Controller
             'id' => $p->id,
             'author' => $p->user->name,
             'author_id' => $p->user_id,
+            'can_message' => $p->user_id !== $u->id && $u->cannotMessage($p->user) === null,
             'body' => $p->body,
             'created_at' => $p->created_at->toIso8601String(),
             'images' => $p->images->map(fn ($i) => [

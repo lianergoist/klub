@@ -39,6 +39,7 @@
             <header class="row" style="flex-wrap:nowrap">
                 <span class="avatar">{{ initials(p.author) }}</span>
                 <div style="flex:1;min-width:0"><strong>{{ p.author }}</strong><div class="small muted">{{ ago(p.created_at) }}</div></div>
+                <button v-if="p.can_message" class="btn ghost small" title="Send besked" :aria-label="`Send besked til ${p.author}`" @click="messageTo(p.author_id)"><Icon name="chat" style="width:16px" /> <span class="small">Skriv</span></button>
                 <div class="row" style="gap:2px">
                     <button v-if="p.mine" class="btn ghost small" title="Slet" aria-label="Slet opslag" @click="remove(p)"><Icon name="trash" style="width:16px" /></button>
                     <button v-if="isMod && !p.hidden" class="btn ghost small" title="Skjul" aria-label="Skjul opslag" @click="askHide(p)"><Icon name="eyeoff" style="width:16px" /></button>
@@ -93,12 +94,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import { api, store, toast } from '../api';
 
-const route = useRoute();
+const route = useRoute(); const router = useRouter();
+async function messageTo(id) { try { const r = await api('messages/start', { method: 'POST', body: { user_id: id } }); router.push(`/beskeder/${r.id}`); } catch (e) { toast(e.message, 'error'); } }
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);

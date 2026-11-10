@@ -20,6 +20,8 @@ const routes = [
     { path: '/betal/:id', component: v('Pay'), props: true },
     { path: '/traener', component: v('Trainer'), meta: { can: 'trainer' } },
     { path: '/indbakke', component: v('Inbox') },
+    { path: '/beskeder', component: v('Inbox') },
+    { path: '/beskeder/:id', component: v('Conversation'), props: true },
     { path: '/opslag', component: v('Feed') },
     { path: '/profil/:tab?', component: v('Profile'), props: true },
     { path: '/mere', component: v('More') },

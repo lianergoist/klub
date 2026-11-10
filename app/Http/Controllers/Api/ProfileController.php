@@ -47,7 +47,7 @@ class ProfileController extends Controller
             'joined_on' => $u->joined_on?->toDateString(),
             'membership_type' => $u->membershipType?->name,
             'status_label' => User::STATUS_LABELS[$u->status] ?? $u->status,
-        ] + $u->only(['id', ...self::FIELDS, 'status', 'notify_email', 'notify_push']);
+        ] + $u->only(['id', ...self::FIELDS, 'status', 'notify_email', 'notify_push', 'allow_messages']);
     }
 
     public function update(Request $r)
@@ -65,6 +65,7 @@ class ProfileController extends Controller
             'emergency_phone' => 'nullable|string|max:30',
             'notify_email' => 'boolean',
             'notify_push' => 'boolean',
+            'allow_messages' => 'boolean',
         ]);
         $before = $u->only(array_keys($data));
         $u->update($data);

@@ -42,6 +42,7 @@ class User extends Authenticatable
             'consent_at' => 'datetime',
             'notify_email' => 'boolean',
             'notify_push' => 'boolean',
+            'allow_messages' => 'boolean',
         ];
     }
 
@@ -117,6 +118,42 @@ class User extends Authenticatable
         $d = \Illuminate\Support\Carbon::parse($date)->toDateString();
 
         return $this->unavailabilities()->where('from_date', '<=', $d)->where('to_date', '>=', $d)->exists();
+    }
+
+    /** Medlemmer der blokerer / er blokeret af denne bruger. */
+    public function blockedIds(): array
+    {
+        return \Illuminate\Support\Facades\DB::table('user_blocks')->where('user_id', $this->id)->pluck('blocked_id')->all();
+    }
+
+    /**
+     * Hvem kan bruge beskeder? Kun voksne (18+) med eget login og aktivt medlemskab (testudgave – se Afklares i funktionsoversigten).
+     */
+    public function canUseMessages(): bool
+    {
+        return $this->email && $this->password && in_array($this->status, ['active', 'passive'])
+            && ($this->age() === null || $this->age() >= 18);
+    }
+
+    /** Begrundelse hvis $this ikke kan skrive til $to, ellers null. */
+    public function cannotMessage(User $to): ?string
+    {
+        if ($to->id === $this->id) return 'Du kan ikke skrive til dig selv.';
+        if (! $this->canUseMessages()) return 'Beskeder er kun for voksne medlemmer med eget login.';
+        if (! $to->canUseMessages()) return $to->name.' kan ikke modtage beskeder.';
+        if (! $to->allow_messages) return $to->name.' har slået beskeder fra.';
+        $blocked = \Illuminate\Support\Facades\DB::table('user_blocks')
+            ->where(fn ($q) => $q->where('user_id', $to->id)->where('blocked_id', $this->id))
+            ->orWhere(fn ($q) => $q->where('user_id', $this->id)->where('blocked_id', $to->id))->exists();
+        if ($blocked) return 'Du kan ikke skrive til '.$to->name.'.';
+
+        return null;
+    }
+
+    public function unreadMessages(): int
+    {
+        return Message::whereNull('read_at')->where('sender_id', '!=', $this->id)
+            ->whereIn('conversation_id', Conversation::for($this)->select('id'))->count();
     }
 
     public function brief(): array

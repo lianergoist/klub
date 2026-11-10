@@ -220,3 +220,7 @@ tfoot td { font-weight: 700; border-bottom: 0; }
     .card { box-shadow: none; border: 0; padding: 0; }
     body { background: #fff; color: #000; }
 }
+
+/* Testudgave */
+.test-ribbon { position: sticky; top: 0; z-index: 30; background: #b42318; color: #fff; text-align: center; font-size: .75rem; font-weight: 600; padding: calc(env(safe-area-inset-top, 0px) + 4px) 12px 4px; }
+.test-ribbon a { color: #fff; text-decoration: underline; }

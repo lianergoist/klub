@@ -14,6 +14,9 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+    @if (config('app.test_banner'))
+    <div class="test-ribbon">TESTUDGAVE · beskeder mellem medlemmer · data her påvirker ikke <a href="https://klub.rpix.dk">klub.rpix.dk</a></div>
+    @endif
     <div id="app"></div>
 </body>
 </html>

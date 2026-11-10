@@ -7,7 +7,7 @@
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
                 <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
-                <RouterLink to="/indbakke"><Icon name="inbox" /> Indbakke <span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
+                <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
                 <template v-if="can.members || can.finance_read || can.board">
                     <div class="sect">Administration</div>
@@ -29,7 +29,7 @@
         <nav class="tabbar">
             <RouterLink to="/aktiviteter"><Icon name="cal" />Aktiviteter</RouterLink>
             <RouterLink to="/opslag"><Icon name="chat" />Opslag</RouterLink>
-            <RouterLink to="/indbakke"><Icon name="inbox" />Indbakke<span v-if="store.user.unread" class="dot">{{ store.user.unread }}</span></RouterLink>
+            <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" />Indbakke<span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
             <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
             <RouterLink to="/mere"><Icon name="more" />Mere</RouterLink>
         </nav>
@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
@@ -48,6 +48,14 @@ import { store, api, setSession, roleLabel } from './api';
 const route = useRoute();
 const router = useRouter();
 const can = computed(() => store.user?.can || {});
+const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
+// Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
+let poll;
+onMounted(() => { poll = setInterval(async () => {
+    if (!store.user || document.hidden) return;
+    try { const u = await api('messages/unread'); store.user.unread = u.notifications; store.user.unread_messages = u.messages; } catch {}
+}, 30000); });
+onUnmounted(() => clearInterval(poll));
 
 async function logout() {
     try { await api('logout', { method: 'POST' }); } catch {}

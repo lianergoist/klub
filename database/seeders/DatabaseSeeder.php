@@ -322,9 +322,41 @@ class DatabaseSeeder extends Seeder
 
         $this->seedFeed($members->unique('id')->values(), compact('sofie', 'freja', 'lars', 'mette', 'rasmus') + ['camilla' => $trainers[2], 'ida' => $trainers[4], 'jonas' => $trainers[1]]);
 
+        $this->seedMessages(compact('sofie', 'lars', 'mette', 'rasmus') + ['ida' => $trainers[4]]);
+
         // Indbakke til demo-medlemmet
         $sofie->notify(new ClubMessage('Ny aktivitet: Vinter-SUP i tørdragt', 'Om 3 dage kl. 18, Slipwayen.', '/aktiviteter/'.Activity::where('title', 'Vinter-SUP i tørdragt')->value('id')));
         $sofie->notify(new ClubMessage('Tilmeldt: Juniortræning – indendørs balance', 'Emil Mikkelsen er tilmeldt.', '/aktiviteter/'.Activity::where('title', 'like', 'Juniortræning – indendørs%')->value('id')));
+    }
+
+    private function seedMessages(array $p): void
+    {
+        $talk = function (User $a, User $b, array $lines, $startAgo, bool $lastUnread = false) {
+            $c = \App\Models\Conversation::between($a, $b);
+            $t = $this->now->copy()->sub($startAgo);
+            foreach ($lines as $i => [$fromA, $text]) {
+                $t = $t->copy()->addMinutes(mt_rand(3, 90));
+                $isLast = $i === count($lines) - 1;
+                $c->messages()->create(['sender_id' => $fromA ? $a->id : $b->id, 'body' => $text, 'created_at' => $t, 'updated_at' => $t,
+                    'read_at' => ($isLast && $lastUnread) ? null : $t->copy()->addMinutes(5)]);
+            }
+            $c->update(['last_message_at' => $t]);
+        };
+        $talk($p['sofie'], $p['lars'], [
+            [true, 'Hej Lars! Emil er lidt nervøs for juniortræningen på lørdag – er det okay, hvis jeg bliver og kigger med?'],
+            [false, 'Selvfølgelig! Forældre er altid velkomne. Vi starter med balanceøvelser på land, så det er en blød start.'],
+            [true, 'Super, tak 😊 Skal han have noget særligt med?'],
+            [false, 'Bare indendørssko og en vandflaske. Vi har alt udstyr.'],
+        ], '2 days');
+        $talk($p['mette'], $p['sofie'], [
+            [true, 'Hej Sofie – kunne du tænke dig at hjælpe med juniorholdet til foråret? Du har jo styr på det 🙂'],
+            [false, 'Det lyder spændende! Hvor meget tid kræver det cirka?'],
+            [true, 'En lørdag om måneden fra april. Vi tager en snak efter teoriaftenen?'],
+        ], '5 hours', true);
+        $talk($p['rasmus'], $p['ida'], [
+            [true, 'Hej Ida, jeg så dit opslag om wingfoil. Har du tid til at vise mig grundteknikken en dag?'],
+            [false, 'Klart! Der er wingfoil for let øvede på mandag – meld dig til, så tager jeg dig under mine vinger 😄'],
+        ], '1 day');
     }
 
     private function seedFeed($members, array $p): void

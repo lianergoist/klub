@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\MemberController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('feed/{post}/dismiss', [FeedController::class, 'dismissReports']);
     Route::delete('feed-comments/{comment}', [FeedController::class, 'deleteComment']);
     Route::put('feed-comments/{comment}/moderate', [FeedController::class, 'moderateComment']);
+
+    Route::get('messages', [MessageController::class, 'index']);
+    Route::get('messages/unread', [MessageController::class, 'unread']);
+    Route::get('messages/people', [MessageController::class, 'people']);
+    Route::post('messages/start', [MessageController::class, 'start']);
+    Route::get('messages/{conversation}', [MessageController::class, 'show']);
+    Route::post('messages/{conversation}', [MessageController::class, 'send'])->middleware('throttle:30,1');
+    Route::post('message-items/{message}/report', [MessageController::class, 'report']);
+    Route::post('users/{user}/block', [MessageController::class, 'block']);
 
     Route::get('categories', [CategoryController::class, 'index']);
     Route::post('categories', [CategoryController::class, 'store']);

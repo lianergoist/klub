@@ -77,6 +77,9 @@
                 <label class="check"><input type="checkbox" v-model="f.notify_email" @change="saveProfile"> E-mail</label>
                 <label class="check"><input type="checkbox" v-model="f.notify_push" @change="saveProfile"> Push-besked på telefonen <span class="tag">næste fase</span></label>
             </div>
+            <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
+            <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
+            <p class="small muted" style="margin-top:4px">Slår du det fra, kan ingen finde dig under "Ny besked". Trænere og bestyrelse når dig stadig via notifikationer og mail.</p>
             <h2 style="margin-top:20px">Hvilke aktiviteter vil du høre om?</h2>
             <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Du får stadig besked om aktiviteter, du er tilmeldt.</p>
             <ul class="list">
