@@ -13,7 +13,7 @@ export default defineConfig({
     plugins: [vue({ template: { transformAssetUrls: { base: null, includeAbsolute: false } } })],
     define: {
         __APP__: 'true',
-        __API_BASE__: JSON.stringify(process.env.KLUB_API || 'https://test.klub.rpix.dk'),
+        __API_BASE__: JSON.stringify(process.env.KLUB_API || 'https://klub.rpix.dk'),
     },
     build: { outDir: '../../dist-app', emptyOutDir: true },
 });
