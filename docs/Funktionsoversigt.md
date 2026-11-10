@@ -185,6 +185,7 @@ Private beskeder mellem medlemmer – to eller flere i samme samtale, fx foræld
 - **Testudgave – regler:**
   - Har man slået beskeder fra, kan andre medlemmer ikke skrive til en, og man kan selv kun skrive med trænere og bestyrelse (inkl. svare dem og skrive i grupper, de har startet).
   - Har man blokeret et medlem, kan man hverken skrive til vedkommende eller modtage beskeder fra vedkommende, før blokeringen fjernes.
+  - Trænere og bestyrelsesmedlemmer kan ikke blokeres – klubben skal altid kunne nå medlemmerne. Oplever man problemer med en træner eller et bestyrelsesmedlem, kan man anmelde beskeden.
   - Trænere og bestyrelse kan skrive til alle voksne medlemmer – også dem, der har slået beskeder fra.
   - I grupper går beskeder ud til alle deltagere, uanset personlige blokeringer. Blokering gælder kun samtaler mellem to.
   - Man kan anmelde en besked. Bestyrelsen får den anmeldte besked; ellers kan kun deltagerne i samtalen læse beskederne.
@@ -196,8 +197,6 @@ Private beskeder mellem medlemmer – to eller flere i samme samtale, fx foræld
 - **Afklares:** må børn og unge under 18 bruge beskeder? I testen kan de hverken skrive eller modtage. Alternativ: trænere skriver til forældrene, ikke til barnet direkte.
 
 - **Afklares:** er det i orden, at alle medlemmer kan se en liste med navnene på alle andre voksne medlemmer (der ikke har fravalgt beskeder)? Skal medlemmer i stedet aktivt vælge at være synlige (fravalg vs. tilvalg)?
-
-- **Afklares:** "Slå beskeder fra" (en generel indstilling) stopper ikke trænere og bestyrelse. Men et medlem kan også *blokere én bestemt person* – og i testen kan man blokere en træner eller et bestyrelsesmedlem, så vedkommende ikke længere kan skrive til medlemmet. Skal det være muligt, eller skal klubbens trænere og bestyrelse altid kunne nå medlemmerne direkte?
 
 - **Afklares:** hvor længe gemmes beskeder, og skal de slettes, når et medlem melder sig ud? Hvem i bestyrelsen modtager anmeldte beskeder?
 
