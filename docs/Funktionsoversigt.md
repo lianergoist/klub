@@ -174,15 +174,15 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Afklares:** skal alle trænere kunne moderere, eller kun udvalgte personer? Hvor længe gemmes opslag og billeder, og skal de slettes, når et medlem melder sig ud?
 
-## Beskeder mellem medlemmer (testudgave)
+## Beskeder mellem medlemmer
 
-Private beskeder mellem medlemmer – to eller flere i samme samtale, fx forælder og træner, eller en gruppe der vil aftale at tage på vandet. Kan afprøves på **test.klub.rpix.dk** (adskilt fra den almindelige demo).
+Private beskeder mellem medlemmer – to eller flere i samme samtale, fx forælder og træner, eller en gruppe der vil aftale at tage på vandet.
 
-- **Testudgave:** samtaler mellem voksne medlemmer (18+) med eget login. Under "Ny besked" vælger man én eller flere fra en liste over alle medlemmer, der modtager beskeder (kun navne vises, ingen kontaktoplysninger), eller trykker "Skriv" på et opslag. Vælger man flere, oprettes en gruppe, som kan få et navn.
+- **Kerne (i proof of concept):** samtaler mellem voksne medlemmer (18+) med eget login. Under "Ny besked" vælger man én eller flere fra en liste over alle medlemmer, der modtager beskeder (kun navne vises, ingen kontaktoplysninger), eller trykker "Skriv" på et opslag. Vælger man flere, oprettes en gruppe, som kan få et navn.
 
-- **Testudgave:** i grupper kan man se hvem der har skrevet hvad og hvem der har læst, tilføje flere deltagere, omdøbe gruppen og forlade den. Ulæste beskeder vises i Indbakke, og der sendes højst én mail pr. samtale, indtil beskederne er læst.
+- **Kerne (i proof of concept):** i grupper kan man se hvem der har skrevet hvad og hvem der har læst, tilføje flere deltagere, omdøbe gruppen og forlade den. Ulæste beskeder vises i Indbakke, og der sendes højst én mail pr. samtale, indtil beskederne er læst.
 
-- **Testudgave – regler:**
+- **Kerne (i proof of concept) – regler:**
   - Har man slået beskeder fra, kan andre medlemmer ikke skrive til en, og man kan selv kun skrive med trænere og bestyrelse (inkl. svare dem og skrive i grupper, de har startet).
   - Har man blokeret et medlem, kan man hverken skrive til vedkommende eller modtage beskeder fra vedkommende, før blokeringen fjernes.
   - Trænere og bestyrelsesmedlemmer kan ikke blokeres – klubben skal altid kunne nå medlemmerne. Oplever man problemer med en træner eller et bestyrelsesmedlem, kan man anmelde beskeden.
@@ -192,9 +192,9 @@ Private beskeder mellem medlemmer – to eller flere i samme samtale, fx foræld
 
 - **Senere:** færdige grupper ud fra en aktivitet (alle tilmeldte) eller en rolle (alle trænere), billeder i beskeder, push-besked på telefonen.
 
-- **Afklares:** skal beskeder med i det endelige system, eller er opslagstavlen og notifikationer nok?
+- **Afklares:** skal beskeder med i det endelige system (fase 1 eller senere), eller er opslagstavlen og notifikationer nok?
 
-- **Afklares:** må børn og unge under 18 bruge beskeder? I testen kan de hverken skrive eller modtage. Alternativ: trænere skriver til forældrene, ikke til barnet direkte.
+- **Afklares:** må børn og unge under 18 bruge beskeder? I proof of concept kan de hverken skrive eller modtage. Alternativ: trænere skriver til forældrene, ikke til barnet direkte.
 
 - **Afklares:** er det i orden, at alle medlemmer kan se en liste med navnene på alle andre voksne medlemmer (der ikke har fravalgt beskeder)? Skal medlemmer i stedet aktivt vælge at være synlige (fravalg vs. tilvalg)?
 
