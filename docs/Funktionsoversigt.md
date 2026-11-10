@@ -273,7 +273,7 @@ Betaling sker via en ekstern betalingsudbyder. Systemet gemmer ikke kortnumre; d
 
 - **Kerne:** oversigt for kassereren over åbne, betalte og forfaldne betalinger, pr. medlem og pr. produkt.
 
-- **Kerne:** automatisk afstemning af MobilePay-udbetalinger: klubsystemet henter Vipps MobilePays afregningsrapport, kobler hver samlet udbetaling i banken til de enkelte betalinger og bogfører gebyrerne. (Hver betaling kobles allerede til sin regning via betalingens id – det er kun den samlede udbetaling til banken, der skal afstemmes.)
+- **Kerne (i proof of concept, med simuleret afregningsrapport):** automatisk afstemning af MobilePay-udbetalinger: klubsystemet henter Vipps MobilePays afregningsrapport, kobler hver samlet udbetaling i banken til de enkelte betalinger og bogfører gebyrerne. (Hver betaling kobles allerede til sin regning via betalingens id – det er kun den samlede udbetaling til banken, der skal afstemmes.)
 
 - **Kerne:** kassereren kan registrere en betaling manuelt (kontant eller bankoverførsel), så de, der ikke bruger MobilePay, også kan betale.
 
@@ -285,7 +285,7 @@ Betaling sker via en ekstern betalingsudbyder. Systemet gemmer ikke kortnumre; d
 
 - **Senere:** betalingsplaner for familier med flere medlemmer.
 
-- **Afklares:** hvilken udbyder? Hvem i klubben opretter aftalen og kan se transaktionerne? Skal klubben dække gebyret eller lægge det oven i prisen?
+- **Afklares:** hvilken udbyder? Hvem i klubben opretter aftalen og kan se transaktionerne? Skal klubben dække gebyret eller lægge det oven i prisen? Hvor ofte skal MobilePay udbetale til banken (dagligt, ugentligt)? Proof of concept regner med dagligt og 1 % i gebyr.
 
 ## Økonomi og regnskab
 

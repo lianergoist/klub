@@ -291,10 +291,10 @@ class DatabaseSeeder extends Seeder
             ['03-12', 'To nye begyndersejl 4,5 m²', '2000', -1890000], ['03-28', 'Wingfoil-boards (2 stk.)', '2000', -2450000],
             ['04-05', 'Reparation af slæbejolle', '2100', -385000], ['04-22', 'Trænerkursus, 2 deltagere', '2300', -680000],
             ['05-03', 'Standerhejsning: pølser og sodavand', '2700', -124550], ['06-23', 'Sankthans: brænde og forplejning', '2700', -98000],
-            ['06-30', 'MobilePay-gebyrer, 1. halvår', '2600', -215400], ['07-15', 'Træneropmuntring: sæsontrøjer', '2400', -312000],
+            ['06-28', 'Bankgebyrer, 2. kvartal', '2600', -37500], ['07-15', 'Træneropmuntring: sæsontrøjer', '2400', -312000],
             ['08-20', 'Ny våddragter til juniorer (6 stk.)', '2000', -1170000], ['09-02', 'Reparation af rack i klubhus', '2100', -164500],
             ['09-18', 'Tilskud fra forbund: juniorarbejde', '1400', 500000], ['10-05', 'Klubmesterskab: præmier', '2700', -87500],
-            ['10-31', 'MobilePay-gebyrer, 3. kvartal', '2600', -96300],
+            ['09-30', 'Bankgebyrer, 3. kvartal', '2600', -37500],
         ];
         $last = null;
         foreach ($manual as [$md, $text, $acc, $amount]) {
@@ -323,6 +323,11 @@ class DatabaseSeeder extends Seeder
         $this->seedFeed($members->unique('id')->values(), compact('sofie', 'freja', 'lars', 'mette', 'rasmus') + ['camilla' => $trainers[2], 'ida' => $trainers[4], 'jonas' => $trainers[1]]);
 
         $this->seedMessages(compact('sofie', 'lars', 'mette', 'rasmus') + ['ida' => $trainers[4]]);
+
+        // MobilePay: indlæs afregninger for alle historiske betalinger. Udbetalinger ældre end en uge er afstemt mod banken.
+        \App\Support\MobilePay\Settlements::import(\App\Support\MobilePay\SimulatedReport::settlements(), $henrik->id);
+        \App\Models\Payout::where('payout_date', '<', $this->now->copy()->subWeek())
+            ->update(['bank_matched_at' => $this->now->copy()->subDays(3), 'bank_text' => \Illuminate\Support\Facades\DB::raw("CONCAT('MobilePay ', provider_payout_id)")]);
 
         // Indbakke til demo-medlemmet
         $sofie->notify(new ClubMessage('Ny aktivitet: Vinter-SUP i tørdragt', 'Om 3 dage kl. 18, Slipwayen.', '/aktiviteter/'.Activity::where('title', 'Vinter-SUP i tørdragt')->value('id')));

@@ -25,6 +25,7 @@ For en lille frivillig klub uden moms og løn er det sandsynligvis nok. Så snar
 | Manuel registrering af kontant- og bankbetaling | Ja | |
 | Refusion (hel/delvis) med godkendelse og log | Ja | |
 | Påmindelse om forfaldne betalinger | Manuel | Automatiske rykkere er planlagt (Senere) |
+| Afstemning af MobilePay-udbetalinger | Ja (simuleret rapport) | Afregningsrapporten hentes hver morgen: betalinger kobles til den samlede udbetaling, og gebyrer bogføres automatisk. Bankafstemningen genkender udbetalingen og afstemmer alle betalinger i den på én gang. I drift hentes rapporten fra Vipps MobilePays rapport-API. |
 | Overblik over åbne, betalte og forfaldne regninger | Ja | Pr. medlem, pr. type |
 
 ### Bogføring og overblik
@@ -51,7 +52,6 @@ For en lille frivillig klub uden moms og løn er det sandsynligvis nok. Så snar
 | **Ingen moms** | Ingen momskoder, intet momsregnskab, ingen momsindberetning. |
 | **Ingen løn eller honorarer** | Kan ikke beregne skat og AM-bidrag eller indberette til eIndkomst. |
 | **Ingen automatisk bankforbindelse** | Kontoudtog skal hentes som CSV og uploades. Regnskabsprogrammer kan typisk hente bankposteringer automatisk. |
-| **Afregning af MobilePay-udbetalinger (endnu ikke bygget)** | Hver MobilePay-betaling har et id og kobles automatisk til sin regning. Men MobilePay udbetaler til banken samlet og fratrukket gebyrer, så kontoudtoget viser én linje for mange betalinger. Vipps MobilePay leverer en afregningsrapport, der viser hvilke betalinger og gebyrer hver udbetaling består af. Henter klubsystemet den, kan udbetalinger afstemmes og gebyrer bogføres automatisk. Det er ikke bygget i proof of concept, men kræver ikke et regnskabsprogram. |
 | **Ingen periodisering eller afskrivninger** | Fx kontingent betalt i december for næste år, eller nyt udstyr der skal afskrives over flere år. |
 | **Ingen e-faktura** | Kan ikke sende eller modtage elektroniske fakturaer (fx til og fra kommunen). |
 | **Ingen godkendt standard** | Systemet er ikke anmeldt som "digitalt standard bogføringssystem" efter bogføringsloven. Det kræver bl.a. godkendelse hos Erhvervsstyrelsen og vil være et større projekt. |

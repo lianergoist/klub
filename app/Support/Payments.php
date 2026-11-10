@@ -71,7 +71,7 @@ class Payments
             $payment = $invoice->payments()->create([
                 'amount' => -$amount,
                 'method' => $invoice->payments()->where('amount', '>', 0)->value('method') ?? 'bank',
-                'reference' => 'REFUSION: '.$reason,
+                'reference' => 'REFUSION-'.$invoice->id.'-'.now()->format('ymdHis').': '.$reason, // unik, så udbyderens rapport kan kobles
                 'registered_by' => $approvedBy->id,
                 'approved_by' => $approvedBy->id,
             ]);

@@ -6,3 +6,7 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+// Hent MobilePays afregningsrapport hver morgen og afstem udbetalinger (kræver cron: * * * * * php artisan schedule:run)
+\Illuminate\Support\Facades\Schedule::call(fn () => \App\Support\MobilePay\Settlements::fetchAndImport())
+    ->dailyAt('06:30')->name('mobilepay-afregning')->withoutOverlapping();

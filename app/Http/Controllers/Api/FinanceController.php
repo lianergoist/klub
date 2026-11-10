@@ -10,6 +10,8 @@ use App\Models\Budget;
 use App\Models\Entry;
 use App\Models\Invoice;
 use App\Models\MembershipType;
+use App\Models\Payment;
+use App\Models\Payout;
 use App\Models\User;
 use App\Notifications\ClubMessage;
 use App\Support\Audit;
@@ -305,15 +307,26 @@ class FinanceController extends Controller
         return Storage::download($entry->attachment_path, $entry->attachment_name);
     }
 
-    /** Bankafstemning: upload CSV fra banken (dato;tekst;beløb) og match mod posteringer på beløb og dato (±3 dage). */
+    /**
+     * Bankafstemning: upload CSV fra banken (dato;tekst;beløb).
+     * 1) Linjer der matcher en MobilePay-udbetaling (udbyderens id i teksten, eller samme nettobeløb ±3 dage) afstemmes mod
+     *    hele udbetalingen – dvs. alle betalinger i den og gebyrposteringen.
+     * 2) Øvrige linjer matches mod enkeltposteringer (samme beløb, ±3 dage).
+     * Posteringer der hører til MobilePay-/kortbetalinger afstemmes kun via udbetalinger.
+     */
     public function reconcile(Request $r)
     {
         $this->read($r);
         $r->validate(['file' => 'required|file|max:2048']);
+        $persist = $r->user()->canWriteFinance();
         $lines = preg_split('/\r?\n/', trim(preg_replace('/^\xEF\xBB\xBF/', '', $r->file('file')->get())));
-        $used = [];
-        $out = [];
-        foreach ($lines as $i => $line) {
+
+        // Posteringer der afstemmes via udbetalinger (ikke enkeltvis)
+        $viaPayout = Entry::whereIn('payment_id', Payment::whereIn('method', \App\Support\MobilePay\Settlements::METHODS)->select('id'))
+            ->pluck('id')->merge(Payout::whereNotNull('fee_entry_id')->pluck('fee_entry_id'))->all();
+
+        $usedEntries = []; $usedPayouts = []; $out = [];
+        foreach ($lines as $line) {
             $cols = str_getcsv($line, str_contains($line, ';') ? ';' : ',', '"', '');
             if (count($cols) < 3) continue;
             try {
@@ -321,19 +334,79 @@ class FinanceController extends Controller
             } catch (\Throwable) {
                 continue; // overskrift o.l.
             }
+            $text = trim($cols[1]);
             $amount = (int) round((float) str_replace(',', '.', str_replace('.', '', trim($cols[2]))) * 100);
-            $match = Entry::where('amount', $amount)->whereBetween('entry_date', [$date->copy()->subDays(3), $date->copy()->addDays(3)])
-                ->whereNotIn('id', $used)->orderByRaw('ABS(DATEDIFF(entry_date, ?))', [$date->toDateString()])->first();
-            if ($match) $used[] = $match->id;
-            $out[] = ['date' => $date->toDateString(), 'text' => $cols[1], 'amount' => $amount,
-                'match' => $match ? ['id' => $match->id, 'date' => $match->entry_date->toDateString(), 'text' => $match->text] : null];
+            $row = ['date' => $date->toDateString(), 'text' => $text, 'amount' => $amount, 'match' => null];
+
+            $payout = Payout::whereNotIn('id', $usedPayouts)->get()->first(fn ($p) => str_contains($text, $p->provider_payout_id))
+                ?? Payout::whereNotIn('id', $usedPayouts)->where('net', $amount)
+                    ->whereBetween('payout_date', [$date->copy()->subDays(3), $date->copy()->addDays(3)])
+                    ->orderByRaw('ABS(DATEDIFF(payout_date, ?))', [$date->toDateString()])->first();
+            if ($payout && $payout->net === $amount) {
+                $usedPayouts[] = $payout->id;
+                if ($persist && ! $payout->bank_matched_at) $payout->update(['bank_matched_at' => now(), 'bank_text' => $text]);
+                $row['match'] = ['type' => 'payout', 'id' => $payout->id, 'date' => $payout->payout_date->toDateString(),
+                    'text' => 'MobilePay-udbetaling '.$payout->provider_payout_id.' – '.$payout->payment_count.($payout->payment_count === 1 ? ' betaling' : ' betalinger').', gebyrer '.Money::fmt($payout->fees)];
+            } else {
+                $m = Entry::where('amount', $amount)->whereBetween('entry_date', [$date->copy()->subDays(3), $date->copy()->addDays(3)])
+                    ->whereNotIn('id', array_merge($usedEntries, $viaPayout))->orderByRaw('ABS(DATEDIFF(entry_date, ?))', [$date->toDateString()])->first();
+                if ($m) {
+                    $usedEntries[] = $m->id;
+                    $row['match'] = ['type' => 'entry', 'id' => $m->id, 'date' => $m->entry_date->toDateString(), 'text' => $m->text];
+                }
+            }
+            $out[] = $row;
         }
+
         $from = collect($out)->min('date');
         $to = collect($out)->max('date');
-        $unmatchedEntries = $from ? Entry::whereBetween('entry_date', [$from, $to])->whereNotIn('id', $used)->get()
+        $unmatchedEntries = $from ? Entry::whereBetween('entry_date', [$from, $to])->whereNotIn('id', array_merge($usedEntries, $viaPayout))
+            ->where('account_id', '!=', self::accountId('9000'))->get()
             ->map(fn ($e) => ['id' => $e->id, 'date' => $e->entry_date->toDateString(), 'text' => $e->text, 'amount' => $e->amount]) : [];
+        $unmatchedPayouts = $from ? Payout::whereBetween('payout_date', [$from, $to])->whereNotIn('id', $usedPayouts)->get()
+            ->map(fn ($p) => ['id' => $p->id, 'date' => $p->payout_date->toDateString(), 'ref' => $p->provider_payout_id, 'net' => $p->net, 'count' => $p->payment_count]) : [];
 
-        return ['lines' => $out, 'unmatched_entries' => $unmatchedEntries];
+        return ['lines' => $out, 'unmatched_entries' => $unmatchedEntries, 'unmatched_payouts' => $unmatchedPayouts, 'saved' => $persist];
+    }
+
+    /* ---------- MobilePay-udbetalinger ---------- */
+
+    public function payouts(Request $r)
+    {
+        $this->read($r);
+        $year = (int) $r->query('year', now()->year);
+        $rows = Payout::whereYear('payout_date', $year)->orderByDesc('payout_date')->get();
+        $awaiting = Payment::whereNull('payout_id')->whereIn('method', \App\Support\MobilePay\Settlements::METHODS);
+
+        return [
+            'payouts' => $rows->map(fn ($p) => [
+                'id' => $p->id, 'ref' => $p->provider_payout_id, 'date' => $p->payout_date->toDateString(),
+                'count' => $p->payment_count, 'gross' => $p->gross, 'fees' => $p->fees, 'net' => $p->net,
+                'matched' => (bool) $p->bank_matched_at, 'bank_text' => $p->bank_text,
+            ]),
+            'totals' => ['gross' => $rows->sum('gross'), 'fees' => $rows->sum('fees'), 'net' => $rows->sum('net'),
+                'unmatched' => $rows->whereNull('bank_matched_at')->count()],
+            'awaiting' => ['count' => (clone $awaiting)->count(), 'amount' => (int) (clone $awaiting)->sum('amount')],
+            'fee_percent' => \App\Support\MobilePay\SimulatedReport::FEE_PERCENT,
+        ];
+    }
+
+    public function payout(Request $r, Payout $payout)
+    {
+        $this->read($r);
+
+        return $payout->payments()->with('invoice.payer')->orderBy('created_at')->get()->map(fn ($p) => [
+            'id' => $p->id, 'reference' => $p->reference, 'at' => $p->created_at->toIso8601String(),
+            'description' => $p->invoice?->description, 'payer' => $p->invoice?->payer?->name,
+            'amount' => $p->amount, 'fee' => $p->fee, 'method' => Payments::methodLabel($p->method),
+        ]);
+    }
+
+    public function fetchPayouts(Request $r)
+    {
+        $this->write($r);
+
+        return \App\Support\MobilePay\Settlements::fetchAndImport($r->user()->id);
     }
 
     public function auditLog(Request $r)

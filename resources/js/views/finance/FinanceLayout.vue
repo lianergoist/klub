@@ -10,6 +10,7 @@
             <RouterLink to="/okonomi/posteringer">Posteringer</RouterLink>
             <RouterLink to="/okonomi/betalinger">Betalinger</RouterLink>
             <RouterLink to="/okonomi/budget">Budget</RouterLink>
+            <RouterLink to="/okonomi/mobilepay">MobilePay</RouterLink>
             <RouterLink to="/okonomi/bank">Bankafstemning</RouterLink>
             <RouterLink to="/okonomi/aarsregnskab">Årsregnskab</RouterLink>
             <RouterLink to="/okonomi/log">Ændringslog</RouterLink>

@@ -36,6 +36,7 @@ const routes = [
             { path: 'betalinger', component: v('finance/Payments') },
             { path: 'budget', component: v('finance/Budget') },
             { path: 'bank', component: v('finance/Bank') },
+            { path: 'mobilepay', component: v('finance/Payouts') },
             { path: 'log', component: v('finance/Audit') },
             { path: 'aarsregnskab', component: v('finance/Report') },
         ],
