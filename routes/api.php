@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FinanceController;
+use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\ProfileController;
@@ -16,11 +17,20 @@ Route::post('register', [AuthController::class, 'register'])->middleware('thrott
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
 Route::get('membership-types', [FinanceController::class, 'membershipTypes']);
+Route::get('guest/offers', [GuestController::class, 'offers']);
+Route::post('guest/book', [GuestController::class, 'book'])->middleware('throttle:10,1');
 Route::get('feed/images/{image}', [FeedController::class, 'image'])->name('feed.image')->middleware('signed');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'show']);
     Route::post('logout', [AuthController::class, 'logout']);
+    // Også for gæster: se og betal egen regning
+    Route::get('invoices/{invoice}', [FinanceController::class, 'invoice']);
+    Route::post('invoices/{invoice}/pay', [FinanceController::class, 'pay']);
+    Route::get('guest/status', [GuestController::class, 'status']);
+
+    // Resten kun for medlemmer
+    Route::middleware(\App\Http\Middleware\EnsureMember::class)->group(function () {
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
@@ -85,9 +95,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('members/{member}/roles', [MemberController::class, 'addRole']);
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
 
-    Route::get('invoices/{invoice}', [FinanceController::class, 'invoice']);
-    Route::post('invoices/{invoice}/pay', [FinanceController::class, 'pay']);
-
     Route::prefix('finance')->group(function () {
         Route::get('invoices', [FinanceController::class, 'invoices']);
         Route::post('invoices/{invoice}/manual', [FinanceController::class, 'manualPayment']);
@@ -108,5 +115,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('payouts/fetch', [FinanceController::class, 'fetchPayouts']);
         Route::get('payouts/{payout}', [FinanceController::class, 'payout']);
         Route::get('audit', [FinanceController::class, 'auditLog']);
+    });
     });
 });

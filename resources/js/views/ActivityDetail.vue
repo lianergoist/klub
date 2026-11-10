@@ -20,6 +20,7 @@
                 <div v-if="a.price_fmt" class="inf"><Icon name="money" /><span>{{ a.price_fmt }} pr. deltager<span v-if="a.members_only" class="muted small"> · kræver betalt kontingent</span></span></div>
             </div>
             <p v-if="a.description" style="white-space:pre-line;margin:14px 0 0">{{ a.description }}</p>
+            <p v-if="a.guest_offer && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for ikke-medlemmer</span> som {{ a.guest_offer === 'trial' ? 'prøvetræning' : 'SUP-kursus' }} via siden "Prøv SurfHorsens".</p>
         </div>
 
         <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
@@ -77,7 +78,7 @@
                     <thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Nødkontakt</th><th v-if="started" class="noprint">Fremmøde</th></tr></thead>
                     <tbody>
                         <tr v-for="p in a.participants" :key="p.id">
-                            <td>{{ p.name }}</td><td>{{ p.age }}</td><td>{{ p.phone || '–' }}</td><td class="small">{{ p.emergency || '–' }}</td>
+                            <td>{{ p.name }} <span v-if="p.guest" class="tag warn">Gæst</span></td><td>{{ p.age }}</td><td>{{ p.phone || '–' }}</td><td class="small">{{ p.emergency || '–' }}</td>
                             <td v-if="started" class="noprint">
                                 <div class="row" style="gap:4px;flex-wrap:nowrap">
                                     <button :class="['btn small', p.attended === true && 'primary']" @click="p.attended = true; att = true">Mødt</button>

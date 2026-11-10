@@ -269,6 +269,26 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        // --- Tilbud til ikke-medlemmer: prøvetræning og SUP-kursus (modregnes ved senere indmeldelse) ---
+        Activity::whereIn('title', ['Juniortræning – indendørs balance', 'Vinterbad og SUP-hygge'])->update(['guest_offer' => 'trial']);
+        $sup = $cats['SUP']->id;
+        foreach ([[166, 'Prøvetræning: windsurf for nybegyndere', 'trial', 0, 'Windsurf'], [172, 'SUP-kursus for begyndere (hold 1)', 'sup_course', 50000, 'SUP'], [186, 'SUP-kursus for begyndere (hold 2)', 'sup_course', 50000, 'SUP']] as [$days, $title, $offer, $price, $cat]) {
+            $start = $this->now->copy()->addDays($days)->setTime(10, 0);
+            $a = $this->activity([$title, [$cat], 'Strandpladsen', $offer === 'sup_course' ? 10 : 12, $price], $start, $cats, [$lars->id], $mette,
+                $offer === 'sup_course' ? 'Tre timers begynderkursus: udstyr, teknik og sikkerhed – og en tur ud på fjorden. Board, pagaj og våddragt er med. Prisen trækkes fra kontingentet, hvis du melder dig ind bagefter.'
+                    : 'For dig, der vil prøve windsurf. Vi starter på land og tager så på vandet i lavt vand. Alt udstyr er med.');
+            $a->update(['guest_offer' => $offer, 'members_only' => false]);
+        }
+        // En gæst, der har betalt prøvetræning (kan melde sig ind med e-mailen gaest@demo.dk og få beløbet modregnet)
+        $gAct = Activity::where('title', 'Vinterbad og SUP-hygge')->first();
+        $guest = User::create(['name' => 'Karoline Holst', 'email' => 'gaest@demo.dk', 'phone' => '29 87 65 43', 'birthdate' => '1996-08-14', 'status' => 'guest', 'consent_at' => $this->now->copy()->subDays(4)]);
+        $guest->update(['household_id' => Household::create(['name' => 'Husstand Karoline Holst', 'payer_id' => $guest->id])->id]);
+        $gAt = $this->now->copy()->subDays(4)->setTime(20, 14);
+        $gInv = $this->invoice($guest, $guest, 'guest', 'Prøvetræning: '.$gAct->title.' '.$gAct->starts_at->format('d.m.Y').' – Karoline Holst', \App\Support\Prices::get('trial'), '1100', $gAt, $gAt, null, $gAct->id);
+        $gInv->update(['payload' => ['offer' => 'trial', 'creditable' => true]]);
+        $gReg = Registration::create(['activity_id' => $gAct->id, 'user_id' => $guest->id, 'status' => 'signed_up', 'invoice_id' => $gInv->id, 'created_at' => $gAt, 'updated_at' => $gAt]);
+        $this->ev($gReg, 'reserved', $guest, $gAt); $this->ev($gReg, 'paid', $guest, $gAt->copy()->addMinute());
+
         // --- Produkter (priser fra pristabellen; opbevaring og dagsleje har foreløbige priser) ---
         $sEnd = \App\Support\Season::end($this->now);
         $rack = Product::create(['name' => 'Opbevaring: plads i boardrack', 'description' => 'Plads til ét board og rig i klubhusets rack. Gælder sæsonen (1. maj – 30. april). Foreløbig pris.', 'price' => 60000, 'billing' => 'season', 'needs_resource' => true]);
@@ -278,7 +298,6 @@ class DatabaseSeeder extends Seeder
         $rental = Product::create(['name' => 'Udstyrsleje i sæsonen', 'description' => 'Fri brug af klubbens boards, sejl og våddragter hele sæsonen (1. maj – 30. april). Enkelt medlem 1.500 kr., familie 4.000 kr. (op til 3 personer) + 1.000 kr. pr. ekstra person.', 'price' => 150000, 'pricing' => 'household', 'billing' => 'season']);
         $day = Product::create(['name' => 'Dagsleje af board og sejl', 'description' => 'Til medlemmer uden sæsonleje. Foreløbig pris.', 'price' => 10000, 'guest_price' => 20000, 'billing' => 'once']);
         $key = Product::create(['name' => 'Nøglebrik til klubhuset (depositum)', 'description' => 'Depositum refunderes ved aflevering.', 'price' => 10000, 'price_code' => 'key_deposit', 'billing' => 'once']);
-        Product::create(['name' => 'Prøvetræning', 'description' => 'Én træning med instruktør og udstyr – for dig, der vil prøve, før du melder dig ind.', 'price' => 40000, 'price_code' => 'trial', 'billing' => 'once']);
 
         $payers = $adults->filter(fn ($m) => $m->payer()->id === $m->id)->values();
         foreach ($payers->random(18)->values() as $k => $m) {

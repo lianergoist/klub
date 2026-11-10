@@ -29,6 +29,7 @@ class User extends Authenticatable
         'active' => 'Aktiv',
         'passive' => 'Passiv',
         'resigned' => 'Udmeldt',
+        'guest' => 'Gæst (ikke medlem)',
     ];
 
     protected function casts(): array

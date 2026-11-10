@@ -28,6 +28,10 @@
                 <label class="field"><span>Pris pr. deltager (kr.)</span><input v-model.number="priceKr" type="number" min="0" step="1" placeholder="Gratis"></label>
                 <label class="check" style="margin-top:22px"><input type="checkbox" v-model="f.members_only"> Kræver betalt kontingent</label>
             </div>
+            <label class="field"><span>Åben for ikke-medlemmer</span>
+                <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning (400 kr.)</option><option value="sup_course">Ja, som SUP-kursus (500 kr.)</option></select>
+            </label>
+            <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
             <div>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
                 <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner.</p>
@@ -53,7 +57,7 @@ import { api, toast } from '../api';
 const props = defineProps({ id: String });
 const router = useRouter();
 const cats = ref([]); const trainers = ref([]); const error = ref(''); const busy = ref(false);
-const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, category_ids: [], trainer_ids: [], notify: true });
+const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, category_ids: [], trainer_ids: [], notify: true });
 const priceKr = computed({ get: () => f.price ? f.price / 100 : '', set: (v) => (f.price = Math.round((Number(v) || 0) * 100)) });
 const hidden = computed(() => trainers.value.filter(t => t.unavailable && !f.trainer_ids.includes(t.id)));
 
@@ -74,7 +78,7 @@ onMounted(async () => {
     cats.value = await api('categories');
     if (props.id) {
         const a = await api(`activities/${props.id}`);
-        Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
+        Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, guest_offer: a.guest_offer, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
     }
     await loadTrainers();
 });

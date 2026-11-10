@@ -12,7 +12,7 @@
                 <label class="field"><span>Adgangskode</span><input v-model="password" type="password" autocomplete="current-password" required></label>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
-                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink></p>
+                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink> eller <RouterLink to="/prov">prøv en træning eller et SUP-kursus</RouterLink></p>
             </form>
         </div>
         <div v-if="demo.length" class="card login-card">

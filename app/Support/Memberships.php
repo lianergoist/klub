@@ -49,18 +49,46 @@ class Memberships
             ->get()->sum(fn ($i) => $i->amount + $i->payments()->where('amount', '<', 0)->sum('amount'));
     }
 
+    /**
+     * Betalte prøvetræninger/SUP-kurser (som gæst inden for de sidste 12 måneder), der endnu ikke er modregnet.
+     * @return array{amount:int, invoices:\Illuminate\Support\Collection}
+     */
+    public static function guestCredit(User $u): array
+    {
+        $inv = Invoice::where('payer_id', $u->id)->where('kind', 'guest')->where('status', 'paid')
+            ->where('paid_at', '>=', now()->subYear())->get()->filter(fn ($i) => ! isset($i->payload['credited_to']));
+
+        return ['amount' => (int) $inv->sum('amount'), 'invoices' => $inv];
+    }
+
     public static function signupInvoice(User $u): Invoice
     {
         $type = $u->membershipType;
         $season = Season::label();
         $half = $type->code !== 'passive' && Season::isHalf();
-        $amount = $type->code === 'passive' ? Prices::get('membership.passive') : Prices::membership(1);
+        $price = $type->code === 'passive' ? Prices::get('membership.passive') : Prices::membership(1);
+        $credit = self::guestCredit($u);
+        $used = min($price, $credit['amount']);
 
-        return Invoice::create([
+        $invoice = Invoice::create([
             'payer_id' => $u->id, 'member_id' => $u->id, 'kind' => 'membership', 'period' => $season,
-            'description' => "Kontingent $season – {$type->name}".($half ? ' (halv sæson)' : '')." – {$u->name}",
-            'amount' => $amount, 'due_on' => now(), 'account_id' => FinanceController::accountId('1000'),
+            'description' => "Kontingent $season – {$type->name}".($half ? ' (halv sæson)' : '')." – {$u->name}"
+                .($used ? ' (fratrukket '.Money::fmt($used).' for '.$credit['invoices']->map(fn ($i) => ['trial' => 'prøvetræning', 'sup_course' => 'SUP-kursus'][$i->payload['offer'] ?? ''] ?? 'gæstekøb')->unique()->join(' og ').')' : ''),
+            'amount' => $price - $used, 'due_on' => now(), 'account_id' => FinanceController::accountId('1000'),
+            'payload' => $used ? ['guest_credit' => $used, 'price' => $price, 'credited_invoices' => $credit['invoices']->pluck('id')->all()] : null,
         ]);
+        foreach ($credit['invoices'] as $g) {
+            $g->update(['payload' => ($g->payload ?? []) + ['credited_to' => $invoice->id]]);
+        }
+        if ($used) Audit::log('membership.guest_credit', $u, ['credit' => $used, 'invoice' => $invoice->id]);
+
+        // Dækker det betalte som gæst hele kontingentet, er medlemmet aktivt med det samme
+        if ($invoice->amount === 0) {
+            $invoice->update(['status' => 'paid', 'paid_at' => now()]);
+            self::onPaid($invoice->fresh());
+        }
+
+        return $invoice;
     }
 
     /** Hvad koster det at tilføje $extra personer til husstanden resten af sæsonen? */

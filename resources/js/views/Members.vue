@@ -11,7 +11,7 @@
         <div class="card flat" style="padding:12px">
             <div class="grid c4" style="gap:8px">
                 <input v-model="f.q" placeholder="Søg navn, e-mail, telefon" @input="debounced">
-                <select v-model="f.status"><option value="">Alle statusser</option><option value="active">Aktive</option><option value="passive">Passive</option><option value="pending">Afventer</option><option value="resigned">Udmeldte</option></select>
+                <select v-model="f.status"><option value="">Alle statusser</option><option value="active">Aktive</option><option value="passive">Passive</option><option value="pending">Afventer</option><option value="resigned">Udmeldte</option><option value="guest">Gæster (ikke medlemmer)</option></select>
                 <select v-model="f.age"><option value="">Alle aldre</option><option value="adult">Voksne (18+)</option><option value="youth">Børn og unge</option></select>
                 <select v-model="f.role"><option value="">Alle roller</option><option value="trainer">Trænere</option><option value="board">Bestyrelse</option></select>
             </div>

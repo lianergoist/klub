@@ -1,14 +1,14 @@
 <template>
-    <div style="max-width:440px;margin:0 auto">
+    <div :style="`max-width:440px;margin:0 auto;${store.user?.status === 'guest' ? 'padding:24px 16px' : ''}`">
         <div v-if="!invs" class="spinner"></div>
         <template v-else-if="done">
             <div class="card" style="text-align:center;padding:32px 20px">
                 <div style="width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin:0 auto 14px"><Icon name="check" style="width:34px" /></div>
                 <h1>{{ isSignup ? 'Velkommen i klubben!' : isUpgrade ? 'I er nu en familie i klubben' : 'Betaling gennemført' }}</h1>
                 <p class="muted">{{ kr(total) }} er betalt. Du har fået en kvittering i din indbakke<span v-if="store.user.email"> og på mail</span>.</p>
-                <p class="small muted">Regningen er automatisk markeret som betalt og bogført i klubbens regnskab.</p>
+                <p v-if="store.user.status !== 'guest'" class="small muted">Regningen er automatisk markeret som betalt og bogført i klubbens regnskab.</p>
                 <p v-if="isSignup" class="small">Du er nu aktivt medlem og kan tilmelde dig aktiviteter med det samme.</p>
-                <RouterLink :to="activityId ? `/aktiviteter/${activityId}` : isSignup ? '/aktiviteter' : isUpgrade ? '/profil/familie' : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
+                <RouterLink :to="store.user.status === 'guest' ? '/prov/tak' : activityId ? `/aktiviteter/${activityId}` : isSignup ? '/aktiviteter' : isUpgrade ? '/profil/familie' : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
             </div>
         </template>
         <template v-else>

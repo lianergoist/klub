@@ -24,6 +24,8 @@ class MemberController extends Controller
         }
         if ($st = $r->query('status')) {
             $q->where('status', $st);
+        } else {
+            $q->where('status', '!=', 'guest'); // gæster vises kun, når man vælger dem
         }
         if ($age = $r->query('age')) {
             $cut = now()->subYears(18)->toDateString();

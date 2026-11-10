@@ -3,6 +3,7 @@
         <RouterLink to="/login" class="small">‹ Tilbage</RouterLink>
         <h1 style="margin-top:8px">Meld dig ind</h1>
         <p class="muted">Udfyld dine oplysninger og betal kontingentet, så er du medlem med det samme. Børn og partner tilføjer du bagefter under <em>Profil → Familie</em>.</p>
+        <div v-if="guest?.credit" class="banner ok">Du har betalt <strong>{{ guest.credit_fmt }}</strong> for {{ guest.bookings.length ? 'prøvetræning/kursus' : 'et tilbud' }} som gæst. Beløbet trækkes fra kontingentet.</div>
         <form class="card stack" @submit.prevent="submit">
             <label class="field"><span>Fulde navn</span><input v-model="f.name" required autocomplete="name"></label>
             <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="email"></label>
@@ -24,7 +25,7 @@
                 <div v-if="t" class="row between" style="margin-top:10px;flex-wrap:nowrap;align-items:flex-end">
                     <div><strong>{{ f.passive ? 'Støttemedlem' : 'Enkelt medlem' }}</strong>
                         <div class="small muted">{{ f.passive ? 'Gælder sæsonen ud' : t.half ? 'Halv sæson – indmeldelse fra 1. august (fuld sæson: ' + kr(t.single.full) + ')' : 'Fuld sæson' }}</div></div>
-                    <div style="font-size:1.3rem;font-weight:700" class="num">{{ kr(price) }}</div>
+                    <div style="font-size:1.3rem;font-weight:700" class="num"><s v-if="credit" class="muted" style="font-weight:400;font-size:.9rem">{{ kr(price) }}</s> {{ kr(toPay) }}</div>
                 </div>
                 <p class="small muted" style="margin:10px 0 0">Er I flere i husstanden, tilføjer du dem bagefter under Profil → Familie. 3 personer betaler {{ t ? kr(t.family3) : '' }} samlet, 4 eller flere {{ t ? kr(t.family4) : '' }}.</p>
             </div>
@@ -34,22 +35,35 @@
             </div>
             <label class="check"><input type="checkbox" v-model="f.consent"> Jeg giver samtykke til ovenstående (og på vegne af de børn, jeg tilføjer).</label>
             <p v-if="error" class="banner bad">{{ error }}</p>
-            <button class="btn primary block" :disabled="busy">{{ t ? `Fortsæt til betaling (${kr(price)})` : 'Fortsæt til betaling' }}</button>
+            <button class="btn primary block" :disabled="busy">{{ !t ? 'Fortsæt til betaling' : toPay === 0 ? 'Meld dig ind' : `Fortsæt til betaling (${kr(toPay)})` }}</button>
         </form>
     </div>
 </template>
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { api, setSession, kr } from '../api';
+import { api, setSession, kr, store, toast } from '../api';
 const router = useRouter();
 const f = reactive({ name: '', email: '', password: '', phone: '', birthdate: '', address: '', postal_code: '', city: '', passive: false, consent: false });
 const error = ref(''); const busy = ref(false); const t = ref(null);
-onMounted(async () => { t.value = await api('membership-types'); });
+const guest = ref(null);
+onMounted(async () => {
+    t.value = await api('membership-types');
+    if (store.user?.status === 'guest') {
+        guest.value = await api('guest/status');
+        Object.assign(f, { name: guest.value.name, email: guest.value.email, phone: guest.value.phone || '', birthdate: guest.value.birthdate || '' });
+    }
+});
+const credit = computed(() => Math.min(guest.value?.credit || 0, price.value));
+const toPay = computed(() => price.value - credit.value);
 const price = computed(() => !t.value ? 0 : f.passive ? t.value.passive.price : t.value.single.price);
 async function submit() {
     busy.value = true; error.value = '';
-    try { const r = await api('register', { method: 'POST', body: f }); setSession(r.token, r.user); router.push(`/betal/${r.invoice_id}`); }
+    try {
+        const r = await api('register', { method: 'POST', body: f }); setSession(r.token, r.user);
+        if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push('/aktiviteter'); }
+        else router.push(`/betal/${r.invoice_id}`);
+    }
     catch (e) { error.value = e.message; } finally { busy.value = false; }
 }
 </script>

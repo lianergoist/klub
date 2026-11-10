@@ -79,12 +79,14 @@ class ActivityController extends Controller
             'deadline_passed' => $activity->deadlinePassed(),
             'is_full' => $activity->isFull(),
             'members_only' => $activity->members_only,
+            'guest_offer' => $activity->guest_offer,
             'is_past' => $activity->ends_at->isPast(),
             'created_by' => $activity->creator?->name,
             // Medlemmer ser kun navne på deltagerlisten
             'participants' => $regs->where('status', 'signed_up')->map(fn ($reg) => [
                 'id' => $reg->user_id, 'name' => $reg->user->name,
             ] + ($isStaff ? [
+                'guest' => $reg->user->status === 'guest',
                 'registration_id' => $reg->id, 'attended' => $reg->attended, 'age' => $reg->user->age(),
                 'phone' => $reg->user->phone, 'emergency' => trim($reg->user->emergency_name.' '.$reg->user->emergency_phone) ?: null,
             ] : []))->sortBy('name')->values(),
@@ -132,6 +134,7 @@ class ActivityController extends Controller
             'cancel_hours' => 'integer|min:0|max:720',
             'price' => 'integer|min:0',
             'members_only' => 'boolean',
+            'guest_offer' => 'nullable|in:trial,sup_course',
             'category_ids' => 'required|array|min:1',
             'category_ids.*' => 'exists:categories,id',
             'trainer_ids' => 'array',

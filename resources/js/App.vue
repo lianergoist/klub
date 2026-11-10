@@ -1,5 +1,5 @@
 <template>
-    <div v-if="store.user && !route.meta.public" class="shell">
+    <div v-if="store.user && !route.meta.public && !route.meta.guest && store.user.status !== 'guest'" class="shell">
         <aside class="sidebar">
             <div class="brandmark brand-default"><img src="/icon.svg" alt=""> Klubben</div>
             <div class="brand-logo" style="padding:0 10px 18px"><img src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>

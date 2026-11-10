@@ -53,7 +53,7 @@ class AuthController extends Controller
     {
         $data = $r->validate([
             'name' => 'required|string|max:120',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->where(fn ($q) => $q->where('status', '!=', 'guest'))],
             'password' => 'required|min:8',
             'phone' => 'nullable|string|max:30',
             'address' => 'nullable|string|max:200',
@@ -67,13 +67,24 @@ class AuthController extends Controller
         $type = Memberships::typeFor($data['birthdate'], (bool) ($data['passive'] ?? false));
         unset($data['consent'], $data['passive']);
         // Medlemmet er "afventer betaling", indtil kontingentet er betalt (se Memberships::onPaid)
-        $user = User::create($data + ['status' => 'pending', 'consent_at' => now(), 'membership_type_id' => $type->id]);
-        $hh = Household::create(['name' => 'Husstand '.$user->name, 'payer_id' => $user->id]);
-        $user->update(['household_id' => $hh->id]);
+        // Har personen tidligere købt prøvetræning/SUP-kursus som gæst, bliver gæsteprofilen til medlemsprofilen (og beløbet modregnes)
+        $user = User::where('email', $data['email'])->where('status', 'guest')->first();
+        if ($user) {
+            $user->update($data + ['status' => 'pending', 'consent_at' => now(), 'membership_type_id' => $type->id]);
+            Audit::log('guest.converted', $user);
+        } else {
+            $user = User::create($data + ['status' => 'pending', 'consent_at' => now(), 'membership_type_id' => $type->id]);
+        }
+        if (! $user->household_id) {
+            $user->update(['household_id' => Household::create(['name' => 'Husstand '.$user->name, 'payer_id' => $user->id])->id]);
+        }
         Audit::log('member.registered', $user);
         $invoice = Memberships::signupInvoice($user->fresh());
 
-        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user->fresh()), 'invoice_id' => $invoice->id];
+        $user->tokens()->where('name', 'guest')->delete();
+
+        return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user->fresh()), 'invoice_id' => $invoice->id,
+            'paid' => $invoice->status === 'paid', 'credit' => $invoice->payload['guest_credit'] ?? 0];
     }
 
     public function logout(Request $r)

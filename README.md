@@ -29,6 +29,7 @@ Nulstil demodata:
 - **Kontingent pr. husstand** (`Prices::membership`): 1–2 personer enkeltkontingent hver (halv pris fra 1. august), 3 personer familie, 4+ familie (stor). Støttemedlemmer betaler for sig.
 - **Indmeldelse** (`/bliv-medlem`): medlemmet oprettes som *afventer betaling* og sendes til betaling. Betalt => aktivt medlem (`App\Support\Memberships::onPaid`).
 - **Tilføjelse af barn/partner**: der oprettes en regning på forskellen mellem den nye husstandspris og det betalte. Personerne gemmes på regningen (`invoices.payload`) og oprettes først ved betaling. Koster det intet ekstra, tilføjes de med det samme.
+- **Gæster** (`/prov`): ikke-medlemmer køber prøvetræning eller SUP-kursus på aktiviteter med `guest_offer`. De oprettes med status `guest` (kun adgang til egen betaling, se `EnsureMember`). Ved indmeldelse med samme e-mail modregnes betalte gæstekøb fra de sidste 12 måneder (`Memberships::guestCredit`).
 - **Udstyrsleje** prissættes samlet for de valgte i husstanden (`Prices::rental`) og gælder sæsonen ud.
 
 ## Opslagstavle

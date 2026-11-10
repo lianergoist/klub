@@ -268,7 +268,15 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Afklares:** priser for opbevaring (rackplads, skab) og dagsleje er ikke fastsat; proof of concept bruger foreløbige priser.
 
-- **Afklares:** prøvetræning er typisk for ikke-medlemmer. Hvordan skal de booke og betale – som gæst uden login, eller via en træner? Skal prisen modregnes, hvis de melder sig ind?
+- **Kerne (i proof of concept):** ikke-medlemmer kan på siden "Prøv SurfHorsens" købe en **prøvetræning (400 kr.)** eller et **SUP-kursus (500 kr.)**. De vælger en dato blandt de aktiviteter, trænerne har åbnet for gæster, udfylder navn, kontaktoplysninger og fødselsdato (under 18: forælders navn og telefon) og betaler med MobilePay. De står derefter på deltagerlisten mærket "Gæst", men har ikke adgang til medlemsdelen.
+
+- **Kerne (i proof of concept):** melder gæsten sig ind inden for 12 måneder (med samme e-mail), trækkes det betalte fra kontingentet. Dækker beløbet hele kontingentet, er man medlem med det samme uden yderligere betaling.
+
+- **Afklares:** hvis gæstekøbet er større end kontingentet (fx SUP-kursus 500 kr. og halv sæson 400 kr.), bortfalder resten i proof of concept. Skal det overskydende kunne bruges til fx udstyrsleje?
+
+- **Afklares:** skal medlemmer også betale for SUP-kurset (i proof of concept: 500 kr. for alle), og skal en prøvetræning/et kursus kun modregnes inden for 12 måneder?
+
+- **Afklares:** hvor længe gemmes oplysninger om gæster, der ikke melder sig ind?
 
 - **Kerne:** opbevaringspladser og lejeudstyr registreres, så samme plads eller samme bræt ikke bliver udlejet to gange.
 
