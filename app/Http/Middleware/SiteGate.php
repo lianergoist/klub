@@ -17,7 +17,10 @@ class SiteGate
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! self::enabled() || $request->isMethod('OPTIONS') || $request->is('adgang', 'up', 'api/site-access') || self::valid($request)) {
+        // Signerede billedlinks (opslagstavlen) er allerede udstedt til en indlogget bruger og udløber selv. <img> kan ikke sende appens token.
+        $signedImage = $request->is('api/feed/images/*') && $request->hasValidSignature();
+
+        if (! self::enabled() || $request->isMethod('OPTIONS') || $request->is('adgang', 'up', 'api/site-access') || $signedImage || self::valid($request)) {
             return $next($request);
         }
 
