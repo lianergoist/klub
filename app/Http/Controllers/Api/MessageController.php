@@ -13,8 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Private beskeder mellem to medlemmer (testudgave).
- * Indholdet er privat: bestyrelsen ser kun en besked, hvis modtageren anmelder den.
+ * Private beskeder mellem medlemmer – to eller flere i samme samtale (testudgave).
+ * Indholdet er privat: bestyrelsen ser kun en besked, hvis en deltager anmelder den.
  */
 class MessageController extends Controller
 {
@@ -26,25 +26,40 @@ class MessageController extends Controller
         return $u;
     }
 
+    private function mine(Request $r, Conversation $c): User
+    {
+        $u = $this->me($r);
+        abort_unless($c->involves($u), 404);
+
+        return $u;
+    }
+
     public function index(Request $r)
     {
         $u = $this->me($r);
-        $convs = Conversation::for($u)->whereNotNull('last_message_at')->with('userA:id,name', 'userB:id,name', 'latestMessage')
+        $convs = Conversation::for($u)->whereNotNull('last_message_at')->with('members:id,name', 'latestMessage.sender:id,name')
             ->orderByDesc('last_message_at')->limit(100)->get();
-        $unread = Message::whereIn('conversation_id', $convs->pluck('id'))->whereNull('read_at')->where('sender_id', '!=', $u->id)
-            ->groupBy('conversation_id')->select('conversation_id', DB::raw('count(*) c'))->pluck('c', 'conversation_id');
         $blocked = $u->blockedIds();
 
-        return $convs->map(fn ($c) => [
-            'id' => $c->id,
-            'with' => $c->other($u)->name,
-            'with_id' => $c->otherId($u),
-            'last' => mb_strimwidth($c->latestMessage?->body ?? '', 0, 90, '…'),
-            'last_mine' => $c->latestMessage?->sender_id === $u->id,
-            'at' => $c->last_message_at?->toIso8601String(),
-            'unread' => (int) ($unread[$c->id] ?? 0),
-            'blocked' => in_array($c->otherId($u), $blocked),
-        ]);
+        return $convs->map(function ($c) use ($u, $blocked) {
+            $lastRead = $c->members->firstWhere('id', $u->id)?->pivot->last_read_message_id ?? 0;
+            $unread = $c->messages()->where('id', '>', $lastRead)->where('system', false)
+                ->where(fn ($q) => $q->where('sender_id', '!=', $u->id)->orWhereNull('sender_id'))->count();
+            $m = $c->latestMessage;
+            $prefix = ! $m || $m->system ? '' : ($m->sender_id === $u->id ? 'Dig: ' : ($c->is_group ? explode(' ', $m->sender?->name ?? '')[0].': ' : ''));
+            $other = $c->is_group ? null : $c->members->firstWhere('id', '!=', $u->id);
+
+            return [
+                'id' => $c->id,
+                'name' => $c->displayName($u),
+                'is_group' => $c->is_group,
+                'count' => $c->members->count(),
+                'last' => $prefix.mb_strimwidth($m?->body ?? '', 0, 90, '…'),
+                'at' => $c->last_message_at?->toIso8601String(),
+                'unread' => $unread,
+                'blocked' => $other && in_array($other->id, $blocked),
+            ];
+        });
     }
 
     public function unread(Request $r)
@@ -52,74 +67,144 @@ class MessageController extends Controller
         return ['messages' => $r->user()->canUseMessages() ? $r->user()->unreadMessages() : 0, 'notifications' => $r->user()->unreadNotifications()->count()];
     }
 
-    /** Find medlemmer at skrive til (kun navn vises – ingen kontaktoplysninger). */
+    /** Alle medlemmer, man kan skrive til (kun navn vises). Medlemmer der har fravalgt beskeder er ikke med. */
     public function people(Request $r)
     {
         $u = $this->me($r);
-        $q = trim((string) $r->query('q'));
-        if (mb_strlen($q) < 2) return [];
-        $cut = now()->subYears(18)->toDateString();
+        $trainers = User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['trainer', 'board'])->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now())))->pluck('id')->flip();
 
-        return User::where('id', '!=', $u->id)->where('name', 'like', "%$q%")
-            ->whereNotNull('email')->whereNotNull('password')->whereIn('status', ['active', 'passive'])
-            ->where('allow_messages', true)->where(fn ($q) => $q->whereNull('birthdate')->orWhere('birthdate', '<=', $cut))
-            ->whereNotIn('id', $u->blockedIds())
-            ->whereNotIn('id', DB::table('user_blocks')->where('blocked_id', $u->id)->select('user_id'))
-            ->orderBy('name')->limit(10)->get(['id', 'name']);
+        return $u->messageableQuery()->orderBy('name')->get(['id', 'name'])->map(fn ($p) => [
+            'id' => $p->id, 'name' => $p->name, 'trainer' => isset($trainers[$p->id]),
+        ]);
     }
 
+    /** Start samtale: én modtager => genbrug 1:1-samtalen. Flere => ny gruppe. */
     public function start(Request $r)
     {
         $u = $this->me($r);
-        $to = User::findOrFail($r->validate(['user_id' => 'required|integer'])['user_id']);
-        if ($why = $u->cannotMessage($to)) abort(422, $why);
+        $d = $r->validate(['user_ids' => 'required|array|min:1|max:30', 'user_ids.*' => 'integer', 'title' => 'nullable|string|max:80']);
+        $ids = array_values(array_unique(array_diff($d['user_ids'], [$u->id])));
+        abort_if(! $ids, 422, 'Vælg mindst ét medlem.');
+        $people = User::whereIn('id', $ids)->get();
+        abort_if($people->count() !== count($ids), 422, 'Et af de valgte medlemmer findes ikke.');
+        foreach ($people as $p) {
+            if ($why = $u->cannotMessage($p)) abort(422, $why);
+        }
 
-        return ['id' => Conversation::between($u, $to)->id];
+        if (count($ids) === 1) {
+            return ['id' => Conversation::between($u, $people->first())->id];
+        }
+
+        $c = DB::transaction(function () use ($u, $ids, $d) {
+            $c = Conversation::create(['is_group' => true, 'title' => trim($d['title'] ?? '') ?: null, 'created_by' => $u->id]);
+            $c->members()->attach(array_merge([$u->id], $ids));
+
+            return $c;
+        });
+        Audit::log('conversation.group_created', $c, ['members' => count($ids) + 1]);
+
+        return ['id' => $c->id];
     }
 
     public function show(Request $r, Conversation $conversation)
     {
-        $u = $this->me($r);
-        abort_unless($conversation->involves($u), 404);
-        $other = $conversation->other($u);
+        $u = $this->mine($r, $conversation);
+        $conversation->load('members:id,name');
+        $members = $conversation->members;
 
-        $q = $conversation->messages()->orderByDesc('id');
+        $q = $conversation->messages()->with('sender:id,name')->orderByDesc('id');
         if ($after = $r->query('after')) $q->where('id', '>', $after);
         if ($before = $r->query('before')) $q->where('id', '<', $before);
         $msgs = $q->limit(50)->get()->reverse()->values();
 
-        $conversation->messages()->where('sender_id', '!=', $u->id)->whereNull('read_at')->update(['read_at' => now()]);
+        $maxId = $conversation->messages()->max('id') ?? 0;
+        $conversation->members()->updateExistingPivot($u->id, ['last_read_message_id' => $maxId]);
+
+        $others = $members->where('id', '!=', $u->id);
+        $other = $conversation->is_group ? null : $others->first();
+        $why = $other ? $u->cannotMessage($other) : null;
 
         return [
             'id' => $conversation->id,
-            'with' => ['id' => $other->id, 'name' => $other->name],
-            'can_send' => $u->cannotMessage($other) === null,
-            'cannot_reason' => $u->cannotMessage($other),
-            'i_blocked' => in_array($other->id, $u->blockedIds()),
+            'name' => $conversation->displayName($u),
+            'title' => $conversation->title,
+            'is_group' => $conversation->is_group,
+            'members' => $members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'me' => $m->id === $u->id])->sortBy('name')->values(),
+            'with' => $other ? ['id' => $other->id, 'name' => $other->name] : null,
+            'can_send' => $why === null && ($conversation->is_group ? $others->isNotEmpty() : (bool) $other),
+            'cannot_reason' => $why ?? ($others->isEmpty() ? 'Der er ikke andre i samtalen.' : null),
+            'i_blocked' => $other && in_array($other->id, $u->blockedIds()),
             'more' => ! $after && $msgs->count() === 50,
+            // Hvor langt har de andre læst? Bruges til "Læst" / "Læst af 3"
+            'read_upto' => $others->map(fn ($m) => ['name' => explode(' ', $m->name)[0], 'id' => (int) $m->pivot->last_read_message_id])->values(),
             'messages' => $msgs->map(fn ($m) => [
-                'id' => $m->id, 'body' => $m->body, 'mine' => $m->sender_id === $u->id,
-                'at' => $m->created_at->toIso8601String(), 'read' => (bool) $m->read_at,
+                'id' => $m->id, 'body' => $m->body, 'mine' => $m->sender_id === $u->id, 'system' => $m->system,
+                'sender' => $m->sender?->name, 'sender_id' => $m->sender_id, 'at' => $m->created_at->toIso8601String(),
             ]),
         ];
     }
 
     public function send(Request $r, Conversation $conversation)
     {
-        $u = $this->me($r);
-        abort_unless($conversation->involves($u), 404);
-        $to = $conversation->other($u);
-        if ($why = $u->cannotMessage($to)) abort(422, $why);
+        $u = $this->mine($r, $conversation);
+        $conversation->load('members');
+        $others = $conversation->members->where('id', '!=', $u->id);
+        abort_if($others->isEmpty(), 422, 'Der er ikke andre i samtalen.');
+        if (! $conversation->is_group && ($why = $u->cannotMessage($others->first()))) abort(422, $why);
         $body = trim($r->validate(['body' => 'required|string|max:4000'])['body']);
         abort_if($body === '', 422, 'Skriv en besked.');
 
-        // Mail kun ved første ulæste besked i samtalen, så modtageren ikke får en mail pr. besked
-        $hadUnread = $conversation->messages()->where('sender_id', $u->id)->whereNull('read_at')->exists();
         $m = $conversation->messages()->create(['sender_id' => $u->id, 'body' => $body]);
         $conversation->update(['last_message_at' => now()]);
-        if (! $hadUnread) $to->notify(new MessageReceived($u->name, $conversation->id));
+        $conversation->members()->updateExistingPivot($u->id, ['last_read_message_id' => $m->id]);
+
+        // Mail kun til deltagere, der ikke allerede har ulæste beskeder i samtalen
+        foreach ($others as $o) {
+            $hadUnread = $conversation->messages()->where('id', '<', $m->id)->where('id', '>', $o->pivot->last_read_message_id)
+                ->where('sender_id', '!=', $o->id)->where('system', false)->exists();
+            if (! $hadUnread) $o->notify(new MessageReceived($u->name, $conversation->id, $conversation->is_group ? $conversation->displayName($o) : null));
+        }
 
         return ['id' => $m->id, 'at' => $m->created_at->toIso8601String()];
+    }
+
+    /** Gruppe: tilføj flere deltagere. */
+    public function addMembers(Request $r, Conversation $conversation)
+    {
+        $u = $this->mine($r, $conversation);
+        abort_unless($conversation->is_group, 422, 'Start en ny gruppe for at skrive til flere.');
+        $ids = $r->validate(['user_ids' => 'required|array|min:1', 'user_ids.*' => 'integer'])['user_ids'];
+        $names = [];
+        foreach (User::whereIn('id', $ids)->get() as $p) {
+            if ($why = $u->cannotMessage($p)) abort(422, $why);
+            $conversation->members()->syncWithoutDetaching([$p->id => ['left_at' => null]]);
+            $names[] = $p->name;
+        }
+        $conversation->messages()->create(['sender_id' => null, 'system' => true, 'body' => explode(' ', $u->name)[0].' tilføjede '.implode(', ', $names)]);
+
+        return ['ok' => true];
+    }
+
+    public function rename(Request $r, Conversation $conversation)
+    {
+        $u = $this->mine($r, $conversation);
+        abort_unless($conversation->is_group, 422);
+        $title = trim((string) $r->validate(['title' => 'nullable|string|max:80'])['title']) ?: null;
+        $conversation->update(['title' => $title]);
+        $conversation->messages()->create(['sender_id' => null, 'system' => true, 'body' => explode(' ', $u->name)[0].($title ? ' kaldte gruppen "'.$title.'"' : ' fjernede gruppens navn')]);
+
+        return ['ok' => true];
+    }
+
+    /** Forlad en gruppe. Man ser den ikke længere og får ikke flere beskeder. */
+    public function leave(Request $r, Conversation $conversation)
+    {
+        $u = $this->mine($r, $conversation);
+        abort_unless($conversation->is_group, 422, 'Du kan blokere i stedet for at forlade en samtale med én person.');
+        $conversation->members()->updateExistingPivot($u->id, ['left_at' => now()]);
+        $conversation->messages()->create(['sender_id' => null, 'system' => true, 'body' => explode(' ', $u->name)[0].' forlod samtalen']);
+
+        return ['ok' => true];
     }
 
     public function block(Request $r, User $user)
@@ -134,11 +219,11 @@ class MessageController extends Controller
         return ['ok' => true];
     }
 
-    /** Modtageren anmelder en besked. Bestyrelsen får beskedens tekst – ellers ser ingen indholdet. */
+    /** En deltager anmelder en besked. Bestyrelsen får beskedens tekst – ellers ser ingen indholdet. */
     public function report(Request $r, Message $message)
     {
         $u = $this->me($r);
-        abort_unless($message->conversation->involves($u) && $message->sender_id !== $u->id, 403);
+        abort_unless($message->conversation->involves($u) && $message->sender_id && $message->sender_id !== $u->id, 403);
         $reason = $r->validate(['reason' => 'required|string|max:300'])['reason'];
         $message->load('sender');
         DB::table('message_reports')->insert(['message_id' => $message->id, 'user_id' => $u->id, 'reason' => $reason, 'created_at' => now(), 'updated_at' => now()]);

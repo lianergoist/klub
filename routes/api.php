@@ -51,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('messages/start', [MessageController::class, 'start']);
     Route::get('messages/{conversation}', [MessageController::class, 'show']);
     Route::post('messages/{conversation}', [MessageController::class, 'send'])->middleware('throttle:30,1');
+    Route::post('messages/{conversation}/members', [MessageController::class, 'addMembers']);
+    Route::put('messages/{conversation}/title', [MessageController::class, 'rename']);
+    Route::post('messages/{conversation}/leave', [MessageController::class, 'leave']);
     Route::post('message-items/{message}/report', [MessageController::class, 'report']);
     Route::post('users/{user}/block', [MessageController::class, 'block']);
 

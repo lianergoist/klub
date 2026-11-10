@@ -331,32 +331,47 @@ class DatabaseSeeder extends Seeder
 
     private function seedMessages(array $p): void
     {
-        $talk = function (User $a, User $b, array $lines, $startAgo, bool $lastUnread = false) {
-            $c = \App\Models\Conversation::between($a, $b);
+        /** $people: deltagere; $lines: [afsenderindeks, tekst]; $unreadFor: brugere der ikke har læst sidste besked */
+        $talk = function (\App\Models\Conversation $c, array $people, array $lines, $startAgo, array $unreadFor = []) {
             $t = $this->now->copy()->sub($startAgo);
-            foreach ($lines as $i => [$fromA, $text]) {
+            $last = null;
+            foreach ($lines as [$who, $text]) {
                 $t = $t->copy()->addMinutes(mt_rand(3, 90));
-                $isLast = $i === count($lines) - 1;
-                $c->messages()->create(['sender_id' => $fromA ? $a->id : $b->id, 'body' => $text, 'created_at' => $t, 'updated_at' => $t,
-                    'read_at' => ($isLast && $lastUnread) ? null : $t->copy()->addMinutes(5)]);
+                $last = $c->messages()->create(['sender_id' => $people[$who]->id, 'body' => $text, 'created_at' => $t, 'updated_at' => $t]);
             }
             $c->update(['last_message_at' => $t]);
+            foreach ($people as $u) {
+                $c->members()->updateExistingPivot($u->id, ['last_read_message_id' => in_array($u->id, array_map(fn ($x) => $x->id, $unreadFor)) ? $last->id - 1 : $last->id]);
+            }
         };
-        $talk($p['sofie'], $p['lars'], [
-            [true, 'Hej Lars! Emil er lidt nervøs for juniortræningen på lørdag – er det okay, hvis jeg bliver og kigger med?'],
-            [false, 'Selvfølgelig! Forældre er altid velkomne. Vi starter med balanceøvelser på land, så det er en blød start.'],
-            [true, 'Super, tak 😊 Skal han have noget særligt med?'],
-            [false, 'Bare indendørssko og en vandflaske. Vi har alt udstyr.'],
+        $pair = fn ($a, $b) => \App\Models\Conversation::between($a, $b);
+
+        $talk($pair($p['sofie'], $p['lars']), [$p['sofie'], $p['lars']], [
+            [0, 'Hej Lars! Emil er lidt nervøs for juniortræningen på lørdag – er det okay, hvis jeg bliver og kigger med?'],
+            [1, 'Selvfølgelig! Forældre er altid velkomne. Vi starter med balanceøvelser på land, så det er en blød start.'],
+            [0, 'Super, tak 😊 Skal han have noget særligt med?'],
+            [1, 'Bare indendørssko og en vandflaske. Vi har alt udstyr.'],
         ], '2 days');
-        $talk($p['mette'], $p['sofie'], [
-            [true, 'Hej Sofie – kunne du tænke dig at hjælpe med juniorholdet til foråret? Du har jo styr på det 🙂'],
-            [false, 'Det lyder spændende! Hvor meget tid kræver det cirka?'],
-            [true, 'En lørdag om måneden fra april. Vi tager en snak efter teoriaftenen?'],
-        ], '5 hours', true);
-        $talk($p['rasmus'], $p['ida'], [
-            [true, 'Hej Ida, jeg så dit opslag om wingfoil. Har du tid til at vise mig grundteknikken en dag?'],
-            [false, 'Klart! Der er wingfoil for let øvede på mandag – meld dig til, så tager jeg dig under mine vinger 😄'],
+        $talk($pair($p['mette'], $p['sofie']), [$p['mette'], $p['sofie']], [
+            [0, 'Hej Sofie – kunne du tænke dig at hjælpe med juniorholdet til foråret? Du har jo styr på det 🙂'],
+            [1, 'Det lyder spændende! Hvor meget tid kræver det cirka?'],
+            [0, 'En lørdag om måneden fra april. Vi tager en snak efter teoriaftenen?'],
+        ], '5 hours', [$p['sofie']]);
+        $talk($pair($p['rasmus'], $p['ida']), [$p['rasmus'], $p['ida']], [
+            [0, 'Hej Ida, jeg så dit opslag om wingfoil. Har du tid til at vise mig grundteknikken en dag?'],
+            [1, 'Klart! Der er wingfoil for let øvede på mandag – meld dig til, så tager jeg dig under mine vinger 😄'],
         ], '1 day');
+
+        // Gruppesamtale
+        $g = \App\Models\Conversation::create(['is_group' => true, 'title' => 'Juniorhold forår', 'created_by' => $p['mette']->id, 'created_at' => $this->now->copy()->subDays(1)]);
+        $grp = [$p['mette'], $p['lars'], $p['ida'], $p['sofie']];
+        $g->members()->attach(array_map(fn ($u) => $u->id, $grp));
+        $talk($g, $grp, [
+            [0, 'Hej alle – jeg har lavet en gruppe til planlægning af juniorholdet til foråret 🌱'],
+            [1, 'God idé! Jeg kan tage de første to lørdage i april.'],
+            [2, 'Jeg tager maj. Skal vi købe flere små våddragter? De gamle er ved at være slidte.'],
+            [0, 'Ja, jeg tager det op på næste bestyrelsesmøde. Sofie, har du lyst til at være forældrekontakt?'],
+        ], '20 hours', [$p['sofie']]);
     }
 
     private function seedFeed($members, array $p): void

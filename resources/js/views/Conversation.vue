@@ -3,22 +3,34 @@
     <div v-else class="convo">
         <header class="convo-head">
             <RouterLink to="/beskeder" class="btn ghost small" aria-label="Tilbage"><Icon name="back" style="width:20px" /></RouterLink>
-            <span class="avatar">{{ initials(c.with.name) }}</span>
-            <strong style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.with.name }}</strong>
+            <span :class="['avatar', { group: c.is_group }]"><Icon v-if="c.is_group" name="users" style="width:18px" /><template v-else>{{ initials(c.name) }}</template></span>
+            <button class="titlebtn" @click="c.is_group && (menu = !menu)">
+                <strong>{{ c.name }}</strong>
+                <span v-if="c.is_group" class="small muted">{{ c.members.length }} deltagere</span>
+            </button>
             <button class="btn ghost small" @click="menu = !menu" aria-label="Flere valg"><Icon name="more" style="width:20px" /></button>
             <div v-if="menu" class="menu card">
-                <button class="btn ghost small block" @click="toggleBlock">{{ c.i_blocked ? 'Fjern blokering' : `Bloker ${c.with.name.split(' ')[0]}` }}</button>
+                <template v-if="c.is_group">
+                    <div class="small muted" style="padding:4px 8px">Deltagere</div>
+                    <ul class="mlist"><li v-for="m in c.members" :key="m.id">{{ m.name }}<span v-if="m.me" class="muted"> (dig)</span></li></ul>
+                    <button class="btn ghost small block" @click="menu = false; showAdd = true"><Icon name="plus" style="width:14px" /> Tilføj deltagere</button>
+                    <button class="btn ghost small block" @click="menu = false; newTitle = c.title || ''; showRename = true">Omdøb gruppe</button>
+                    <button class="btn ghost small block danger" @click="leave">Forlad gruppe</button>
+                </template>
+                <button v-else class="btn ghost small block" @click="toggleBlock">{{ c.i_blocked ? 'Fjern blokering' : `Bloker ${c.with.name.split(' ')[0]}` }}</button>
             </div>
         </header>
 
         <div ref="scroller" class="msgs">
             <button v-if="c.more" class="btn small" style="align-self:center" @click="older">Vis ældre beskeder</button>
-            <p v-if="!c.messages.length" class="muted small" style="text-align:center;margin-top:30px">Skriv den første besked til {{ c.with.name.split(' ')[0] }}.<br>Beskeder er private mellem jer to.</p>
+            <p v-if="!c.messages.length" class="muted small" style="text-align:center;margin-top:30px">{{ c.is_group ? 'Skriv den første besked til gruppen.' : `Skriv den første besked til ${c.with.name.split(' ')[0]}.` }}<br>Beskeder kan kun ses af deltagerne.</p>
             <template v-for="(m, i) in c.messages" :key="m.id">
                 <div v-if="dayChange(i)" class="day">{{ dag(m.at) }}</div>
-                <div :class="['msg', m.mine ? 'mine' : 'theirs']">
+                <div v-if="m.system" class="sys">{{ m.body }} · {{ klok(m.at) }}</div>
+                <div v-else :class="['msg', m.mine ? 'mine' : 'theirs']">
+                    <div v-if="c.is_group && !m.mine && newSender(i)" class="sender">{{ m.sender }}</div>
                     <div class="b">{{ m.body }}</div>
-                    <div class="meta">{{ klok(m.at) }}<span v-if="m.mine && isLastMine(i)"> · {{ m.read ? 'Læst' : 'Sendt' }}</span>
+                    <div class="meta">{{ klok(m.at) }}<span v-if="m.mine && isLastMine(i)"> · {{ readLabel(m) }}</span>
                         <button v-if="!m.mine" class="rep" @click="reportMsg = m" aria-label="Anmeld besked"><Icon name="flag" style="width:12px" /></button>
                     </div>
                 </div>
@@ -32,11 +44,19 @@
         <div v-else class="banner warn small" style="margin:8px 0 0">{{ c.cannot_reason }}</div>
 
         <Modal v-if="reportMsg" title="Anmeld besked" @close="reportMsg = null">
-            <p class="small">Beskeden sendes til bestyrelsen sammen med din begrundelse. Ellers kan ingen andre end jer to se jeres beskeder.</p>
+            <p class="small">Beskeden sendes til bestyrelsen sammen med din begrundelse. Ellers kan kun deltagerne i samtalen se beskederne.</p>
             <blockquote class="bubble-q">{{ reportMsg.body }}</blockquote>
             <label class="field"><span>Hvorfor anmelder du beskeden?</span><input v-model="reportReason" placeholder="Fx chikane, upassende indhold"></label>
-            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="alsoBlock"> Bloker også {{ c.with.name.split(' ')[0] }}</label>
+            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="alsoBlock"> Bloker også {{ reportMsg.sender?.split(' ')[0] }}</label>
             <button class="btn primary block" style="margin-top:12px" :disabled="!reportReason.trim()" @click="report">Anmeld</button>
+        </Modal>
+        <Modal v-if="showAdd" title="Tilføj deltagere" @close="showAdd = false">
+            <MemberPicker :exclude="c.members.map(m => m.id)" @change="addIds = $event" />
+            <button class="btn primary block" style="margin-top:12px" :disabled="!addIds.length" @click="addMembers">Tilføj {{ addIds.length || '' }}</button>
+        </Modal>
+        <Modal v-if="showRename" title="Omdøb gruppe" @close="showRename = false">
+            <input v-model="newTitle" maxlength="80" placeholder="Fx Juniorhold forår">
+            <button class="btn primary block" style="margin-top:12px" @click="rename">Gem</button>
         </Modal>
     </div>
 </template>
@@ -45,12 +65,16 @@
 import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
+import MemberPicker from '../components/MemberPicker.vue';
+import { useRouter } from 'vue-router';
 import { api, store, klok, toast } from '../api';
 
 const props = defineProps({ id: String });
 const c = ref(null); const draft = ref(''); const busy = ref(false); const scroller = ref(null); const menu = ref(false);
 const reportMsg = ref(null); const reportReason = ref(''); const alsoBlock = ref(false);
 let timer;
+const router = useRouter();
+const showAdd = ref(false); const addIds = ref([]); const showRename = ref(false); const newTitle = ref('');
 
 const initials = (n) => n.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
 const dag = (iso) => { const d = new Date(iso), t = new Date(); const y = new Date(); y.setDate(t.getDate() - 1);
@@ -58,6 +82,13 @@ const dag = (iso) => { const d = new Date(iso), t = new Date(); const y = new Da
     return d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' }); };
 const dayChange = (i) => i === 0 || new Date(c.value.messages[i].at).toDateString() !== new Date(c.value.messages[i - 1].at).toDateString();
 const isLastMine = (i) => !c.value.messages.slice(i + 1).some(m => m.mine);
+const newSender = (i) => { const p = c.value.messages[i - 1]; return !p || p.system || p.sender_id !== c.value.messages[i].sender_id || dayChange(i); };
+function readLabel(m) {
+    const readers = c.value.read_upto.filter(r => r.id >= m.id);
+    if (!c.value.is_group) return readers.length ? 'Læst' : 'Sendt';
+    if (!readers.length) return 'Sendt';
+    return readers.length === c.value.read_upto.length ? 'Læst af alle' : `Læst af ${readers.map(r => r.name).join(', ')}`;
+}
 const bottom = async () => { await nextTick(); if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight; };
 function grow(e) { e.target.style.height = 'auto'; e.target.style.height = Math.min(140, e.target.scrollHeight) + 'px'; }
 
@@ -66,12 +97,9 @@ async function poll() {
     if (!c.value || document.hidden) return;
     const msgs = c.value.messages;
     const last = msgs.at(-1)?.id || 0;
-    // Hent de seneste beskeder igen: giver både nye beskeder og opdateret "Læst"-status
-    const r = await api(`messages/${props.id}?after=${msgs.at(-20)?.id - 1 || 0}`);
-    for (const m of r.messages) { const x = msgs.find(y => y.id === m.id); if (x) x.read = m.read; }
-    const fresh = r.messages.filter(m => m.id > last);
-    if (fresh.length) { msgs.push(...fresh); bottom(); refreshBadge(); }
-    Object.assign(c.value, { can_send: r.can_send, cannot_reason: r.cannot_reason, i_blocked: r.i_blocked });
+    const r = await api(`messages/${props.id}?after=${last}`);
+    if (r.messages.length) { msgs.push(...r.messages); bottom(); refreshBadge(); }
+    Object.assign(c.value, { read_upto: r.read_upto, members: r.members, name: r.name, title: r.title, can_send: r.can_send, cannot_reason: r.cannot_reason, i_blocked: r.i_blocked });
 }
 async function older() {
     const r = await api(`messages/${props.id}?before=${c.value.messages[0].id}`);
@@ -91,8 +119,15 @@ async function toggleBlock() {
 }
 async function report() {
     await api(`message-items/${reportMsg.value.id}/report`, { method: 'POST', body: { reason: reportReason.value } });
-    if (alsoBlock.value && !c.value.i_blocked) await api(`users/${c.value.with.id}/block`, { method: 'POST', body: { block: true } });
+    if (alsoBlock.value && reportMsg.value.sender_id) await api(`users/${reportMsg.value.sender_id}/block`, { method: 'POST', body: { block: true } });
     reportMsg.value = null; reportReason.value = ''; alsoBlock.value = false; toast('Tak. Bestyrelsen har fået besked.'); load();
+}
+async function addMembers() {
+    try { await api(`messages/${props.id}/members`, { method: 'POST', body: { user_ids: addIds.value } }); showAdd.value = false; addIds.value = []; toast('Deltagerne er tilføjet'); load(); }
+    catch (e) { toast(e.message, 'error'); }
+}
+async function rename() { await api(`messages/${props.id}/title`, { method: 'PUT', body: { title: newTitle.value } }); showRename.value = false; load(); }
+async function leave() { await api(`messages/${props.id}/leave`, { method: 'POST' }); toast('Du har forladt gruppen'); router.push('/beskeder');
 }
 async function refreshBadge() { try { const u = await api('messages/unread'); if (store.user) { store.user.unread_messages = u.messages; store.user.unread = u.notifications; } } catch {} }
 
@@ -105,7 +140,14 @@ watch(() => props.id, load);
 .convo { display: flex; flex-direction: column; height: calc(100dvh - 120px - env(safe-area-inset-bottom, 0px)); max-width: 680px; margin: 0 auto; }
 @media (min-width: 900px) { .convo { height: calc(100dvh - 60px); } }
 .convo-head { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--line); position: relative; }
-.menu { position: absolute; right: 0; top: 48px; z-index: 5; padding: 6px; margin: 0; min-width: 200px; }
+.menu { position: absolute; right: 0; top: 48px; z-index: 5; padding: 6px; margin: 0; min-width: 230px; max-height: 60vh; overflow-y: auto; }
+.mlist { list-style: none; margin: 0 0 6px; padding: 0 8px 6px; font-size: .88rem; border-bottom: 1px solid var(--line); }
+.mlist li { padding: 3px 0; }
+.titlebtn { flex: 1; min-width: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; display: flex; flex-direction: column; }
+.titlebtn strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avatar.group { background: var(--surface-2); color: var(--ink-2); }
+.sender { font-size: .72rem; font-weight: 600; color: var(--ink-3); margin: 6px 0 2px 12px; }
+.sys { align-self: center; font-size: .75rem; color: var(--ink-3); background: var(--surface-2); border-radius: 999px; padding: 3px 10px; margin: 6px 0; text-align: center; }
 .avatar { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .8rem; }
 .msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 12px 2px; }
 .day { align-self: center; font-size: .75rem; color: var(--ink-3); margin: 10px 0 4px; }

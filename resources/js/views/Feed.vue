@@ -100,7 +100,7 @@ import Modal from '../components/Modal.vue';
 import { api, store, toast } from '../api';
 
 const route = useRoute(); const router = useRouter();
-async function messageTo(id) { try { const r = await api('messages/start', { method: 'POST', body: { user_id: id } }); router.push(`/beskeder/${r.id}`); } catch (e) { toast(e.message, 'error'); } }
+async function messageTo(id) { try { const r = await api('messages/start', { method: 'POST', body: { user_ids: [id] } }); router.push(`/beskeder/${r.id}`); } catch (e) { toast(e.message, 'error'); } }
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);

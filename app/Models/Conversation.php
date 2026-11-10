@@ -7,23 +7,45 @@ use Illuminate\Database\Eloquent\Model;
 class Conversation extends Model
 {
     protected $guarded = ['id'];
-    protected $casts = ['last_message_at' => 'datetime'];
+    protected $casts = ['last_message_at' => 'datetime', 'is_group' => 'boolean'];
 
-    public function userA() { return $this->belongsTo(User::class, 'user_a_id'); }
-    public function userB() { return $this->belongsTo(User::class, 'user_b_id'); }
+    /** Aktive deltagere (har ikke forladt samtalen). */
+    public function members()
+    {
+        return $this->belongsToMany(User::class)->withPivot('last_read_message_id', 'left_at')->wherePivotNull('left_at')->withTimestamps();
+    }
+
     public function messages() { return $this->hasMany(Message::class); }
     public function latestMessage() { return $this->hasOne(Message::class)->latestOfMany(); }
 
-    public function involves(User $u): bool { return in_array($u->id, [$this->user_a_id, $this->user_b_id]); }
-    public function otherId(User $u): int { return $this->user_a_id === $u->id ? $this->user_b_id : $this->user_a_id; }
-    public function other(User $u): User { return $this->user_a_id === $u->id ? $this->userB : $this->userA; }
-
-    public static function between(User $a, User $b): self
+    public function scopeFor($q, User $u)
     {
-        [$x, $y] = $a->id < $b->id ? [$a->id, $b->id] : [$b->id, $a->id];
-
-        return self::firstOrCreate(['user_a_id' => $x, 'user_b_id' => $y]);
+        return $q->whereHas('members', fn ($q) => $q->where('users.id', $u->id));
     }
 
-    public function scopeFor($q, User $u) { return $q->where(fn ($q) => $q->where('user_a_id', $u->id)->orWhere('user_b_id', $u->id)); }
+    public function involves(User $u): bool
+    {
+        return $this->members()->where('users.id', $u->id)->exists();
+    }
+
+    /** Find eller opret 1:1-samtale mellem to medlemmer. */
+    public static function between(User $a, User $b): self
+    {
+        $key = min($a->id, $b->id).'-'.max($a->id, $b->id);
+        $c = self::firstOrCreate(['pair_key' => $key], ['is_group' => false, 'created_by' => $a->id]);
+        $c->members()->syncWithoutDetaching([$a->id, $b->id]);
+
+        return $c;
+    }
+
+    /** Navn til visning: gruppens titel, ellers de andre deltageres fornavne. */
+    public function displayName(User $viewer): string
+    {
+        $others = $this->members->where('id', '!=', $viewer->id);
+        if (! $this->is_group) return $others->first()?->name ?? 'Tidligere medlem';
+        if ($this->title) return $this->title;
+        $names = $others->map(fn ($u) => explode(' ', $u->name)[0])->values();
+
+        return $names->count() > 3 ? $names->take(3)->join(', ').' +'.($names->count() - 3) : $names->join(', ', ' og ');
+    }
 }

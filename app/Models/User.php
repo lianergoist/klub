@@ -152,8 +152,23 @@ class User extends Authenticatable
 
     public function unreadMessages(): int
     {
-        return Message::whereNull('read_at')->where('sender_id', '!=', $this->id)
-            ->whereIn('conversation_id', Conversation::for($this)->select('id'))->count();
+        return Message::join('conversation_user as cu', function ($j) {
+            $j->on('cu.conversation_id', '=', 'messages.conversation_id')->where('cu.user_id', $this->id)->whereNull('cu.left_at');
+        })->whereColumn('messages.id', '>', 'cu.last_read_message_id')
+            ->where(fn ($q) => $q->where('messages.sender_id', '!=', $this->id)->orWhereNull('messages.sender_id'))
+            ->where('messages.system', false)->count();
+    }
+
+    /** Medlemmer som kan modtage beskeder fra $this (til listen "Ny besked"). */
+    public function messageableQuery()
+    {
+        $cut = now()->subYears(18)->toDateString();
+
+        return User::where('id', '!=', $this->id)->whereNotNull('email')->whereNotNull('password')
+            ->whereIn('status', ['active', 'passive'])->where('allow_messages', true)
+            ->where(fn ($q) => $q->whereNull('birthdate')->orWhere('birthdate', '<=', $cut))
+            ->whereNotIn('id', $this->blockedIds())
+            ->whereNotIn('id', \Illuminate\Support\Facades\DB::table('user_blocks')->where('blocked_id', $this->id)->select('user_id'));
     }
 
     public function brief(): array
