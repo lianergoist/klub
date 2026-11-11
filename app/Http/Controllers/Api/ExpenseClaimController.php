@@ -70,14 +70,16 @@ class ExpenseClaimController extends Controller
             'file_path' => $f->store('udlaeg'),
             'file_name' => $f->getClientOriginalName() ?: 'kvittering',
             'file_mime' => $f->getMimeType() ?: 'application/octet-stream',
+            'requires_approval' => $r->user()->hasRole('treasurer'),
         ]);
         Audit::log('expense_claim.submitted', $claim, ['amount' => $claim->amount]);
 
-        $treasurers = User::whereIn('id', RoleAssignment::where('role', 'treasurer')->where('starts_on', '<=', now())
-            ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id'))->get();
-        Notification::send($treasurers, new ClubMessage(
-            'Nyt udlæg: '.Money::fmt($claim->amount),
-            $r->user()->name.' har indsendt en kvittering: '.str($claim->description)->limit(80).'.',
+        // Kassererens eget udlæg går først til revisoren; andre udlæg går til kassereren
+        $to = self::withRole($claim->requires_approval ? 'auditor' : 'treasurer')->where('id', '!=', $r->user()->id)->get();
+        Notification::send($to, new ClubMessage(
+            ($claim->requires_approval ? 'Udlæg til godkendelse: ' : 'Nyt udlæg: ').Money::fmt($claim->amount),
+            $r->user()->name.' har indsendt en kvittering: '.str($claim->description)->limit(80).'.'
+                .($claim->requires_approval ? ' Kassererens egne udlæg skal godkendes af revisoren.' : ''),
             '/okonomi/udlaeg'
         ));
 
@@ -103,7 +105,7 @@ class ExpenseClaimController extends Controller
         abort_unless($r->user()->canReadFinance(), 403);
         $status = $r->query('status', 'submitted');
 
-        return ExpenseClaim::with('user', 'handler')
+        return ExpenseClaim::with('user', 'handler', 'approver')
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->orderBy($status === 'submitted' ? 'created_at' : 'handled_at', $status === 'submitted' ? 'asc' : 'desc')
             ->limit(200)->get()->map(fn ($c) => $this->row($c, true));
@@ -114,6 +116,7 @@ class ExpenseClaimController extends Controller
     {
         abort_unless($r->user()->canWriteFinance(), 403, 'Kun kassereren kan bogføre udlæg.');
         abort_unless($claim->status === 'submitted', 422, 'Udlægget er allerede behandlet.');
+        abort_if($claim->awaitingApproval(), 422, 'Kassererens eget udlæg skal godkendes af revisoren, før det kan bogføres.');
         $d = $r->validate([
             'account_id' => 'required|exists:accounts,id',
             'entry_date' => 'required|date',
@@ -141,13 +144,35 @@ class ExpenseClaimController extends Controller
             '/kvittering'
         ));
 
-        return $this->row($claim->fresh(['user', 'handler']), true);
+        return $this->row($claim->fresh(['user', 'handler', 'approver']), true);
     }
 
+    /** Revisoren godkender kassererens eget udlæg. Derefter kan det bogføres som andre udlæg. */
+    public function approve(Request $r, ExpenseClaim $claim)
+    {
+        $u = $r->user();
+        abort_unless($u->hasRole('auditor'), 403, 'Kun revisoren kan godkende kassererens udlæg.');
+        abort_unless($claim->awaitingApproval(), 422, 'Udlægget venter ikke på godkendelse.');
+        abort_if($claim->user_id === $u->id, 422, 'Du kan ikke godkende dit eget udlæg.');
+        $claim->update(['approved_by' => $u->id, 'approved_at' => now()]);
+        Audit::log('expense_claim.approved', $claim);
+        $claim->user->notify(new ClubMessage(
+            'Udlæg godkendt af revisor',
+            'Dit udlæg på '.Money::fmt($claim->amount).' ('.str($claim->description)->limit(60).') er godkendt af '.$u->name.' og kan nu bogføres og udbetales.',
+            '/okonomi/udlaeg'
+        ));
+
+        return $this->row($claim->fresh(['user', 'handler', 'approver']), true);
+    }
+
+    /** Kassereren afviser andres udlæg; revisoren afviser kassererens egne. */
     public function reject(Request $r, ExpenseClaim $claim)
     {
-        abort_unless($r->user()->canWriteFinance(), 403, 'Kun kassereren kan afvise udlæg.');
+        $u = $r->user();
         abort_unless($claim->status === 'submitted', 422, 'Udlægget er allerede behandlet.');
+        abort_if($claim->user_id === $u->id, 422, 'Du kan ikke afvise dit eget udlæg.');
+        abort_unless($claim->requires_approval ? $u->hasRole('auditor') : $u->canWriteFinance(), 403,
+            $claim->requires_approval ? 'Kassererens udlæg afvises af revisoren.' : 'Kun kassereren kan afvise udlæg.');
         $reason = $r->validate(['reason' => 'required|string|max:300'])['reason'];
         $claim->update(['status' => 'rejected', 'handled_by' => $r->user()->id, 'handled_at' => now(), 'reject_reason' => $reason]);
         Audit::log('expense_claim.rejected', $claim, ['reason' => $reason]);
@@ -157,7 +182,7 @@ class ExpenseClaimController extends Controller
             '/kvittering'
         ));
 
-        return $this->row($claim->fresh(['user', 'handler']), true);
+        return $this->row($claim->fresh(['user', 'handler', 'approver']), true);
     }
 
     private function row(ExpenseClaim $c, bool $staff = false): array
@@ -173,6 +198,9 @@ class ExpenseClaimController extends Controller
             'bank_reg' => $c->bank_reg,
             'bank_account' => $c->bank_account,
             'status' => $c->status,
+            'requires_approval' => $c->requires_approval,
+            'awaiting_approval' => $c->awaitingApproval(),
+            'approved_at' => $c->approved_at?->toIso8601String(),
             'reject_reason' => $c->reject_reason,
             'created_at' => $c->created_at->toIso8601String(),
             'handled_at' => $c->handled_at?->toIso8601String(),
@@ -183,8 +211,16 @@ class ExpenseClaimController extends Controller
             'member' => $c->user->name,
             'member_email' => $c->user->email,
             'handled_by' => $c->handler?->name,
+            'approved_by' => $c->approver?->name,
+            'is_mine' => $c->user_id === auth()->id(),
             'entry_id' => $c->entry_id,
         ] : []);
+    }
+
+    private static function withRole(string $role)
+    {
+        return User::whereIn('id', RoleAssignment::where('role', $role)->where('starts_on', '<=', now())
+            ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id'));
     }
 
     /** Dansk mobilnummer: 8 cifre (tillader +45 og mellemrum). Ellers null. */

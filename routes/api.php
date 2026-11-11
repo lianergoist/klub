@@ -109,6 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('invoices', [FinanceController::class, 'invoices']);
         Route::get('expense-claims', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'index']);
         Route::post('expense-claims/{claim}/pay', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'pay']);
+        Route::post('expense-claims/{claim}/approve', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'approve']);
         Route::post('expense-claims/{claim}/reject', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'reject']);
         Route::post('invoices/{invoice}/manual', [FinanceController::class, 'manualPayment']);
         Route::post('invoices/{invoice}/refund', [FinanceController::class, 'refund']);

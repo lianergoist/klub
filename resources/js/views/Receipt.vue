@@ -57,7 +57,8 @@
                             <div v-if="c.status === 'rejected'" class="small" style="color:var(--bad)">Afvist: {{ c.reject_reason }}</div>
                         </div>
                         <div style="text-align:right;flex-shrink:0">
-                            <span :class="['tag', statusCls[c.status]]">{{ statusText[c.status] }}</span>
+                            <span v-if="c.awaiting_approval" class="tag warn">Afventer revisor</span>
+                            <span v-else :class="['tag', statusCls[c.status]]">{{ statusText[c.status] }}</span>
                             <div><a :href="c.file_url" target="_blank" rel="noopener" class="small">Se kvittering</a></div>
                         </div>
                     </div>

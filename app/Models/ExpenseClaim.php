@@ -8,9 +8,16 @@ class ExpenseClaim extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['handled_at' => 'datetime'];
+    protected $casts = ['handled_at' => 'datetime', 'approved_at' => 'datetime', 'requires_approval' => 'boolean'];
+
+    /** Venter på revisorens godkendelse (kassererens eget udlæg). */
+    public function awaitingApproval(): bool
+    {
+        return $this->status === 'submitted' && $this->requires_approval && ! $this->approved_at;
+    }
 
     public function user() { return $this->belongsTo(User::class); }
+    public function approver() { return $this->belongsTo(User::class, 'approved_by'); }
     public function handler() { return $this->belongsTo(User::class, 'handled_by'); }
     public function entry() { return $this->belongsTo(Entry::class); }
 

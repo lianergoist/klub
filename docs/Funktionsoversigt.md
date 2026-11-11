@@ -362,7 +362,9 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 
 - **Afklares:** skal udlæg være aftalt på forhånd (fx med bestyrelsen eller den ansvarlige for et budget), og er der en frist for at indsende kvitteringer (fx 3 måneder eller inden regnskabsårets afslutning)?
 
-- **Afklares:** hvem godkender kassererens egne udlæg? I proof of concept kan kassereren bogføre sine egne udlæg. Skal et andet bestyrelsesmedlem godkende dem (se Senere-punktet om to-trins-godkendelse)?
+- **Kerne:** kassererens egne udlæg skal godkendes af revisoren, før kassereren kan bogføre og udbetale dem. Revisoren får besked og kan godkende eller afvise under Økonomi → Udlæg. Ingen kan godkende eller afvise sine egne udlæg. (Besluttet 11. nov. 2026.)
+
+- **Senere:** udbetaling af udlæg direkte fra systemet i stedet for manuelt i MobilePay/netbank. MobilePays udbetalingsfunktion kan kun sende penge tilbage til en betaling, medlemmet tidligere har lavet til klubben, og kræver en særskilt aftale, så den egner sig formentlig ikke til udlæg. Mere realistisk er en betalingsfil, som kassereren uploader i bankens netbank. Det skal undersøges med klubbens bank.
 
 - **Afklares:** hvor længe gemmes medlemmers bankoplysninger fra udlæg? Kvitteringen er bilag og skal gemmes i 5 år efter bogføringsloven, men kontonummeret kunne slettes, når udlægget er udbetalt.
 

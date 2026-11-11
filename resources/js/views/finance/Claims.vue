@@ -3,6 +3,9 @@
         <div class="chips" style="margin-bottom:12px">
             <button v-for="s in tabs" :key="s.id" :class="['chip', { on: status === s.id }]" @click="status = s.id">{{ s.label }}</button>
         </div>
+        <p v-if="status === 'submitted' && isAuditor && !can.finance_write" class="small muted" style="margin:0 0 12px">
+            Som revisor godkender du kassererens egne udlæg, før kassereren kan bogføre og udbetale dem.
+        </p>
         <p v-if="status === 'submitted' && can.finance_write" class="small muted" style="margin:0 0 12px">
             Overfør pengene via MobilePay eller netbank, og bogfør derefter udlægget. Kvitteringen bliver bilag på posteringen, og medlemmet får besked.
         </p>
@@ -18,8 +21,14 @@
                 <div class="body">
                     <div class="row between" style="align-items:flex-start">
                         <div><strong style="font-size:1.1rem">{{ c.amount_fmt }}</strong> <span class="muted small">· {{ c.member }} · {{ dato(c.created_at) }}</span></div>
-                        <span :class="['tag', statusCls[c.status]]">{{ statusText[c.status] }}</span>
+                        <span v-if="c.awaiting_approval" class="tag warn">Afventer revisor</span>
+                        <span v-else :class="['tag', statusCls[c.status]]">{{ statusText[c.status] }}</span>
                     </div>
+                    <p v-if="c.requires_approval" class="small" style="margin:4px 0 0">
+                        <span class="tag info">Kassererens udlæg</span>
+                        <span v-if="c.approved_by" class="muted"> Godkendt af revisor {{ c.approved_by }} {{ dato(c.approved_at) }}</span>
+                        <span v-else-if="c.status === 'submitted'" class="muted"> Skal godkendes af revisoren, før det kan bogføres.</span>
+                    </p>
                     <p style="margin:6px 0;white-space:pre-line">{{ c.description }}</p>
                     <div class="payto">
                         <template v-if="c.payout_method === 'mobilepay'"><span class="muted small">MobilePay til</span> <strong>{{ c.mobilepay_phone }}</strong></template>
@@ -27,9 +36,14 @@
                     </div>
                     <p v-if="c.status === 'rejected'" class="small" style="margin:6px 0 0;color:var(--bad)">Afvist af {{ c.handled_by }} {{ dato(c.handled_at) }}: {{ c.reject_reason }}</p>
                     <p v-if="c.status === 'paid'" class="small muted" style="margin:6px 0 0">Bogført af {{ c.handled_by }} {{ dato(c.handled_at) }} som postering #{{ c.entry_id }}.</p>
-                    <div v-if="c.status === 'submitted' && can.finance_write" class="row" style="gap:8px;margin-top:10px">
-                        <button class="btn primary small" @click="openPay(c)">Bogfør som udbetalt</button>
+                    <!-- Revisoren godkender eller afviser kassererens egne udlæg -->
+                    <div v-if="c.awaiting_approval && isAuditor && !c.is_mine" class="row" style="gap:8px;margin-top:10px">
+                        <button class="btn primary small" :disabled="busy" @click="approve(c)">Godkend</button>
                         <button class="btn small danger" @click="openReject(c)">Afvis</button>
+                    </div>
+                    <div v-else-if="c.status === 'submitted' && !c.awaiting_approval && can.finance_write" class="row" style="gap:8px;margin-top:10px">
+                        <button class="btn primary small" @click="openPay(c)">Bogfør som udbetalt</button>
+                        <button v-if="!c.is_mine && (!c.requires_approval || isAuditor)" class="btn small danger" @click="openReject(c)">Afvis</button>
                     </div>
                 </div>
             </div>
@@ -66,6 +80,7 @@ import Modal from '../../components/Modal.vue';
 import { api, store, toast, dato } from '../../api';
 
 const can = computed(() => store.user.can);
+const isAuditor = computed(() => store.user.roles.includes('auditor'));
 const tabs = [{ id: 'submitted', label: 'Afventer' }, { id: 'paid', label: 'Udbetalt' }, { id: 'rejected', label: 'Afvist' }];
 const statusText = { submitted: 'Afventer', paid: 'Udbetalt', rejected: 'Afvist' };
 const statusCls = { submitted: 'warn', paid: 'ok', rejected: 'bad' };
@@ -88,6 +103,11 @@ async function savePay() {
         await api(`finance/expense-claims/${paying.value.id}/pay`, { method: 'POST', body: { account_id: pay.account_id, entry_date: pay.entry_date, amount: Math.round(pay.kr * 100), text: pay.text } });
         paying.value = null; toast('Udlægget er bogført, og medlemmet har fået besked'); load();
     } catch (e) { pay.error = e.message; } finally { busy.value = false; }
+}
+async function approve(c) {
+    busy.value = true;
+    try { await api(`finance/expense-claims/${c.id}/approve`, { method: 'POST' }); toast('Udlægget er godkendt – kassereren kan nu bogføre det'); load(); }
+    catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
 function openReject(c) { rejectReason.value = ''; rejecting.value = c; }
 async function saveReject() {

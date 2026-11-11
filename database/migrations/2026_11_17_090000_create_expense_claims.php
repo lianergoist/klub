@@ -22,6 +22,10 @@ return new class extends Migration
             $t->string('file_name');
             $t->string('file_mime', 60);
             $t->string('status', 12)->default('submitted'); // submitted | paid | rejected
+            // Kassererens egne udlæg skal godkendes af revisoren, før de kan bogføres
+            $t->boolean('requires_approval')->default(false);
+            $t->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $t->timestamp('approved_at')->nullable();
             $t->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
             $t->timestamp('handled_at')->nullable();
             $t->string('reject_reason', 300)->nullable();
