@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\ActivitySeries;
 use App\Models\Invoice;
 use App\Models\Registration;
 use App\Models\User;
@@ -12,12 +13,13 @@ use App\Support\Audit;
 use App\Support\Money;
 use App\Support\Payments;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class ActivityController extends Controller
 {
-    /** tab: upcoming | mine | attended | trainer */
+    /** tab: upcoming | mine | attended | trainer | open (mangler træner) */
     public function index(Request $r)
     {
         $u = $r->user();
@@ -30,6 +32,8 @@ class ActivityController extends Controller
             'attended' => $q->where('ends_at', '<', now())->whereHas('registrations', fn ($q) => $q->whereIn('user_id', $ids)->where('attended', true))->orderByDesc('starts_at'),
             'trainer' => $q->whereHas('trainers', fn ($q) => $q->where('users.id', $u->id))
                 ->when($r->query('when') === 'past', fn ($q) => $q->where('ends_at', '<', now())->orderByDesc('starts_at'), fn ($q) => $q->where('ends_at', '>=', now())->orderBy('starts_at')),
+            // Kommende aktiviteter uden træner – alle trænere kan tage dem
+            'open' => $q->where('ends_at', '>=', now())->whereNull('cancelled_at')->whereDoesntHave('trainers')->orderBy('starts_at'),
             default => $q->where('ends_at', '>=', now())->orderBy('starts_at'),
         };
 
@@ -60,13 +64,14 @@ class ActivityController extends Controller
             'cancelled' => (bool) $a->cancelled_at,
             'categories' => $a->categories->map->only('id', 'name', 'color'),
             'trainers' => $a->trainers->map->brief(),
+            'series_id' => $a->series_id,
         ];
     }
 
     public function show(Request $r, Activity $activity)
     {
         $u = $r->user();
-        $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator');
+        $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator', 'series');
         $isStaff = $u->isTrainer();
         $regs = $activity->registrations()->with('user', 'events.by')->get();
         // Trænere på aktiviteten tilmeldes ikke som deltagere
@@ -109,6 +114,13 @@ class ActivityController extends Controller
                 ->sortBy('at')->values() : [],
             'can_edit' => $isStaff,
             'is_leader' => $activity->trainers->contains('id', $u->id),
+            'can_take' => $u->hasRole('trainer'),
+            'series' => $activity->series ? [
+                'id' => $activity->series->id,
+                'label' => $activity->series->label(),
+                // Denne og senere gange, der ikke er aflyst
+                'remaining' => $activity->series->activities()->whereNull('cancelled_at')->where('starts_at', '>=', $activity->starts_at)->count(),
+            ] : null,
         ];
     }
 
@@ -142,6 +154,7 @@ class ActivityController extends Controller
             'trainer_ids' => 'array',
             'trainer_ids.*' => 'exists:users,id',
             'notify' => 'boolean',
+            'repeat_until' => 'nullable|date|after:starts_at|before_or_equal:'.now()->addYear()->toDateString(),
         ];
     }
 
@@ -161,8 +174,12 @@ class ActivityController extends Controller
         $data = $r->validate($this->rules(), [], ['category_ids' => 'kategori']);
         $this->rejectArchived($data['category_ids']);
 
+        if (! empty($data['repeat_until'])) {
+            return $this->storeSeries($r, $data);
+        }
+
         $activity = DB::transaction(function () use ($r, $data) {
-            $a = Activity::create(collect($data)->except('category_ids', 'trainer_ids', 'notify')->all() + ['created_by' => $r->user()->id]);
+            $a = Activity::create(collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until')->all() + ['created_by' => $r->user()->id]);
             $a->categories()->sync($data['category_ids']);
             $this->syncTrainers($a, $data['trainer_ids'] ?? [], $r->user());
             Audit::log('activity.created', $a);
@@ -177,6 +194,115 @@ class ActivityController extends Controller
         return ['id' => $activity->id];
     }
 
+    /**
+     * Fast aktivitet: samme ugedag og tidspunkt hver uge fra start til og med repeat_until.
+     * Hver gang oprettes som sin egen aktivitet. Svarfristen flyttes med, så den ligger lige så længe før start hver gang.
+     */
+    private function storeSeries(Request $r, array $data)
+    {
+        $start = Carbon::parse($data['starts_at']);
+        $length = (int) $start->diffInMinutes(Carbon::parse($data['ends_at']));
+        $deadlineOffset = ! empty($data['signup_deadline']) ? (int) Carbon::parse($data['signup_deadline'])->diffInMinutes($start) : null;
+        $until = Carbon::parse($data['repeat_until'])->endOfDay();
+
+        $dates = [];
+        for ($d = $start->copy(); $d->lte($until); $d->addWeek()) {
+            $dates[] = $d->copy();
+        }
+        abort_if(count($dates) > 60, 422, 'En fast aktivitet kan højst have 60 gange. Vælg en tidligere slutdato.');
+
+        $series = DB::transaction(function () use ($r, $data, $dates, $length, $deadlineOffset, $start, $until) {
+            $series = ActivitySeries::create([
+                'title' => $data['title'], 'weekday' => $start->isoWeekday(),
+                'start_time' => $start->format('H:i'), 'end_time' => $start->copy()->addMinutes($length)->format('H:i'),
+                'from_date' => $start->toDateString(), 'to_date' => end($dates)->toDateString(), 'created_by' => $r->user()->id,
+            ]);
+            $base = collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until', 'starts_at', 'ends_at', 'signup_deadline')->all();
+            foreach ($dates as $d) {
+                $a = Activity::create($base + [
+                    'series_id' => $series->id, 'starts_at' => $d, 'ends_at' => $d->copy()->addMinutes($length),
+                    'signup_deadline' => $deadlineOffset !== null ? $d->copy()->subMinutes($deadlineOffset) : null,
+                    'created_by' => $r->user()->id,
+                ]);
+                $a->categories()->sync($data['category_ids']);
+                $this->syncTrainers($a, $data['trainer_ids'] ?? [], $r->user());
+            }
+            Audit::log('activity_series.created', $series, ['count' => count($dates)]);
+
+            return $series;
+        });
+
+        $first = $series->activities()->first();
+        if ($data['notify'] ?? true) {
+            $this->notifyNew($first, $series);
+        }
+
+        return ['id' => $first->id, 'series_id' => $series->id, 'count' => count($dates)];
+    }
+
+    /** Aktiviteterne en handling gælder: kun denne, eller denne og alle senere gange i serien, der ikke er aflyst. */
+    private function scope(Activity $a, bool $series)
+    {
+        if (! $series || ! $a->series_id) {
+            return collect([$a]);
+        }
+
+        return Activity::where('series_id', $a->series_id)->where('starts_at', '>=', $a->starts_at)->whereNull('cancelled_at')->orderBy('starts_at')->get();
+    }
+
+    /** En træner melder sig selv som træner – på én gang eller på resten af serien. Dage, hvor træneren er utilgængelig, springes over. */
+    public function take(Request $r, Activity $activity)
+    {
+        $u = $r->user();
+        abort_unless($u->hasRole('trainer'), 403, 'Kun trænere kan melde sig som træner.');
+        abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
+        abort_if($activity->ends_at->isPast(), 422, 'Aktiviteten er afholdt.');
+        $series = $r->boolean('series');
+
+        $taken = 0; $skipped = [];
+        foreach ($this->scope($activity, $series) as $a) {
+            if ($a->trainers()->whereKey($u->id)->exists()) continue;
+            if ($series && $a->id !== $activity->id && $u->isUnavailableOn($a->starts_at)) {
+                $skipped[] = $a->starts_at->locale('da')->isoFormat('D. MMM');
+                continue;
+            }
+            // En træner er ikke samtidig deltager
+            $a->registrations()->where('user_id', $u->id)->where('status', 'signed_up')->update(['status' => 'cancelled']);
+            $this->syncTrainers($a, array_merge($a->trainers()->pluck('users.id')->all(), [$u->id]), $u);
+            $taken++;
+        }
+
+        return ['activity' => $this->show($r, $activity->fresh()), 'taken' => $taken, 'skipped' => $skipped];
+    }
+
+    /** En træner melder fra. Står aktiviteten derefter uden træner, får de andre trænere besked. */
+    public function leave(Request $r, Activity $activity)
+    {
+        $u = $r->user();
+        $series = $r->boolean('series');
+        $orphaned = collect();
+        foreach ($this->scope($activity, $series) as $a) {
+            if (! $a->trainers()->whereKey($u->id)->exists()) continue;
+            $this->syncTrainers($a, array_values(array_diff($a->trainers()->pluck('users.id')->all(), [$u->id])), $u);
+            if (! $a->trainers()->exists() && $a->starts_at->isFuture()) {
+                $orphaned->push($a);
+            }
+        }
+
+        if ($orphaned->isNotEmpty()) {
+            $first = $orphaned->first();
+            $when = $orphaned->count() === 1
+                ? $first->starts_at->locale('da')->isoFormat('dddd D. MMMM [kl.] HH:mm')
+                : $orphaned->count().' gange fra '.$first->starts_at->locale('da')->isoFormat('D. MMMM');
+            $others = User::whereIn('id', \App\Models\RoleAssignment::where('role', 'trainer')->where('starts_on', '<=', now())
+                ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id'))
+                ->where('id', '!=', $u->id)->get();
+            Notification::send($others, new ClubMessage('Mangler træner: '.$first->title, $u->name.' har meldt fra ('.$when.'). Kan du tage den?', '/aktiviteter/'.$first->id));
+        }
+
+        return $this->show($r, $activity->fresh());
+    }
+
     public function update(Request $r, Activity $activity)
     {
         abort_unless($r->user()->isTrainer(), 403);
@@ -185,7 +311,7 @@ class ActivityController extends Controller
         $before = $activity->only('starts_at', 'ends_at', 'location');
 
         DB::transaction(function () use ($r, $data, $activity) {
-            $activity->update(collect($data)->except('category_ids', 'trainer_ids', 'notify')->all());
+            $activity->update(collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until')->all());
             $activity->categories()->sync($data['category_ids']);
             $this->syncTrainers($activity, $data['trainer_ids'] ?? [], $r->user());
             Audit::log('activity.updated', $activity);
@@ -227,12 +353,16 @@ class ActivityController extends Controller
     public function cancel(Request $r, Activity $activity)
     {
         abort_unless($r->user()->isTrainer(), 403);
-        $reason = $r->validate(['reason' => 'required|string|max:300'])['reason'];
-        $activity->update(['cancelled_at' => now()]);
-        Audit::log('activity.cancelled', $activity, ['reason' => $reason]);
-        $this->notifyParticipants($activity, 'Aflyst: '.$activity->title, 'Aktiviteten er aflyst. Årsag: '.$reason.($activity->price ? ' Betalingen refunderes af kassereren.' : ''));
+        $reason = $r->validate(['reason' => 'required|string|max:300', 'series' => 'boolean'])['reason'];
+        $list = $this->scope($activity, $r->boolean('series'))->filter(fn ($a) => ! $a->cancelled_at);
+        foreach ($list as $a) {
+            $a->update(['cancelled_at' => now()]);
+            Audit::log('activity.cancelled', $a, ['reason' => $reason]);
+            $this->notifyParticipants($a, 'Aflyst: '.$a->title.' '.$a->starts_at->locale('da')->isoFormat('D. MMM'),
+                'Aktiviteten er aflyst. Årsag: '.$reason.($a->price ? ' Betalingen refunderes af kassereren.' : ''));
+        }
 
-        return ['ok' => true];
+        return ['ok' => true, 'count' => $list->count()];
     }
 
     public function attendance(Request $r, Activity $activity)
@@ -335,15 +465,15 @@ class ActivityController extends Controller
             ]);
     }
 
-    private function notifyNew(Activity $a): void
+    private function notifyNew(Activity $a, ?ActivitySeries $series = null): void
     {
         $catIds = $a->categories->pluck('id');
         $users = User::whereIn('status', ['active'])->whereNotNull('email')
             ->whereDoesntHave('categorySettings', fn ($q) => $q->whereIn('categories.id', $catIds)->where('category_user.notify', false))->get();
         $deadline = $a->signup_deadline ? ' Svarfrist: '.$a->signup_deadline->locale('da')->isoFormat('D. MMM [kl.] HH:mm').'.' : '';
         Notification::send($users, new ClubMessage(
-            'Ny aktivitet: '.$a->title,
-            $a->starts_at->locale('da')->isoFormat('dddd D. MMMM [kl.] HH:mm').($a->location ? ', '.$a->location : '').'.'.$deadline,
+            ($series ? 'Ny fast aktivitet: ' : 'Ny aktivitet: ').$a->title,
+            ($series ? $series->label() : $a->starts_at->locale('da')->isoFormat('dddd D. MMMM [kl.] HH:mm')).($a->location ? ', '.$a->location : '').'.'.($series ? '' : $deadline),
             '/aktiviteter/'.$a->id
         ));
     }

@@ -81,6 +81,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('activities/{activity}', [ActivityController::class, 'update']);
     Route::put('activities/{activity}/trainers', [ActivityController::class, 'setTrainers']);
     Route::post('activities/{activity}/cancel', [ActivityController::class, 'cancel']);
+    Route::post('activities/{activity}/take', [ActivityController::class, 'take']);
+    Route::post('activities/{activity}/leave', [ActivityController::class, 'leave']);
     Route::put('activities/{activity}/attendance', [ActivityController::class, 'attendance']);
     Route::post('activities/{activity}/signup', [ActivityController::class, 'signup']);
     Route::post('activities/{activity}/unsignup', [ActivityController::class, 'cancelSignup']);

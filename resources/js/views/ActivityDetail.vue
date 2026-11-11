@@ -14,6 +14,7 @@
         <div class="card" style="margin-top:14px">
             <div class="stack">
                 <div class="inf"><Icon name="cal" /><span><span>{{ datoLang(a.starts_at) }}</span>, kl. {{ klok(a.starts_at) }}–{{ klok(a.ends_at) }}</span></div>
+                <div v-if="a.series" class="inf"><Icon name="clock" /><span>Fast aktivitet<br><span class="small muted">{{ a.series.label }}</span></span></div>
                 <div v-if="a.location" class="inf"><Icon name="pin" /><span>{{ a.location }}</span></div>
                 <div class="inf"><Icon name="whistle" /><span>{{ a.trainers.length ? a.trainers.map(t => t.name).join(', ') : 'Træner ikke fundet endnu' }}</span></div>
                 <div v-if="a.signup_deadline" class="inf"><Icon name="clock" /><span>Svarfrist {{ tidspunkt(a.signup_deadline) }}<br><span class="small muted">Afmelding senest {{ a.cancel_hours }} timer før start</span></span></div>
@@ -23,12 +24,27 @@
             <p v-if="a.guest_offer && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for ikke-medlemmer</span> som {{ a.guest_offer === 'trial' ? 'prøvetræning' : 'SUP-kursus' }} via siden "Prøv SurfHorsens".</p>
         </div>
 
+        <!-- Mangler træner: alle trænere kan tage den -->
+        <div v-if="!a.cancelled && !a.is_past && !a.trainers.length && a.can_edit" class="card need noprint">
+            <div class="row" style="gap:10px;align-items:flex-start;flex-wrap:nowrap"><Icon name="whistle" style="width:22px;height:22px;color:var(--warn);flex-shrink:0;margin-top:2px" />
+                <div><strong>Mangler træner</strong><p class="small muted" style="margin:2px 0 0">Aktiviteten har ingen træner endnu.<span v-if="a.can_take"> Tag den selv, eller sæt en anden træner på under Trænere.</span></p></div>
+            </div>
+            <div v-if="a.can_take" class="row" style="margin-top:12px;gap:8px">
+                <button class="btn primary" :disabled="busy" @click="take(false)">Jeg tager den</button>
+                <button v-if="a.series && a.series.remaining > 1" class="btn" :disabled="busy" @click="take(true)">Tag alle resterende ({{ a.series.remaining }})</button>
+            </div>
+        </div>
+        <div v-else-if="!a.cancelled && !a.is_past && a.can_take && !a.is_leader && a.can_edit" class="row noprint" style="margin-bottom:14px;gap:8px">
+            <button class="btn small" :disabled="busy" @click="take(false)"><Icon name="whistle" style="width:16px" /> Meld mig som træner</button>
+            <button v-if="a.series && a.series.remaining > 1" class="btn small" :disabled="busy" @click="take(true)">… på alle resterende ({{ a.series.remaining }})</button>
+        </div>
+
         <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
 
         <!-- Tilmelding -->
-        <div v-else-if="!a.is_past && a.is_leader && !a.household.length" class="banner info"><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</div>
+        <div v-else-if="!a.is_past && a.is_leader && !a.household.length" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
         <div v-else-if="!a.is_past" class="card">
-            <p v-if="a.is_leader" class="small muted" style="margin:0 0 8px">Du er træner på denne aktivitet. Her kan du tilmelde dine familiemedlemmer.</p>
+            <p v-if="a.is_leader" class="small muted row between" style="margin:0 0 8px"><span>Du er træner på denne aktivitet. Her kan du tilmelde dine familiemedlemmer.</span><button class="btn small noprint" @click="showLeave = true">Meld fra som træner</button></p>
             <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
@@ -125,10 +141,23 @@
             <button class="btn primary block" style="margin-top:12px" @click="saveTrainers">Gem</button>
         </Modal>
 
+        <Modal v-if="showLeave" title="Meld fra som træner" @close="showLeave = false">
+            <p>Hvis aktiviteten derefter står uden træner, får de andre trænere besked, så en af dem kan tage den.</p>
+            <div v-if="a.series && a.series.remaining > 1" class="stack" style="gap:6px">
+                <label class="check"><input type="radio" v-model="leaveSeries" :value="false"> Kun denne gang</label>
+                <label class="check"><input type="radio" v-model="leaveSeries" :value="true"> Denne og alle senere gange, hvor jeg er træner</label>
+            </div>
+            <button class="btn danger block" style="margin-top:12px" :disabled="busy" @click="leave">Meld fra</button>
+        </Modal>
+
         <Modal v-if="showCancel" title="Aflys aktivitet" @close="showCancel = false">
             <p>Alle tilmeldte får besked.<span v-if="a.price"> Betalinger skal refunderes af kassereren.</span></p>
+            <div v-if="a.series && a.series.remaining > 1" class="stack" style="gap:6px;margin-bottom:10px">
+                <label class="check"><input type="radio" v-model="cancelSeries" :value="false"> Kun denne gang</label>
+                <label class="check"><input type="radio" v-model="cancelSeries" :value="true"> Denne og alle senere gange ({{ a.series.remaining }})</label>
+            </div>
             <label class="field"><span>Begrundelse</span><textarea v-model="cancelReason" placeholder="Fx for lidt vind eller for få tilmeldte"></textarea></label>
-            <button class="btn danger block" style="margin-top:12px" :disabled="!cancelReason" @click="cancelActivity">Aflys og giv besked</button>
+            <button class="btn danger block" style="margin-top:12px" :disabled="!cancelReason" @click="cancelActivity">{{ cancelSeries ? `Aflys ${a.series.remaining} gange og giv besked` : 'Aflys og giv besked' }}</button>
         </Modal>
     </div>
 </template>
@@ -145,7 +174,8 @@ const props = defineProps({ id: String });
 const router = useRouter();
 const a = ref(null); const picked = ref([]); const busy = ref(false); const att = ref(false);
 const showTrainers = ref(false); const trainerOpts = ref([]); const selTrainers = ref([]); const showUnavailable = ref(false);
-const showCancel = ref(false); const cancelReason = ref('');
+const showCancel = ref(false); const cancelReason = ref(''); const cancelSeries = ref(false);
+const showLeave = ref(false); const leaveSeries = ref(false);
 
 const started = computed(() => a.value && new Date(a.value.starts_at) < new Date());
 const canPick = (m) => !['signed_up', 'pending_payment'].includes(m.status) && !(a.value.members_only && !m.membership_valid) && (!a.value.deadline_passed || store.user.can.trainer) && !a.value.is_full;
@@ -192,13 +222,29 @@ async function saveTrainers() {
     showTrainers.value = false; toast('Trænere opdateret');
 }
 async function cancelActivity() {
-    await api(`activities/${a.value.id}/cancel`, { method: 'POST', body: { reason: cancelReason.value } });
-    showCancel.value = false; toast('Aktiviteten er aflyst, og deltagerne har fået besked'); load();
+    const r = await api(`activities/${a.value.id}/cancel`, { method: 'POST', body: { reason: cancelReason.value, series: cancelSeries.value } });
+    showCancel.value = false; toast(r.count > 1 ? `${r.count} gange er aflyst, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked'); load();
+}
+async function take(series) {
+    busy.value = true;
+    try {
+        const r = await api(`activities/${a.value.id}/take`, { method: 'POST', body: { series } });
+        a.value = r.activity;
+        toast(series ? `Du er træner på ${r.taken} gange` + (r.skipped.length ? ` (ikke ${r.skipped.join(', ')} – du er meldt utilgængelig)` : '') : 'Du er træner på aktiviteten');
+    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+}
+async function leave() {
+    busy.value = true;
+    try {
+        a.value = await api(`activities/${a.value.id}/leave`, { method: 'POST', body: { series: leaveSeries.value } });
+        showLeave.value = false; toast('Du har meldt fra som træner');
+    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
 function print() { window.print(); }
 </script>
 
 <style scoped>
 .inf { display: flex; gap: 10px; align-items: flex-start; }
+.need { border: 1px solid var(--warn); }
 .inf svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }
 </style>

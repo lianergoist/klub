@@ -81,9 +81,17 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** oprettelsen sender notifikation til alle medlemmer (se afsnittet om notifikationer).
 
-- **Senere:** gentagne aktiviteter (fx hver onsdag kl. 18 hele sæsonen) og kopi af tidligere aktivitet.
+- **Kerne:** faste aktiviteter: samme ugedag og tidspunkt hver uge (fx hver onsdag kl. 18–20) fra en startdato til og med en slutdato, højst 60 gange. Ugedag og tidspunkt tages fra starttidspunktet. Hver gang bliver sin egen aktivitet med egen tilmelding, deltagerliste og fremmøde, og svarfristen flyttes med (fx dagen før kl. 20 hver gang). Medlemmer, der følger kategorien, får én samlet besked om den faste aktivitet.
+
+- **Kerne:** aktiviteter (også faste) kan oprettes uden træner/tovholder. De vises med mærket "Mangler træner" for trænere og bestyrelse.
 
   - Dvs også oprette aktiviteter uden at sætte træner/tovholder på. /Thomas
+
+- **Afklares:** hvad sker der, hvis en aktivitet stadig mangler træner kort før start? Fx påmindelse til alle trænere 3 dage før, besked til bestyrelsen dagen før, eller automatisk aflysning med besked til de tilmeldte.
+
+- **Afklares:** skal man kunne ændre alle gange i en fast aktivitet på én gang (fx nyt tidspunkt eller sted fra en bestemt dato)? I proof of concept rettes hver gang for sig, mens trænertilmelding og aflysning kan gælde resten af serien.
+
+- **Senere:** kopi af tidligere aktivitet.
 
 - **Senere:** forudsætninger (kræver fx duelighedsbevis eller eget udstyr), så systemet kan advare ved tilmelding.
 
@@ -94,6 +102,16 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 **Trænerskift og historik**
 
 - **Kerne:** alle trænere kan ændre, hvem der er træner på en aktivitet.
+
+- **Kerne:** alle trænere kan selv melde sig som træner på en aktivitet ("Jeg tager den"), og på en fast aktivitet også på alle resterende gange på én gang. Dage, hvor træneren har meldt sig utilgængelig, springes over.
+
+- **Kerne:** en træner kan melde fra som træner (én gang eller resten af en fast aktivitet). Står aktiviteten derefter uden træner, får de øvrige trænere besked ("Mangler træner – kan du tage den?").
+
+- **Kerne:** alle trænere kan aflyse en aktivitet med begrundelse; på en fast aktivitet enten kun den ene gang eller denne og alle senere gange. De tilmeldte får besked.
+
+- **Kerne:** Trænerportalen har listen "Mangler træner" med alle kommende aktiviteter uden træner.
+
+- **Afklares:** må alle trænere tage enhver aktivitet, eller kun aktiviteter i de kategorier, de kan undervise i (se Senere-punktet under Trænerportal)? Og skal bestyrelsesmedlemmer, der ikke er trænere, også kunne melde sig som træner/tovholder?
 
 - **Kerne:** hver ændring logges med hvem, hvornår og hvad (fx "Lars blev erstattet af Mette den 3. marts"). Historikken kan ses af trænere og bestyrelse.
 

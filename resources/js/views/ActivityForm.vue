@@ -14,6 +14,18 @@
                 <label class="field"><span>Start</span><input v-model="f.starts_at" type="datetime-local" required @change="autoFill"></label>
                 <label class="field"><span>Slut</span><input v-model="f.ends_at" type="datetime-local" required></label>
             </div>
+            <div v-if="!id" class="repeat">
+                <label class="check"><input type="checkbox" v-model="repeat"> Fast aktivitet – gentag hver uge</label>
+                <template v-if="repeat">
+                    <label class="field" style="margin-top:8px"><span>Til og med</span><input v-model="f.repeat_until" type="date" :min="f.starts_at.slice(0, 10)" required></label>
+                    <p class="small" style="margin:6px 0 0" v-if="occurrences.length">
+                        <strong>{{ weekdayLabel }}</strong> · {{ occurrences.length }} gange ({{ kortDato(occurrences[0]) }} – {{ kortDato(occurrences[occurrences.length - 1]) }}).
+                        <span class="muted">Hver gang bliver sin egen aktivitet, som trænerne kan tage, bytte eller aflyse.</span>
+                    </p>
+                    <p v-else-if="!f.starts_at" class="small muted" style="margin:6px 0 0">Vælg først start – ugedag og tidspunkt tages derfra.</p>
+                </template>
+            </div>
+            <p v-else-if="seriesLabel" class="small muted" style="margin:0">Del af en fast aktivitet ({{ seriesLabel }}). Ændringer her gælder kun denne gang.</p>
             <label class="field"><span>Sted</span><input v-model="f.location" placeholder="Fx Strandpladsen"></label>
             <label class="field"><span>Beskrivelse</span><textarea v-model="f.description" placeholder="Hvad skal deltagerne vide? Udstyr, niveau, vejrforbehold …"></textarea></label>
             <div class="grid c2">
@@ -34,7 +46,7 @@
             <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
             <div>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
-                <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner.</p>
+                <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner – så kan trænerne selv tage den bagefter.<span v-if="repeat"> Valgte trænere sættes på alle gange.</span></p>
                 <div class="chips">
                     <button v-for="t in trainers.filter(t => !t.unavailable || f.trainer_ids.includes(t.id))" :key="t.id" type="button" :class="['chip', { on: f.trainer_ids.includes(t.id) }]" @click="toggle(f.trainer_ids, t.id)">
                         {{ t.name }}<span v-if="t.unavailable" class="tag warn">utilgængelig</span>
@@ -44,7 +56,7 @@
             </div>
             <label v-if="!id" class="check"><input type="checkbox" v-model="f.notify"> Send besked til medlemmer, der følger kategorien</label>
             <p v-if="error" class="banner bad">{{ error }}</p>
-            <button class="btn primary block" :disabled="busy">{{ id ? 'Gem ændringer' : 'Opret aktivitet' }}</button>
+            <button class="btn primary block" :disabled="busy || (repeat && occurrences.length < 2)">{{ id ? 'Gem ændringer' : repeat && occurrences.length > 1 ? `Opret ${occurrences.length} gange` : 'Opret aktivitet' }}</button>
         </form>
     </div>
 </template>
@@ -57,8 +69,25 @@ import { api, toast } from '../api';
 const props = defineProps({ id: String });
 const router = useRouter();
 const cats = ref([]); const trainers = ref([]); const error = ref(''); const busy = ref(false);
-const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, category_ids: [], trainer_ids: [], notify: true });
+const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, category_ids: [], trainer_ids: [], notify: true, repeat_until: '' });
 const priceKr = computed({ get: () => f.price ? f.price / 100 : '', set: (v) => (f.price = Math.round((Number(v) || 0) * 100)) });
+const repeat = ref(false); const seriesLabel = ref('');
+const kortDato = (d) => d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+const occurrences = computed(() => {
+    if (!repeat.value || !f.starts_at || !f.repeat_until) return [];
+    const out = []; const end = new Date(f.repeat_until + 'T23:59');
+    for (let d = new Date(f.starts_at); d <= end && out.length < 61; d.setDate(d.getDate() + 7)) out.push(new Date(d));
+    return out;
+});
+const weekdayLabel = computed(() => {
+    if (!f.starts_at) return '';
+    const s = new Date(f.starts_at); const e = f.ends_at ? new Date(f.ends_at) : null;
+    const t = (d) => d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+    return 'Hver ' + s.toLocaleDateString('da-DK', { weekday: 'long' }) + ' kl. ' + t(s) + (e ? '–' + t(e) : '');
+});
+watch(repeat, (on) => {
+    if (on && !f.repeat_until && f.starts_at) { const d = new Date(f.starts_at); d.setDate(d.getDate() + 7 * 11); f.repeat_until = local(d).slice(0, 10); }
+});
 const hidden = computed(() => trainers.value.filter(t => t.unavailable && !f.trainer_ids.includes(t.id)));
 
 const local = (iso) => { if (!iso) return ''; const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
@@ -79,17 +108,22 @@ onMounted(async () => {
     if (props.id) {
         const a = await api(`activities/${props.id}`);
         Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, guest_offer: a.guest_offer, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
+        seriesLabel.value = a.series?.label || '';
     }
     await loadTrainers();
 });
 
 async function save() {
     busy.value = true; error.value = '';
-    const body = { ...f, max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: f.signup_deadline || null };
+    const body = { ...f, max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
     try {
         const r = await api(props.id ? `activities/${props.id}` : 'activities', { method: props.id ? 'PUT' : 'POST', body });
-        toast(props.id ? 'Ændringerne er gemt' : 'Aktiviteten er oprettet');
+        toast(props.id ? 'Ændringerne er gemt' : r.count ? `Den faste aktivitet er oprettet (${r.count} gange)` : 'Aktiviteten er oprettet');
         router.replace(`/aktiviteter/${r.id}`);
     } catch (e) { error.value = e.message; } finally { busy.value = false; }
 }
 </script>
+
+<style scoped>
+.repeat { background: var(--surface-2); border-radius: 12px; padding: 12px; }
+</style>

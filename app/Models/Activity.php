@@ -20,6 +20,7 @@ class Activity extends Model
     public function trainers() { return $this->belongsToMany(User::class, 'activity_trainer'); }
     public function trainerChanges() { return $this->hasMany(TrainerChange::class)->orderBy('created_at')->orderBy('id'); }
     public function registrations() { return $this->hasMany(Registration::class); }
+    public function series() { return $this->belongsTo(ActivitySeries::class, 'series_id'); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
 
     /** Tilmeldte + igangværende betalinger (plads reserveres i 15 min). */

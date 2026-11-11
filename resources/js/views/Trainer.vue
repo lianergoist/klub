@@ -14,15 +14,17 @@
             <div class="chips" style="margin-bottom:12px">
                 <button :class="['chip', { on: when === 'future' }]" @click="when = 'future'">Kommende</button>
                 <button :class="['chip', { on: when === 'past' }]" @click="when = 'past'">Afholdte</button>
+                <button :class="['chip', { on: when === 'open' }]" @click="when = 'open'">Mangler træner<span v-if="openCount" class="count">{{ openCount }}</span></button>
             </div>
+            <p v-if="when === 'open' && acts && acts.length" class="small muted" style="margin:-4px 0 10px">Kommende aktiviteter uden træner. Åbn en aktivitet og tryk "Jeg tager den".</p>
             <div v-if="acts === null" class="spinner"></div>
-            <div v-else-if="!acts.length" class="card empty">Ingen aktiviteter.</div>
+            <div v-else-if="!acts.length" class="card empty">{{ when === 'open' ? 'Alle kommende aktiviteter har en træner. 👍' : 'Ingen aktiviteter.' }}</div>
             <div v-else class="card" style="padding:0">
                 <RouterLink v-for="a in acts" :key="a.id" :to="`/aktiviteter/${a.id}`" class="act">
                     <div class="when"><div class="d">{{ dagNr(a.starts_at) }}</div><div class="m">{{ maanedKort(a.starts_at) }}</div></div>
                     <div style="flex:1">
                         <div class="t">{{ a.title }}</div>
-                        <div class="meta">kl. {{ klok(a.starts_at) }} · {{ a.signed_up_count }}<span v-if="a.max_participants">/{{ a.max_participants }}</span> tilmeldt<span v-if="a.trainers.length > 1"> · med {{ a.trainers.filter(t => t.id !== store.user.id).map(t => t.name.split(' ')[0]).join(', ') }}</span></div>
+                        <div class="meta"><span v-if="when === 'open'">{{ ugedagKort(a.starts_at) + ' ' }}</span>kl. {{ klok(a.starts_at) }} · {{ a.signed_up_count }}<span v-if="a.max_participants">/{{ a.max_participants }}</span> tilmeldt<span v-if="a.trainers.length > 1"> · med {{ a.trainers.filter(t => t.id !== store.user.id).map(t => t.name.split(' ')[0]).join(', ') }}</span></div>
                         <CatTags :cats="a.categories" />
                     </div>
                 </RouterLink>
@@ -97,7 +99,7 @@
 import { ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import CatTags from '../components/CatTags.vue';
 import Icon from '../components/Icon.vue';
-import { api, store, klok, dato, toast, dagNr, maanedKort } from '../api';
+import { api, store, klok, dato, toast, dagNr, maanedKort, ugedagKort } from '../api';
 
 const isTrainer = store.user.roles.includes('trainer');
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
@@ -146,7 +148,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', fitHeight));
 const isWeekend = (d) => [0, 6].includes(new Date(d).getDay());
 const tip = (t, x, i) => `${t.name}, ${dato(cal.value.days[i])}: ` + (x.off ? `utilgængelig (${x.reason || 'ikke angivet'})` : x.busy.length ? x.busy.join(', ') : 'ledig');
 
-async function loadActs() { acts.value = null; acts.value = await api(`activities?tab=trainer&when=${when.value === 'past' ? 'past' : 'future'}`); }
+const openCount = ref(0);
+async function loadActs() {
+    acts.value = null;
+    acts.value = await api(when.value === 'open' ? 'activities?tab=open' : `activities?tab=trainer&when=${when.value === 'past' ? 'past' : 'future'}`);
+    if (when.value === 'open') openCount.value = acts.value.length;
+}
+async function loadOpenCount() { openCount.value = (await api('activities?tab=open')).length; }
 async function addOff() {
     const r = await api('unavailability', { method: 'POST', body: off });
     offList.value = r.list; clashes.value = r.clashes; Object.assign(off, { from: '', to: '', reason: '' }); toast('Fravær registreret');
@@ -158,10 +166,11 @@ watch(tab, async (t) => {
     if (t === 'off') offList.value = await api('unavailability');
     if (t === 'cal' && !cal.value) await loadCal();
 });
-onMounted(loadActs);
+onMounted(() => { loadActs(); loadOpenCount(); });
 </script>
 
 <style scoped>
+.chip .count { margin-left: 6px; background: var(--warn); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .72rem; font-weight: 700; }
 .cal-nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 10px; }
 .mnav { min-height: 48px; min-width: 76px; padding: 8px 12px; background: var(--accent-soft); border-color: transparent; color: var(--accent); font-size: 1rem; text-transform: capitalize; }
 .mnav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
