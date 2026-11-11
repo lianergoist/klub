@@ -34,9 +34,6 @@
                 <button class="btn" @click="openTrainers">Sæt anden træner på</button>
             </div>
         </div>
-        <div v-else-if="!a.cancelled && !a.is_past && a.can_take && !a.is_leader && a.can_edit" class="row noprint" style="margin-bottom:14px;gap:8px">
-            <button class="btn small" :disabled="busy" @click="take"><Icon name="whistle" style="width:16px" /> Meld mig som træner</button>
-        </div>
 
         <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
 
@@ -111,7 +108,7 @@
 
         <!-- Træner -->
         <div v-if="a.can_edit" class="card noprint">
-            <div class="row between"><h2 style="margin:0">Trænere</h2><button class="btn small" @click="openTrainers">Skift træner</button></div>
+            <div class="row between"><h2 style="margin:0">Trænere</h2><button class="btn small" @click="openTrainers">Skift/tilføj træner</button></div>
             <p style="margin:10px 0">{{ a.trainers.map(t => t.name).join(', ') || 'Ingen træner sat på' }}</p>
             <h3 style="margin-top:14px">Ændringslog</h3>
             <ul class="timeline">
