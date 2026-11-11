@@ -74,8 +74,8 @@ class ActivityController extends Controller
         $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator', 'series');
         $isStaff = $u->isTrainer();
         $regs = $activity->registrations()->with('user', 'events.by')->get();
-        // Trænere på aktiviteten tilmeldes ikke som deltagere
-        $managed = $u->managedMembers()->reject(fn ($m) => $activity->trainers->contains('id', $m->id))->values();
+        // Trænere tilmelder sig ikke som deltagere (hverken på egne eller andres aktiviteter)
+        $managed = $u->managedMembers()->reject(fn ($m) => $m->hasRole('trainer') || $activity->trainers->contains('id', $m->id))->values();
 
         return self::row($activity) + [
             'description' => $activity->description,
@@ -250,29 +250,18 @@ class ActivityController extends Controller
         return Activity::where('series_id', $a->series_id)->where('starts_at', '>=', $a->starts_at)->whereNull('cancelled_at')->orderBy('starts_at')->get();
     }
 
-    /** En træner melder sig selv som træner – på én gang eller på resten af serien. Dage, hvor træneren er utilgængelig, springes over. */
+    /** En træner melder sig selv som træner på aktiviteten. */
     public function take(Request $r, Activity $activity)
     {
         $u = $r->user();
         abort_unless($u->hasRole('trainer'), 403, 'Kun trænere kan melde sig som træner.');
         abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
         abort_if($activity->ends_at->isPast(), 422, 'Aktiviteten er afholdt.');
-        $series = $r->boolean('series');
-
-        $taken = 0; $skipped = [];
-        foreach ($this->scope($activity, $series) as $a) {
-            if ($a->trainers()->whereKey($u->id)->exists()) continue;
-            if ($series && $a->id !== $activity->id && $u->isUnavailableOn($a->starts_at)) {
-                $skipped[] = $a->starts_at->locale('da')->isoFormat('D. MMM');
-                continue;
-            }
-            // En træner er ikke samtidig deltager
-            $a->registrations()->where('user_id', $u->id)->where('status', 'signed_up')->update(['status' => 'cancelled']);
-            $this->syncTrainers($a, array_merge($a->trainers()->pluck('users.id')->all(), [$u->id]), $u);
-            $taken++;
+        if (! $activity->trainers()->whereKey($u->id)->exists()) {
+            $this->syncTrainers($activity, array_merge($activity->trainers()->pluck('users.id')->all(), [$u->id]), $u);
         }
 
-        return ['activity' => $this->show($r, $activity->fresh()), 'taken' => $taken, 'skipped' => $skipped];
+        return $this->show($r, $activity->fresh());
     }
 
     /** En træner melder fra. Står aktiviteten derefter uden træner, får de andre trænere besked. */
@@ -394,7 +383,7 @@ class ActivityController extends Controller
             Activity::whereKey($activity->id)->lockForUpdate()->first();
             foreach ($data['member_ids'] as $mid) {
                 $m = $allowed[$mid] ?? abort(403, 'Du kan kun tilmelde dig selv og din husstand.');
-                abort_if($activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner på aktiviteten og skal ikke tilmeldes.');
+                abort_if($m->hasRole('trainer') || $activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner og skal ikke tilmeldes som deltager.');
                 if ($activity->members_only && ! $m->hasValidMembership()) {
                     abort(422, $m->name.' har ikke betalt kontingent for sæson '.\App\Support\Season::label().'.');
                 }

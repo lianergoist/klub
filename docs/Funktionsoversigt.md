@@ -103,7 +103,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** alle trænere kan ændre, hvem der er træner på en aktivitet.
 
-- **Kerne:** alle trænere kan selv melde sig som træner på en aktivitet ("Jeg tager den"), og på en fast aktivitet også på alle resterende gange på én gang. Dage, hvor træneren har meldt sig utilgængelig, springes over.
+- **Kerne:** alle trænere kan selv melde sig som træner på en aktivitet ("Jeg tager den") eller sætte en anden træner på ("Sæt anden træner på"). Det sker for én gang ad gangen, også på faste aktiviteter.
 
 - **Kerne:** en træner kan melde fra som træner (én gang eller resten af en fast aktivitet). Står aktiviteten derefter uden træner, får de øvrige trænere besked ("Mangler træner – kan du tage den?").
 
@@ -139,7 +139,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** trænere på en aktivitet tilmeldes ikke selv som deltagere. De kan dog tilmelde deres familiemedlemmer.
 
-- **Afklares:** må trænere deltage gratis i andre træneres aktiviteter, eller betaler de som alle andre?
+- **Kerne:** trænere tilmelder sig ikke som deltagere – hverken på egne eller andres aktiviteter. En træner kan stadig tilmelde sine familiemedlemmer, der ikke selv er trænere. (Besluttet 11. nov. 2026.)
 
 - **Afklares:** hvad sker der med betalingen, hvis man melder fra? Refunderes ved frameldingen før en bestemt frist, ellers ikke? (se afsnittet om betaling)
 

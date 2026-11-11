@@ -27,25 +27,24 @@
         <!-- Mangler træner: alle trænere kan tage den -->
         <div v-if="!a.cancelled && !a.is_past && !a.trainers.length && a.can_edit" class="card need noprint">
             <div class="row" style="gap:10px;align-items:flex-start;flex-wrap:nowrap"><Icon name="whistle" style="width:22px;height:22px;color:var(--warn);flex-shrink:0;margin-top:2px" />
-                <div><strong>Mangler træner</strong><p class="small muted" style="margin:2px 0 0">Aktiviteten har ingen træner endnu.<span v-if="a.can_take"> Tag den selv, eller sæt en anden træner på under Trænere.</span></p></div>
+                <div><strong>Mangler træner</strong><p class="small muted" style="margin:2px 0 0">Aktiviteten har ingen træner endnu.</p></div>
             </div>
-            <div v-if="a.can_take" class="row" style="margin-top:12px;gap:8px">
-                <button class="btn primary" :disabled="busy" @click="take(false)">Jeg tager den</button>
-                <button v-if="a.series && a.series.remaining > 1" class="btn" :disabled="busy" @click="take(true)">Tag alle resterende ({{ a.series.remaining }})</button>
+            <div class="row" style="margin-top:12px;gap:8px">
+                <button v-if="a.can_take" class="btn primary" :disabled="busy" @click="take">Jeg tager den</button>
+                <button class="btn" @click="openTrainers">Sæt anden træner på</button>
             </div>
         </div>
         <div v-else-if="!a.cancelled && !a.is_past && a.can_take && !a.is_leader && a.can_edit" class="row noprint" style="margin-bottom:14px;gap:8px">
-            <button class="btn small" :disabled="busy" @click="take(false)"><Icon name="whistle" style="width:16px" /> Meld mig som træner</button>
-            <button v-if="a.series && a.series.remaining > 1" class="btn small" :disabled="busy" @click="take(true)">… på alle resterende ({{ a.series.remaining }})</button>
+            <button class="btn small" :disabled="busy" @click="take"><Icon name="whistle" style="width:16px" /> Meld mig som træner</button>
         </div>
 
         <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
 
         <!-- Tilmelding -->
-        <div v-else-if="!a.is_past && a.is_leader && !a.household.length" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
-        <div v-else-if="!a.is_past" class="card">
-            <p v-if="a.is_leader" class="small muted row between" style="margin:0 0 8px"><span>Du er træner på denne aktivitet. Her kan du tilmelde dine familiemedlemmer.</span><button class="btn small noprint" @click="showLeave = true">Meld fra som træner</button></p>
-            <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
+        <div v-else-if="!a.is_past && a.is_leader" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
+        <!-- Trænere tilmelder sig ikke som deltagere; boksen vises kun, hvis der er nogen at tilmelde (fx en træners børn) -->
+        <div v-if="!a.cancelled && !a.is_past && a.household.length" class="card">
+            <div class="row between"><h2 style="margin:0">{{ a.can_take ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
             <div v-if="a.deadline_passed" class="banner warn" style="margin-top:12px">Svarfristen er overskredet. Kontakt træneren, hvis du vil med.</div>
@@ -225,12 +224,11 @@ async function cancelActivity() {
     const r = await api(`activities/${a.value.id}/cancel`, { method: 'POST', body: { reason: cancelReason.value, series: cancelSeries.value } });
     showCancel.value = false; toast(r.count > 1 ? `${r.count} gange er aflyst, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked'); load();
 }
-async function take(series) {
+async function take() {
     busy.value = true;
     try {
-        const r = await api(`activities/${a.value.id}/take`, { method: 'POST', body: { series } });
-        a.value = r.activity;
-        toast(series ? `Du er træner på ${r.taken} gange` + (r.skipped.length ? ` (ikke ${r.skipped.join(', ')} – du er meldt utilgængelig)` : '') : 'Du er træner på aktiviteten');
+        a.value = await api(`activities/${a.value.id}/take`, { method: 'POST' });
+        toast('Du er træner på aktiviteten');
     } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
 async function leave() {
