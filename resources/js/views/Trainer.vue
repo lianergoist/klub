@@ -54,17 +54,21 @@
         </template>
 
         <template v-if="tab === 'cal'">
-            <div class="row between cal-bar">
-                <div class="row" style="gap:4px">
-                    <button class="btn small ghost" :disabled="!cal" @click="loadCal(cal.prev)" aria-label="Forrige måned">‹</button>
-                    <strong class="cal-month">{{ cal ? maaned(cal.month + '-01') : '' }}</strong>
-                    <button class="btn small ghost" :disabled="!cal" @click="loadCal(cal.next)" aria-label="Næste måned">›</button>
+            <div class="cal-nav">
+                <button class="btn mnav" :disabled="!cal" @click="loadCal(cal.prev)" aria-label="Forrige måned">
+                    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg><span>{{ cal ? kortMaaned(cal.prev) : '' }}</span>
+                </button>
+                <div class="cal-month">
+                    <strong>{{ cal ? maaned(cal.month + '-01') : '' }}</strong>
+                    <button v-if="cal && cal.month !== todayIso.slice(0, 7)" class="today-link" @click="loadCal()">Gå til i dag</button>
                 </div>
-                <button class="btn small" @click="loadCal()">I dag</button>
+                <button class="btn mnav" :disabled="!cal" @click="loadCal(cal.next)" aria-label="Næste måned">
+                    <span>{{ cal ? kortMaaned(cal.next) : '' }}</span><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
+                </button>
             </div>
             <p class="small muted cal-help">
                 <template v-if="detail">{{ detail }}</template>
-                <template v-else><span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> på en aktivitet · tryk for detaljer</template>
+                <template v-else><span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> aktivitet · tryk for detaljer</template>
             </p>
             <div v-if="!cal" class="spinner"></div>
             <div v-else ref="scroller" class="cal-scroll" :style="{ height: calHeight }">
@@ -106,7 +110,8 @@ const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDat
 const todayIso = isoOf(new Date());
 const parse = (iso) => new Date(iso + 'T12:00:00');
 const isMonday = (iso) => parse(iso).getDay() === 1;
-const ugedag = (iso) => parse(iso).toLocaleDateString('da-DK', { weekday: 'short' }).replace('.', '');
+const ugedag = (iso) => ['sø', 'ma', 'ti', 'on', 'to', 'fr', 'lø'][parse(iso).getDay()];
+const kortMaaned = (ym) => parse(ym + '-01').toLocaleDateString('da-DK', { month: 'short' }).replace('.', '');
 const maaned = (iso) => { const s = parse(iso).toLocaleDateString('da-DK', { month: 'long', year: 'numeric' }); return s[0].toUpperCase() + s.slice(1); };
 function uge(iso) { // ISO-ugenummer
     const d = parse(iso); d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
@@ -157,17 +162,22 @@ onMounted(loadActs);
 </script>
 
 <style scoped>
-.cal-bar { margin-bottom: 6px; }
-.cal-bar .ghost { font-size: 1.2rem; padding-inline: 14px; }
+.cal-nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 10px; }
+.mnav { min-height: 48px; min-width: 76px; padding: 8px 12px; background: var(--accent-soft); border-color: transparent; color: var(--accent); font-size: 1rem; text-transform: capitalize; }
+.mnav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.mnav:active { transform: scale(.96); }
+.cal-month { text-align: center; font-size: 1.15rem; line-height: 1.2; }
+.cal-month strong { display: block; }
+.today-link { border: 0; background: none; font: inherit; font-size: .8rem; font-weight: 600; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 4px; }
 .cal-help { min-height: 1.4em; margin: 0 0 8px; }
-.cal-help .cell { width: 16px; height: 16px; font-size: .6rem; vertical-align: -3px; }
+.cal-help .cell { width: 16px; height: 16px; font-size: .6rem; vertical-align: middle; }
 .cal-scroll { overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
 .avail { border-collapse: separate; border-spacing: 0; width: 100%; }
 .avail th, .avail td { padding: 5px 3px; text-align: center; border-bottom: 1px solid var(--line); font-size: .75rem; }
-.avail thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); font-size: .72rem; color: var(--ink); text-transform: none; min-width: 44px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 2px solid var(--line); padding: 8px 3px; }
-.avail .dcol { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; white-space: nowrap; padding-left: 8px; padding-right: 6px; font-weight: 600; color: var(--ink-2); width: 1%; }
+.avail thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); font-size: .72rem; color: var(--ink); text-transform: none; letter-spacing: 0; min-width: 40px; white-space: nowrap; border-bottom: 2px solid var(--line); padding: 8px 3px; }
+.avail .dcol { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; white-space: nowrap; padding-left: 12px; padding-right: 6px; font-weight: 600; color: var(--ink-2); width: 1%; text-transform: none; letter-spacing: 0; }
 .avail thead .dcol { z-index: 3; }
-.avail .wk { margin-left: 5px; font-size: .62rem; font-weight: 600; color: var(--ink-3); }
+.avail .wk { margin-left: 4px; font-size: .62rem; font-weight: 600; color: var(--ink-3); }
 .avail td { cursor: pointer; height: 30px; }
 .avail tr.we td, .avail tr.we .dcol { background: var(--surface-2); }
 .avail tr.mon > * { border-top: 2px solid var(--line); }
@@ -178,4 +188,5 @@ onMounted(loadActs);
 .cell { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-size: .7rem; font-weight: 700; }
 .cell.off { background: var(--bad-soft); color: var(--bad); }
 .cell.busy { background: var(--accent-soft); color: var(--accent); }
+@media (max-width: 899.98px) { .cal-scroll { margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; } }
 </style>
