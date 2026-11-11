@@ -58,8 +58,16 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: (to, from, saved) => saved || { top: 0 } });
 
-router.beforeEach(async (to) => {
+// Sider, der kun findes på web (Økonomi er ikke med i appen): i appen åbnes de i browseren
+const WEB_ONLY = ['/okonomi'];
+
+router.beforeEach(async (to, from) => {
     if (IS_APP && !siteAccess() && to.path !== '/adgang') return '/adgang';
+    if (IS_APP && WEB_ONLY.some(p => to.path === p || to.path.startsWith(p + '/'))) {
+        import('./native').then((m) => m.openWeb(to.fullPath));
+        // Bliv hvor man er – eller gå til forsiden, hvis linket åbnede appen (fx et tryk på en push-besked)
+        return from.matched.length ? false : '/aktiviteter';
+    }
     if (to.meta.public) return true;
     if (!store.token) return '/login';
     if (!store.user) { try { await refreshMe(); } catch { return '/login'; } }
