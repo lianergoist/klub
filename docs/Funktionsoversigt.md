@@ -344,6 +344,24 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Afklares:** hvor længe gemmes oplysninger om gæster, der ikke melder sig ind?
 
+**Klippekort for ikke-medlemmer** (fx SUP 10-turskort)
+
+- **Kerne:** et klippekort er et tilkøb med et antal klip (fx 10), der gælder 12 måneder fra køb og til aktiviteter i bestemte kategorier (fx SUP). Bestyrelsen opretter det under Indstillinger → Medlemskaber og tilkøb (felterne "Klippekort med klip" og "Kun for ikke-medlemmer"). Klippekort er kun for ikke-medlemmer. (Besluttet 11. nov. 2026.)
+
+- **Kerne:** ikke-medlemmer køber kortet og opretter et login på siden /klippekort (linket fra login-siden) og betaler med MobilePay. De logger ind som gæst og ser kun deres klippekort, de aktiviteter, kortet gælder til, og deres egne regninger.
+
+- **Kerne:** en aktivitet åbnes for klippekort med feltet "Åben for klippekort" (også på faste aktiviteter). Tilmelding bruger ét klip; afmelding inden afmeldingsfristen giver klippet tilbage, udeblivelse gør ikke. Trænerne ser gæsterne på deltagerlisten med mærket "Gæst" og kan registrere fremmøde som for alle andre. Klubben kan dermed se, hvor mange der kommer.
+
+- **Kerne:** papkort: den, der allerede har betalt for et papkort, opretter kun et login på /klippekort. Kassereren eller bestyrelsen overfører derefter de resterende klip under Medlemmer → gæstens side ("Overfør papkort"); kortet gælder 12 måneder fra overførslen.
+
+- **Afklares:** prisen på SUP 10-turskortet. I proof of concept er den foreløbigt 600 kr. Bestyrelsen kan rette den under Indstillinger.
+
+- **Afklares:** skal et betalt klippekort trækkes fra kontingentet, hvis gæsten melder sig ind (som prøvetræning og SUP-kursus inden for 12 måneder)? I proof of concept trækkes det ikke fra.
+
+- **Afklares:** må en gæst tage en ven med på sit kort (2 klip til samme træning), eller er kortet personligt? I proof of concept er det personligt.
+
+- **Afklares:** hvor længe gemmes oplysninger om gæster med klippekort, når kortet er brugt op eller udløbet (se også punktet ovenfor om gæster)?
+
 - **Kerne:** opbevaringspladser og lejeudstyr registreres, så samme plads eller samme bræt ikke bliver udlejet to gange.
 
 - **Senere:** kalender for udstyrslejen med booking pr. dag og tid, samt retur-registrering.

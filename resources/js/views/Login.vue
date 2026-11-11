@@ -13,6 +13,7 @@
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink> <template v-if="!IS_APP">eller <RouterLink to="/prov">prøv en træning eller et SUP-kursus</RouterLink></template></p>
+                <p class="small muted" style="text-align:center;margin-top:4px">Ikke medlem, men vil med til SUP? <RouterLink to="/klippekort">Køb et klippekort</RouterLink></p>
             </form>
         </div>
         <div v-if="demo.length" class="card login-card">

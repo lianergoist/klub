@@ -17,6 +17,8 @@ const routes = [
     { path: '/', redirect: '/aktiviteter' },
     { path: '/login', component: v('Login'), meta: { public: true } },
     { path: '/bliv-medlem', component: v('Register'), meta: { public: true } },
+    { path: '/klippekort', component: v('Punchcard'), meta: { public: true } },
+    { path: '/klip', component: v('GuestKlip'), meta: { guest: true } },
     ...(__APP__ ? [{ path: '/adgang', component: v('AppGate'), meta: { public: true } }] : [
         { path: '/prov', component: v('Guest'), meta: { public: true } },
         { path: '/prov/tak', component: v('GuestThanks'), meta: { guest: true } },
@@ -74,7 +76,8 @@ router.beforeEach(async (to, from) => {
     if (!store.token) return '/login';
     if (!store.user) { try { await refreshMe(); } catch { return '/login'; } }
     // Gæster (prøvetræning/SUP-kursus) har kun adgang til betaling og deres kvittering
-    if (store.user?.status === 'guest' && !to.meta.guest && !to.path.startsWith('/betal')) return '/prov/tak';
+    // Gæster (ikke-medlemmer) har kun adgang til deres klippekort-side, betaling og kvittering
+    if (store.user?.status === 'guest' && !to.meta.guest && !to.path.startsWith('/betal')) return '/klip';
     if (to.meta.can && !store.user?.can?.[to.meta.can]) return '/aktiviteter';
     return true;
 });

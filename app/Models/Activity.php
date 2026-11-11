@@ -14,6 +14,7 @@ class Activity extends Model
         'signup_deadline' => 'datetime',
         'cancelled_at' => 'datetime',
         'members_only' => 'boolean',
+        'punchcard' => 'boolean',
     ];
 
     public function categories() { return $this->belongsToMany(Category::class); }

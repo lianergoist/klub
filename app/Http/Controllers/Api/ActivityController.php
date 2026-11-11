@@ -86,6 +86,7 @@ class ActivityController extends Controller
             'is_full' => $activity->isFull(),
             'members_only' => $activity->members_only,
             'guest_offer' => $activity->guest_offer,
+            'punchcard' => $activity->punchcard,
             'is_past' => $activity->ends_at->isPast(),
             'created_by' => $activity->creator?->name,
             // Medlemmer ser kun navne på deltagerlisten
@@ -149,6 +150,7 @@ class ActivityController extends Controller
             'price' => 'integer|min:0',
             'members_only' => 'boolean',
             'guest_offer' => 'nullable|in:trial,sup_course',
+            'punchcard' => 'boolean',
             'category_ids' => 'required|array|min:1',
             'category_ids.*' => 'exists:categories,id',
             'trainer_ids' => 'array',

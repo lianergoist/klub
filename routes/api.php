@@ -20,6 +20,8 @@ Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('thr
 Route::get('packages/offer', [\App\Http\Controllers\Api\PackageController::class, 'offer']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
 Route::post('guest/book', [GuestController::class, 'book'])->middleware('throttle:10,1');
+Route::get('punchcards', [\App\Http\Controllers\Api\PunchcardController::class, 'offer']);
+Route::post('punchcards/signup', [\App\Http\Controllers\Api\PunchcardController::class, 'signup'])->middleware('throttle:10,1');
 Route::get('feed/images/{image}', [FeedController::class, 'image'])->name('feed.image')->middleware('signed');
 Route::get('expense-claims/{claim}/file', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'file'])->name('expense.file')->middleware('signed');
 
@@ -30,6 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('invoices/{invoice}', [FinanceController::class, 'invoice']);
     Route::post('invoices/{invoice}/pay', [FinanceController::class, 'pay']);
     Route::get('guest/status', [GuestController::class, 'status']);
+    // Klippekort: gæstens egen side, køb og tilmelding med klip
+    Route::get('klip', [\App\Http\Controllers\Api\PunchcardController::class, 'home']);
+    Route::post('klip/buy', [\App\Http\Controllers\Api\PunchcardController::class, 'buy']);
+    Route::post('klip/activities/{activity}/signup', [\App\Http\Controllers\Api\PunchcardController::class, 'punch']);
+    Route::post('klip/activities/{activity}/cancel', [\App\Http\Controllers\Api\PunchcardController::class, 'unpunch']);
 
     // Resten kun for medlemmer
     Route::middleware(\App\Http\Middleware\EnsureMember::class)->group(function () {
@@ -109,6 +116,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('members/{member}', [MemberController::class, 'show']);
     Route::put('members/{member}', [MemberController::class, 'update']);
     Route::post('members/{member}/approve', [MemberController::class, 'approve']);
+    Route::post('members/{member}/punchcard', [\App\Http\Controllers\Api\PunchcardController::class, 'transfer']);
     Route::post('members/{member}/roles', [MemberController::class, 'addRole']);
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
 

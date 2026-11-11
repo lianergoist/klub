@@ -87,13 +87,15 @@ class Packages
         if ($err = $package->compositionError($people, $from)) abort(422, $err);
 
         foreach ($members as $m) {
+            // Klippekort er kun for ikke-medlemmer (gæster)
+            abort_if($package->guest_only && $m->status !== 'guest', 422, $package->name.' er kun for ikke-medlemmer.');
             if ($package->isMembership() && ($other = self::overlapping($m, $from, $to))) {
                 abort(422, $m->name.' har allerede '.$other->package->name.($other->valid_to ? ' til '.$other->valid_to->format('d.m.Y') : '').'.');
             }
             if (! $package->isMembership() && $package->requires_membership && ! $m->hasValidMembership(true)) {
                 abort(422, $package->name.' kræver gyldigt medlemskab, og det har '.$m->name.' ikke.');
             }
-            if (! $package->isMembership() && $package->period_type !== 'once'
+            if (! $package->isMembership() && $package->period_type !== 'once' && ! $package->isPunchcard()
                 && Purchase::where('package_id', $package->id)->currentOrFuture()->whereHas('users', fn ($q) => $q->whereKey($m->id))->exists()) {
                 abort(422, $m->name.' har allerede '.mb_strtolower($package->name).'.');
             }
@@ -123,6 +125,7 @@ class Packages
             $purchase = Purchase::create([
                 'package_id' => $package->id, 'payer_id' => $payer->id, 'invoice_id' => $invoice->id, 'resource_id' => $resource?->id,
                 'valid_from' => $from, 'valid_to' => $to,
+                'uses_left' => $package->isPunchcard() ? $package->uses : null,
                 // Medlemskab til næste periode: adgang til aktiviteter fra købsdatoen, hvis pakken giver det (klubbens praksis)
                 'access_from' => $package->isMembership() && $package->early_access && $from->isAfter(now()->endOfDay()) ? now()->toDateString() : null,
             ]);

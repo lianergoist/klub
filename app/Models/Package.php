@@ -11,11 +11,16 @@ class Package extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean',
+        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean', 'guest_only' => 'boolean',
         'archived_at' => 'datetime',
     ];
 
     public const KINDS = ['membership' => 'Medlemskab', 'product' => 'Tilkøb'];
+
+    /** Klippekort: de kategorier, kortet kan bruges til (fx SUP). */
+    public function categories() { return $this->belongsToMany(Category::class); }
+
+    public function isPunchcard(): bool { return (int) $this->uses > 0; }
 
     public function slots() { return $this->hasMany(PackageSlot::class)->with('category'); }
     public function purchases() { return $this->hasMany(Purchase::class); }

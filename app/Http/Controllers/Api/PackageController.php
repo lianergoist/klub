@@ -41,7 +41,8 @@ class PackageController extends Controller
 
     public static function offers(string $kind)
     {
-        return Package::with('slots.category', 'product.resources')->where('kind', $kind)->whereNull('archived_at')->where('self_service', true)
+        // Klippekort kun for ikke-medlemmer vises ikke for medlemmer (de købes på /klippekort)
+        return Package::with('slots.category', 'product.resources')->where('kind', $kind)->whereNull('archived_at')->where('self_service', true)->where('guest_only', false)
             ->orderBy('position')->orderBy('id')->get()
             ->filter(fn ($p) => $p->buyableOn(now()))
             ->map(fn ($p) => self::offerRow($p))->values();
@@ -167,12 +168,14 @@ class PackageController extends Controller
             'today' => $today,
             'categories' => PersonCategory::orderBy('min_age')->get()->map(fn ($c) => $c->only('id', 'name', 'plural', 'min_age', 'max_age') + ['archived' => (bool) $c->archived_at]),
             'accounts' => Account::where('type', 'income')->orderBy('number')->get(['id', 'number', 'name']),
-            'packages' => Package::with('slots')->orderBy('kind')->orderBy('position')->orderBy('id')->get()->map(function ($p) use ($prices, $today, $row, $counts, $active) {
+            'activity_categories' => \App\Models\Category::whereNull('archived_at')->orderBy('name')->get(['id', 'name', 'color']),
+            'packages' => Package::with('slots', 'categories')->orderBy('kind')->orderBy('position')->orderBy('id')->get()->map(function ($p) use ($prices, $today, $row, $counts, $active) {
                 $hist = $prices[$p->priceCode()] ?? collect();
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
                 return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
-                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id') + [
+                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only') + [
+                    'category_ids' => $p->categories->pluck('id')->values(),
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
                     'slots' => $p->slots->map(fn ($s) => ['person_category_id' => $s->person_category_id, 'min' => $s->min, 'max' => $s->max])->values(),
@@ -206,6 +209,10 @@ class PackageController extends Controller
             'early_access' => 'boolean',
             'requires_membership' => 'boolean',
             'self_service' => 'boolean',
+            'uses' => 'nullable|integer|min:1|max:100',
+            'guest_only' => 'boolean',
+            'category_ids' => 'array',
+            'category_ids.*' => 'exists:categories,id',
             'renews_to_id' => ['nullable', Rule::exists('packages', 'id')->where('kind', 'membership')],
             'account_id' => ['required', Rule::exists('accounts', 'id')->where('type', 'income')],
             'slots' => 'required|array|min:1',
@@ -244,7 +251,11 @@ class PackageController extends Controller
         $d['period_days'] = $d['period_type'] === 'days' ? $d['period_days'] : null;
         [$d['date_from'], $d['date_to']] = $d['period_type'] === 'dates' ? [$d['date_from'], $d['date_to']] : [null, null];
         $kind = $p?->kind ?? $d['kind'];
-        if ($kind === 'membership') $d['requires_membership'] = false; else { $d['gives_access'] = true; $d['renews_to_id'] = null; }
+        if ($kind === 'membership') { $d['requires_membership'] = false; $d['uses'] = null; $d['guest_only'] = false; $d['category_ids'] = []; }
+        else { $d['gives_access'] = true; $d['renews_to_id'] = null; }
+        abort_if(! empty($d['uses']) && empty($d['category_ids']), 422, 'Vælg hvilke aktiviteter (kategorier) klippekortet gælder til.');
+        if (empty($d['uses'])) { $d['uses'] = null; $d['category_ids'] = []; }
+        abort_if(! empty($d['uses']) && ! empty($d['requires_membership']) && ! empty($d['guest_only']), 422, 'Et klippekort kan ikke både kræve medlemskab og være kun for ikke-medlemmer.');
 
         return $d;
     }
@@ -254,9 +265,10 @@ class PackageController extends Controller
         $this->board($r);
         $d = $this->validated($r);
         $p = DB::transaction(function () use ($r, $d) {
-            $p = Package::create(collect($d)->except('slots', 'price')->all() + ['created_by' => $r->user()->id,
+            $p = Package::create(collect($d)->except('slots', 'price', 'category_ids')->all() + ['created_by' => $r->user()->id,
                 'position' => (Package::where('kind', $d['kind'])->max('position') ?? 0) + 1]);
             foreach ($d['slots'] as $s) $p->slots()->create($s);
+            $p->categories()->sync($d['category_ids'] ?? []);
             Prices::set($p->priceCode(), (int) round($d['price'] * 100), now()->toDateString(), $r->user()->id);
             Audit::log('package.created', $p, ['name' => $p->name, 'price' => Money::fmt((int) round($d['price'] * 100))]);
 
@@ -271,9 +283,10 @@ class PackageController extends Controller
     {
         $this->board($r);
         $d = $this->validated($r, $package);
-        $before = $package->only(array_keys(collect($d)->except('slots')->all())) + ['slots' => $package->slots->map->only('person_category_id', 'min', 'max')->all()];
+        $before = $package->only(array_keys(collect($d)->except('slots', 'category_ids')->all())) + ['slots' => $package->slots->map->only('person_category_id', 'min', 'max')->all()];
         DB::transaction(function () use ($package, $d) {
-            $package->update(collect($d)->except('slots')->all());
+            $package->update(collect($d)->except('slots', 'category_ids')->all());
+            $package->categories()->sync($d['category_ids'] ?? []);
             $package->slots()->delete();
             foreach ($d['slots'] as $s) $package->slots()->create($s);
         });

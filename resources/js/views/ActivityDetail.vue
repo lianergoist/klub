@@ -21,6 +21,7 @@
                 <div v-if="a.price_fmt" class="inf"><Icon name="money" /><span>{{ a.price_fmt }} pr. deltager<span v-if="a.members_only" class="muted small"> · kræver betalt kontingent</span></span></div>
             </div>
             <p v-if="a.description" style="white-space:pre-line;margin:14px 0 0">{{ a.description }}</p>
+            <p v-if="a.punchcard && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for klippekort</span> Ikke-medlemmer med klippekort kan tilmelde sig.</p>
             <p v-if="a.guest_offer && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for ikke-medlemmer</span> som {{ a.guest_offer === 'trial' ? 'prøvetræning' : 'SUP-kursus' }} via siden "Prøv SurfHorsens".</p>
         </div>
 
