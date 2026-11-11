@@ -41,6 +41,7 @@ class Packages
 
         $window = $package->windowFor(now());
         abort_unless($window, 422, $package->name.' kan kun købes i perioden '.$package->periodLabel().'.');
+        abort_unless($package->onSale() || $staff, 422, $package->name.' er kun '.$package->saleLabel().'.');
         [$from, $to] = $window;
 
         $household = $payer->managedMembers()->keyBy('id');
@@ -305,9 +306,9 @@ class Packages
         $product = fn ($code) => Product::where('price_code', $code)->first();
 
         $specs = [
-            ['m.single', 'membership', 'Enkelt medlem – hel sæson', 'Ét medlem (barn eller voksen) for hele sæsonen.', $season, 1, 1, [], fn () => $rows('membership.single')],
+            ['m.single', 'membership', 'Enkelt medlem – hel sæson', 'Ét medlem (barn eller voksen) for hele sæsonen.', $season, 1, 1, ['sale' => ['05-01', '07-31']], fn () => $rows('membership.single')],
             ['m.single_half', 'membership', 'Enkelt medlem – halv sæson', 'Ét medlem fra 1. august og sæsonen ud.', $half, 1, 1, ['renews' => 'm.single'], fn () => $rows('membership.single_half')],
-            ['m.two', 'membership', 'Husstand med 2 personer – hel sæson', 'To medlemmer i samme husstand.', $season, 2, 2, [], fn () => $combo(['membership.single' => 2])],
+            ['m.two', 'membership', 'Husstand med 2 personer – hel sæson', 'To medlemmer i samme husstand.', $season, 2, 2, ['sale' => ['05-01', '07-31']], fn () => $combo(['membership.single' => 2])],
             ['m.two_half', 'membership', 'Husstand med 2 personer – halv sæson', 'To medlemmer i samme husstand fra 1. august.', $half, 2, 2, ['renews' => 'm.two'], fn () => $combo(['membership.single_half' => 2])],
             ['m.family3', 'membership', 'Familie med 3 personer', 'Tre medlemmer i samme husstand.', $season, 3, 3, [], fn () => $rows('membership.family3')],
             ['m.family4', 'membership', 'Familie med 4 eller flere', 'Fire eller flere medlemmer i samme husstand.', $season, 4, 10, [], fn () => $rows('membership.family4')],
@@ -333,6 +334,7 @@ class Packages
                 'requires_membership' => $opt['member'] ?? false, 'product_id' => ($opt['product'] ?? null)?->id,
                 'account_id' => $acc($opt['acc'] ?? '1000'), 'position' => $i,
                 'archived_at' => isset($opt['product']) && ! $opt['product']->active ? now() : null,
+                'sale_from' => $opt['sale'][0] ?? null, 'sale_to' => $opt['sale'][1] ?? null,
             ]);
             foreach ($cats as $c) $pkg->slots()->create(['person_category_id' => $c->id, 'min' => 0, 'max' => $max]);
             foreach ($prices() as $r) {

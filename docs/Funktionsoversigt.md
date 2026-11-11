@@ -259,7 +259,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** bestyrelse, kasserer og admin kan lægge en ny pris ind på en pakke med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Priser for prøvetræning og SUP-kursus (ikke-medlemmer) ligger for sig. Alle ændringer skrives i ændringsloggen.
 
-- **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der kan købes nu. Vælger man en pakke til flere personer, tilføjer man dem med det samme. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
+- **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der er til salg nu. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
 
 - **Kerne:** kassereren fornyer medlemskaberne for en ny sæson med ét tryk: medlemskaber med faste datoer fornyes med samme personer og samme pakke, eller den pakke, den er sat til at fornyes som (fx halv sæson → hel sæson). Passer personerne ikke længere (fx et barn, der er blevet voksen), eller er pakken arkiveret, vises husstanden på en liste, så kassereren kan tage sig af den.
 
@@ -267,7 +267,9 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** halv sæson er en pakke med faste datoer 1/8–30/4, som kan købes fra 1. august.
 
-- **Afklares:** en pakke med faste datoer kan købes, så længe perioden løber, og koster det samme hele perioden. "Hel sæson" kan altså købes til fuld pris i marts. Skal pakker kunne have en salgsperiode (fx kun til salg maj–juli), eller er det nok, at der findes en halvsæsonpakke?
+- **Kerne:** en pakke kan have en salgsperiode (fx 1. maj – 31. juli), så den kun tilbydes i en del af året. De hidtidige helsæsonmedlemskaber (enkelt og 2 personer) sælges 1/5–31/7, så nye medlemmer fra 1. august kun får tilbudt halv sæson. Fornyelse ved ny sæson sker uanset salgsperioden. (Besluttet 11. nov. 2026.)
+
+- **Kerne:** ved indmeldelse spørges der først, om andre i husstanden også skal være medlemmer. Svarer man nej, vises kun medlemskaber, der passer til én person. Svarer man ja, tilføjer man personerne og får derefter vist de medlemskaber, der passer, med det billigste først.
 
 - **Senere:** opgradering med modregning (fx fra "1 voksen og 1 barn" til en familiepakke midt i sæsonen, hvor det betalte trækkes fra). Indtil videre købes en ekstra pakke til den nye person.
 

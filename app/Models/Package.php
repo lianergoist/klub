@@ -44,6 +44,31 @@ class Package extends Model
         };
     }
 
+    /** Er pakken til salg på datoen? Uden salgsperiode kan den købes, så længe den gælder. */
+    public function onSale($date = null): bool
+    {
+        if (! $this->sale_from || ! $this->sale_to) return true;
+        $md = Carbon::parse($date ?? now())->format('m-d');
+
+        return $this->sale_from <= $this->sale_to
+            ? $md >= $this->sale_from && $md <= $this->sale_to
+            : $md >= $this->sale_from || $md <= $this->sale_to; // hen over nytår
+    }
+
+    /** Kan købes i dag: til salg og med en gyldighedsperiode, der dækker dagen. */
+    public function buyableOn($date = null): bool
+    {
+        return $this->onSale($date) && $this->windowFor($date) !== null;
+    }
+
+    public function saleLabel(): ?string
+    {
+        if (! $this->sale_from || ! $this->sale_to) return null;
+        $md = fn ($s) => Carbon::parse('2000-'.$s)->locale('da')->isoFormat('D. MMM');
+
+        return 'til salg '.$md($this->sale_from).' – '.$md($this->sale_to);
+    }
+
     /** Den faste periode, der starter i en given sæson/år (bruges ved fornyelse). */
     public function dateWindowStartingIn(int $year): array
     {

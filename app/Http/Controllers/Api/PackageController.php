@@ -42,7 +42,7 @@ class PackageController extends Controller
     {
         return Package::with('slots.category', 'product.resources')->where('kind', $kind)->whereNull('archived_at')->where('self_service', true)
             ->orderBy('position')->orderBy('id')->get()
-            ->filter(fn ($p) => $p->windowFor(now()) !== null)
+            ->filter(fn ($p) => $p->buyableOn(now()))
             ->map(fn ($p) => self::offerRow($p))->values();
     }
 
@@ -161,12 +161,13 @@ class PackageController extends Controller
                 $hist = $prices[$p->priceCode()] ?? collect();
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
-                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'total_min', 'total_max',
+                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'total_min', 'total_max',
                     'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id') + [
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
                     'slots' => $p->slots->map(fn ($s) => ['person_category_id' => $s->person_category_id, 'min' => $s->min, 'max' => $s->max])->values(),
                     'period_label' => $p->periodLabel(), 'composition_label' => $p->compositionLabel(),
+                    'sale_label' => $p->saleLabel(), 'on_sale' => $p->buyableOn(now()),
                     'current' => $current ? $row($current) : null,
                     'upcoming' => $hist->filter(fn ($x) => $x->valid_from > $today)->sortBy('valid_from')->map($row)->values(),
                     'previous' => $hist->filter(fn ($x) => $x->valid_from <= $today && $x->id !== $current?->id)->map($row)->values(),
@@ -186,6 +187,8 @@ class PackageController extends Controller
             'period_days' => 'required_if:period_type,days|nullable|integer|min:1|max:365',
             'date_from' => ['required_if:period_type,dates', 'nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
             'date_to' => ['required_if:period_type,dates', 'nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
+            'sale_from' => ['nullable', 'required_with:sale_to', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
+            'sale_to' => ['nullable', 'required_with:sale_from', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
             'total_min' => 'required|integer|min:1|max:50',
             'total_max' => 'nullable|integer|min:1|max:50|gte:total_min',
             'gives_access' => 'boolean',
@@ -220,6 +223,10 @@ class PackageController extends Controller
         if ($d['period_type'] === 'dates') {
             foreach (['date_from', 'date_to'] as $f) abort_unless(checkdate((int) substr($d[$f], 0, 2), (int) substr($d[$f], 3, 2), 2024), 422, 'Ugyldig dato: '.$d[$f]);
         }
+        foreach (['sale_from', 'sale_to'] as $f) {
+            if (! empty($d[$f])) abort_unless(checkdate((int) substr($d[$f], 0, 2), (int) substr($d[$f], 3, 2), 2024), 422, 'Ugyldig dato: '.$d[$f]);
+        }
+        $d['sale_from'] ??= null; $d['sale_to'] ??= null;
         abort_if(($d['renews_to_id'] ?? null) && ($d['period_type'] !== 'dates' || ($p && $d['renews_to_id'] == $p->id)), 422, 'Kun pakker med faste datoer kan fornyes som en anden pakke.');
         $d['period_days'] = $d['period_type'] === 'days' ? $d['period_days'] : null;
         [$d['date_from'], $d['date_to']] = $d['period_type'] === 'dates' ? [$d['date_from'], $d['date_to']] : [null, null];

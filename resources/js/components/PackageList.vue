@@ -25,7 +25,8 @@ import { dato } from '../api';
 const props = defineProps({ packages: Array, modelValue: Number, fits: Function, empty: { type: String, default: 'Der er ingen pakker at vælge mellem lige nu.' } });
 defineEmits(['update:modelValue']);
 const showAll = ref(false);
-const ok = computed(() => props.fits ? props.packages.filter(p => !props.fits(p)) : props.packages);
+// Pakker, der passer, vises med den billigste først
+const ok = computed(() => (props.fits ? props.packages.filter(p => !props.fits(p)) : props.packages).slice().sort((a, b) => a.price - b.price));
 const others = computed(() => props.fits ? props.packages.filter(p => props.fits(p)) : []);
 const shown = computed(() => showAll.value || !ok.value.length ? [...ok.value, ...others.value] : [...ok.value, ...others.value.filter(p => p.id === props.modelValue)]);
 </script>
