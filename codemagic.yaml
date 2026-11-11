@@ -1,5 +1,5 @@
 # Codemagic: byg mobilappen fra dette repo.
-# Appen peger på https://klub.rpix.dk (KLUB_API). Til test mod testserveren: sæt KLUB_API=https://test.klub.rpix.dk.
+# Appen peger på https://klub.rpix.dk (KLUB_API).
 # Første gang: forbind repoet i Codemagic og opret en App Store Connect API-nøgle (Teams → Integrations) med navnet i
 # integrations.app_store_connect nedenfor. Android-testudgaven kræver ingen signering (debug-APK).
 

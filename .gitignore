@@ -28,3 +28,6 @@ Thumbs.db
 
 # Mobilapp: bygges fra resources/app (npm run build:app)
 /dist-app
+
+# Android-app til download (bygges på serveren)
+/public/app/

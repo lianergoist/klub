@@ -63,9 +63,9 @@ Kør kommandoen som root (den skriver i `.env`), og kør derefter `chown -R www-
 
 Appen er den samme Vue-app pakket med Capacitor (`android/`, `ios/`, `capacitor.config.json`). Den bygges med `npm run build:app` (indgang `resources/app/`, output `dist-app/`) og er **uden økonomi og gæstesider** – kassereren får et link, der åbner økonomien i browseren.
 
-- API-adresse: `KLUB_API=https://klub.rpix.dk npm run build:app` (standard: testserveren).
+- API-adresse: `KLUB_API=https://klub.rpix.dk npm run build:app` (standard: klub.rpix.dk).
 - Version: vises under "Log ud" (appen: version + buildnummer fra telefonen, web: version + byggedato). Ny version (fx 0.2) skal skrives tre steder: `version` i `package.json` (0.2.0), `versionName` i `android/app/build.gradle` og `MARKETING_VERSION` i `ios/App/App.xcodeproj/project.pbxproj`. Buildnummeret tæller Codemagic op af sig selv (`BUILD_NUMBER`; Android bruger mindst 2).
-- Afprøvning på serveren: JDK 21 og Android SDK ligger i `/opt/android-sdk` med en emulator (`klub`). Byg en debug-APK i en kopi af repoet (`/root/klub-app`) mod testserveren med `KLUB_API=https://test.klub.rpix.dk`.
+- Afprøvning på serveren: JDK 21 og Android SDK ligger i `/opt/android-sdk` med en emulator (`klub`). Byg en debug-APK i en kopi af repoet (`/root/klub-app`), fx `KLUB_API=https://klub.rpix.dk npm run build:app && npx cap sync android && cd android && ./gradlew assembleDebug`. Den seneste APK lægges i `public/app/` (ikke i git), så den kan hentes på https://klub.rpix.dk/app/.
 - Sitets adgangskode (proof of concept) sendes som headeren `X-Site-Access` (hentes via `POST /api/site-access`), da appen ikke kan bruge sitets cookie. CORS tillader kun appens adresser (`config/cors.php`).
 - `npm run app:sync` = byg + kopiér til de indbyggede projekter. Ikoner og opstartsskærm er lavet ud fra `assets/` (klubbens logo).
 - Codemagic: `codemagic.yaml` har en Android-testudgave (debug-APK) og en iOS-testudgave (TestFlight).
@@ -75,13 +75,13 @@ Appen er den samme Vue-app pakket med Capacitor (`android/`, `ios/`, `capacitor.
   - servicekonto-nøgle på serveren (**ikke i git**), sti i `.env`: `FCM_CREDENTIALS=/var/www/klub/storage/app/private/firebase.json`
 - Mangler før udgivelse: universal/app links, sikker opbevaring af login, MobilePay-retur til appen og sletning af konto i appen (Apple-krav).
 
-## Testmiljø
+## Udvikling og fortrydelse
 
-Nye funktioner kan afprøves på **https://test.klub.rpix.dk** før de kommer på klub.rpix.dk:
+Hele opsætningen er et proof of concept, og der udvikles direkte på klub.rpix.dk (`main`). Testsitet test.klub.rpix.dk er nedlagt (november 2026).
 
-- kode: `/var/www/klub-test` (en git-gren, fx `beskeder`), database `klub_test`, egen `.env` med rødt TEST-bånd (`APP_TEST_BANNER=true`)
-- samme adgangskode til sitet; demodata nulstilles med samme kommando som nedenfor, kørt i `/var/www/klub-test`
-- testdatabasen er ikke med i den automatiske databasebackup
+- Kode fortrydes med git (`git revert`), derefter `npm run build` og `php artisan optimize`.
+- Git ruller ikke databasen tilbage: før hver migration tages en sikkerhedskopi med `mysqldump`, og serveren tager selv en kopi hver 6. time (`/var/backups/klub`, 14 dage).
+- Demodata kan altid nulstilles med kommandoen under Demo.
 
 ## Efter ændringer i koden
 
