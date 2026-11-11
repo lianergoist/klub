@@ -244,17 +244,32 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 | Familiekontingent, 3 personer i samme husstand | 2.500 kr. |
 | Familiekontingent, 4 eller flere i samme husstand | 3.000 kr. |
 
-- **Kerne:** medlemstyperne er *enkelt medlem*, *familie* og *støttemedlem*. Kontingentet beregnes pr. husstand ud fra antallet af aktive medlemmer (støttemedlemmer tæller ikke med): 1–2 personer betaler enkeltkontingent hver, 3 personer familiekontingent, 4 eller flere familiekontingent for store familier.
+- **Kerne:** alle medlemskaber og tilkøb er **pakker**, som bestyrelse og admin selv opretter under Indstillinger → Medlemskaber og tilkøb. En pakke beskriver:
+  - **hvem** den dækker: antal personer i alt (mindst–højst) og pr. personkategori (fx "2 voksne og 1–3 børn" eller "1 voksen og 1 barn"),
+  - **hvor længe** den gælder: faste datoer hvert år (fx 1/5–30/4 eller 1/8–30/4), et antal dage fra køb (1–365) eller engangsbetaling,
+  - **pris** med historik ("gælder fra"), hvilken konto indtægten bogføres på, og om medlemmerne selv kan vælge den.
+  - Medlemskaber kan give adgang til aktiviteter eller ej (støttemedlem). Tilkøb kan kræve gyldigt medlemskab.
+  - Pakker slettes aldrig, men arkiveres. Ændringer gælder kun nye køb; eksisterende køb beholder personer og periode.
 
-- **Kerne (i proof of concept):** alle priser (kontingent, udstyrsleje, opbevaring, prøvetræning, SUP-kursus, depositum) ligger samlet under Indstillinger, hvor bestyrelse og kasserer selv kan lægge en ny pris ind med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Alle ændringer skrives i ændringsloggen.
+- **Kerne:** personkategorierne vedligeholdes samme sted (i dag *Barn 0–17* og *Voksen 18+*). Alderen regnes på den dag, pakken begynder at gælde.
 
-- **Kerne:** kassereren opretter kontingentopkrævning for en sæson med ét tryk: én regning pr. husstand og én pr. støttemedlem, sendt til husstandens betaler.
+- **Kerne:** gyldigt medlemskab = personen er med i et betalt medlemskab, der dækker dags dato. En person kan kun have ét medlemskab ad gangen.
+
+- **Kerne:** de hidtidige medlemstyper og priser er lagt ind som pakker: enkelt medlem (hel/halv sæson), husstand med 2 personer (hel/halv sæson), familie med 3, familie med 4 eller flere, og støttemedlem. Udstyrsleje, opbevaring, dagsleje og depositum er tilkøb. Demodata har desuden eksemplerne "Familie: 2 voksne og 1–3 børn" og "Adgang til motionsrum, 30 dage".
+
+- **Kerne:** bestyrelse, kasserer og admin kan lægge en ny pris ind på en pakke med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Priser for prøvetræning og SUP-kursus (ikke-medlemmer) ligger for sig. Alle ændringer skrives i ændringsloggen.
+
+- **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der kan købes nu. Vælger man en pakke til flere personer, tilføjer man dem med det samme. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
+
+- **Kerne:** kassereren fornyer medlemskaberne for en ny sæson med ét tryk: medlemskaber med faste datoer fornyes med samme personer og samme pakke, eller den pakke, den er sat til at fornyes som (fx halv sæson → hel sæson). Passer personerne ikke længere (fx et barn, der er blevet voksen), eller er pakken arkiveret, vises husstanden på en liste, så kassereren kan tage sig af den.
 
 - **Kerne:** betalingsstatus pr. medlem og sæson: ikke opkrævet, opkrævet, betalt, forfalden.
 
-- **Kerne:** halv sæson: melder et enkelt medlem sig ind fra 1. august, betales halvsæsonprisen.
+- **Kerne:** halv sæson er en pakke med faste datoer 1/8–30/4, som kan købes fra 1. august.
 
-- **Kerne:** tilføjes et barn eller en partner midt i sæsonen, betaler husstanden forskellen mellem den nye husstandspris og det, der allerede er betalt for sæsonen (fx enkelt medlem på halv sæson 400 kr. → 2 personer 800 kr. → 3 personer 2.500 kr.).
+- **Afklares:** en pakke med faste datoer kan købes, så længe perioden løber, og koster det samme hele perioden. "Hel sæson" kan altså købes til fuld pris i marts. Skal pakker kunne have en salgsperiode (fx kun til salg maj–juli), eller er det nok, at der findes en halvsæsonpakke?
+
+- **Senere:** opgradering med modregning (fx fra "1 voksen og 1 barn" til en familiepakke midt i sæsonen, hvor det betalte trækkes fra). Indtil videre købes en ekstra pakke til den nye person.
 
 - **Kerne:** aktiviteter (og evt. dele af systemet) kan kræve gyldigt medlemskab, dvs. betalt kontingent for den aktuelle sæson.
 
@@ -286,13 +301,17 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 
 
-- **Kerne:** produktkatalog med navn, pris, betalingsform (engang, pr. periode) og hvem det gælder for (fx pris for medlem vs. gæst).
+- **Kerne:** tilkøb er pakker (se Kontingent og medlemstyper): bestyrelse og admin opretter dem med navn, pris, periode (faste datoer, antal dage eller engang), hvor mange personer de dækker, og om de kræver medlemskab – fx "Adgang til motionsrum, 30 dage".
 
 - **Kerne:** medlemmet kan tilvælge produkter i profilen og se, hvad det koster.
 
 - **Kerne:** hvert tilkøb bliver en regning med betalingsstatus, på samme måde som kontingent.
 
-- **Kerne:** udstyrsleje bestilles for én eller flere i husstanden og prissættes samlet: 1–2 personer betaler enkeltpris hver, 3 personer familiepris, derover + pr. ekstra person. Lejen gælder sæsonen ud (30. april).
+- **Kerne:** udstyrsleje findes som pakker for 1, 2, 3, 4 og 5 personer i husstanden (samme priser som før). Lejen gælder sæsonen ud (30. april).
+
+- **Senere:** nye tilkøb med pladser (som rack og skab) kræver, at pladserne kan oprettes under Indstillinger. Indtil videre har kun de eksisterende opbevaringspakker pladser.
+
+- **Senere:** tilkøb med faste datoer (fx opbevaring) fornyes automatisk ved ny sæson ligesom medlemskaber.
 
 - **Afklares:** priserne for opbevaring (rackplads 600 kr., skab 400 kr.) og dagsleje (100 kr.) er foreløbige. Bestyrelsen kan selv rette dem under Indstillinger.
 

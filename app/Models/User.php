@@ -102,18 +102,22 @@ class User extends Authenticatable
     }
 
     /** Betalt kontingent for træningssæsonen (1. maj – 30. april), fx "2026/27". */
-    public function hasValidMembership(?string $season = null): bool
-    {
-        $season ??= \App\Support\Season::label();
+    public function purchases() { return $this->belongsToMany(Purchase::class); }
 
-        return Invoice::where('kind', 'membership')->where('period', $season)->where('status', 'paid')
-            ->where(function ($q) {
-                $q->where('member_id', $this->id);
-                if ($this->household_id) {
-                    $q->orWhere(fn ($q) => $q->whereNull('member_id')
-                        ->whereIn('payer_id', User::where('household_id', $this->household_id)->select('id')));
-                }
-            })->exists();
+    /**
+     * Gyldigt medlemskab = med i et betalt medlemskab, der dækker dags dato.
+     * $access: kun medlemskaber, der giver adgang til aktiviteter (ikke støttemedlem).
+     */
+    public function hasValidMembership(bool $access = false): bool
+    {
+        return $this->currentMembership($access) !== null;
+    }
+
+    public function currentMembership(bool $access = false): ?Purchase
+    {
+        return $this->purchases()->activeOn()->with('package')
+            ->whereHas('package', fn ($q) => $q->where('kind', 'membership')->when($access, fn ($q) => $q->where('gives_access', true)))
+            ->orderByDesc('valid_to')->first();
     }
 
     public function isUnavailableOn($date): bool

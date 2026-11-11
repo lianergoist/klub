@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
-use App\Models\MembershipType;
 use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Notifications\ClubMessage;
@@ -17,7 +16,7 @@ class MemberController extends Controller
     private function query(Request $r)
     {
         $year = (string) now()->year;
-        $q = User::with('membershipType', 'roleAssignments', 'household')->orderBy('name');
+        $q = User::with('roleAssignments', 'household')->orderBy('name');
 
         if ($s = $r->query('q')) {
             $q->where(fn ($q) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%")->orWhere('phone', 'like', "%$s%"));
@@ -50,7 +49,7 @@ class MemberController extends Controller
         return $this->query($r)->get()->map(fn ($u) => [
             'id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone,
             'age' => $u->age(), 'status' => $u->status, 'status_label' => User::STATUS_LABELS[$u->status],
-            'type' => $u->membershipType?->name, 'roles' => array_values(array_diff($u->roles(), ['member'])),
+            'type' => $u->currentMembership()?->package->name, 'roles' => array_values(array_diff($u->roles(), ['member'])),
             'household' => $u->household?->name, 'is_payer' => $u->household?->payer_id === $u->id,
             'paid' => $u->hasValidMembership(),
         ]);
@@ -62,7 +61,7 @@ class MemberController extends Controller
         Audit::log('members.exported');
         $rows = $this->query($r)->get()->map(fn ($u) => [
             $u->name, $u->email, $u->phone, $u->address, $u->postal_code, $u->city, $u->birthdate?->toDateString(),
-            User::STATUS_LABELS[$u->status], $u->membershipType?->name, $u->hasValidMembership() ? 'Betalt' : 'Ikke betalt',
+            User::STATUS_LABELS[$u->status], $u->currentMembership()?->package->name, $u->hasValidMembership() ? 'Betalt' : 'Ikke betalt',
             implode(', ', array_map(fn ($x) => User::ROLE_LABELS[$x], $u->roles())),
         ]);
 
@@ -72,11 +71,11 @@ class MemberController extends Controller
     public function show(Request $r, User $member)
     {
         abort_unless($r->user()->canSeeMembers(), 403);
-        $member->load('roleAssignments.grantedBy', 'household.members', 'membershipType');
+        $member->load('roleAssignments.grantedBy', 'household.members');
         Audit::log('member.viewed', $member);
 
         return [
-            'profile' => ProfileController::profile($member) + ['consent_at' => $member->consent_at?->toIso8601String(), 'membership_type_id' => $member->membership_type_id],
+            'profile' => ProfileController::profile($member) + ['consent_at' => $member->consent_at?->toIso8601String()],
             'household' => $member->household ? [
                 'name' => $member->household->name,
                 'payer' => $member->household->payer?->name,
@@ -92,7 +91,10 @@ class MemberController extends Controller
             ]),
             'invoices' => $r->user()->hasRole('treasurer', 'board', 'admin') ? Invoice::where('payer_id', $member->id)->orWhere('member_id', $member->id)->latest()->get()->map(fn ($i) => FinanceController::invoiceRow($i)) : [],
             'membership_valid' => $member->hasValidMembership(),
-            'types' => MembershipType::all(['id', 'name']),
+            'purchases' => $member->purchases()->with('package', 'invoice')->latest('valid_from')->limit(20)->get()->map(fn ($p) => [
+                'id' => $p->id, 'name' => $p->package->name, 'kind' => $p->package->kind, 'valid_from' => $p->valid_from->toDateString(),
+                'valid_to' => $p->valid_to?->toDateString(), 'status' => $p->cancelled_at ? 'cancelled' : ($p->invoice ? $p->invoice->displayStatus() : 'paid'),
+            ]),
             'log' => \App\Models\AuditLog::with('user')->where('subject_type', 'User')->where('subject_id', $member->id)->latest('id')->limit(30)->get()
                 ->map(fn ($l) => ['action' => $l->action, 'by' => $l->user?->name, 'at' => $l->created_at->toIso8601String()]),
         ];
@@ -101,9 +103,8 @@ class MemberController extends Controller
     public function approve(Request $r, User $member)
     {
         abort_unless($r->user()->hasRole('board', 'treasurer', 'admin'), 403);
-        $d = $r->validate(['membership_type_id' => 'required|exists:membership_types,id']);
         abort_unless($member->status === 'pending', 422, 'Medlemmet er allerede godkendt.');
-        $member->update(['status' => 'active', 'joined_on' => now(), 'membership_type_id' => $d['membership_type_id']]);
+        $member->update(['status' => 'active', 'joined_on' => now()]);
         Audit::log('member.approved', $member);
         $member->payer()->notify(new ClubMessage('Velkommen i klubben!', $member->name.' er nu godkendt som medlem. Kontingentet bliver opkrævet snarest.', '/profil'));
 
@@ -117,7 +118,7 @@ class MemberController extends Controller
             'name' => 'required|string|max:120', 'email' => 'nullable|email|unique:users,email,'.$member->id,
             'phone' => 'nullable|string', 'address' => 'nullable|string', 'postal_code' => 'nullable|string', 'city' => 'nullable|string',
             'birthdate' => 'nullable|date', 'status' => 'required|in:pending,active,passive,resigned',
-            'membership_type_id' => 'nullable|exists:membership_types,id', 'emergency_name' => 'nullable|string', 'emergency_phone' => 'nullable|string',
+            'emergency_name' => 'nullable|string', 'emergency_phone' => 'nullable|string',
         ]);
         $before = $member->only(array_keys($d));
         if ($d['status'] === 'resigned' && $member->status !== 'resigned') {

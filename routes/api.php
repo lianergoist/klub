@@ -17,7 +17,7 @@ Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
-Route::get('membership-types', [FinanceController::class, 'membershipTypes']);
+Route::get('packages/offer', [\App\Http\Controllers\Api\PackageController::class, 'offer']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
 Route::post('guest/book', [GuestController::class, 'book'])->middleware('throttle:10,1');
 Route::get('feed/images/{image}', [FeedController::class, 'image'])->name('feed.image')->middleware('signed');
@@ -39,14 +39,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
-    Route::post('profile/household', [ProfileController::class, 'addMember']);
-    Route::delete('profile/household/upgrade', [ProfileController::class, 'cancelUpgrade']);
+    Route::get('profile/packages', [\App\Http\Controllers\Api\PackageController::class, 'mine']);
+    Route::post('profile/purchases', [\App\Http\Controllers\Api\PackageController::class, 'buy']);
+    Route::post('profile/purchases/{purchase}/cancel', [\App\Http\Controllers\Api\PackageController::class, 'cancel']);
     Route::get('profile/categories', [ProfileController::class, 'categories']);
     Route::put('profile/categories', [ProfileController::class, 'saveCategories']);
     Route::get('profile/invoices', [ProfileController::class, 'invoices']);
     Route::get('profile/export', [ProfileController::class, 'export']);
-    Route::get('profile/products', [ProfileController::class, 'products']);
-    Route::post('products/{product}/order', [ProfileController::class, 'order']);
+    Route::get('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'admin']);
+    Route::post('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'store']);
+    Route::put('settings/packages/{package}', [\App\Http\Controllers\Api\PackageController::class, 'update']);
+    Route::put('settings/packages/{package}/archive', [\App\Http\Controllers\Api\PackageController::class, 'archive']);
+    Route::post('settings/packages/{package}/price', [\App\Http\Controllers\Api\PackageController::class, 'setPrice']);
+    Route::delete('settings/packages/{package}/price/{price}', [\App\Http\Controllers\Api\PackageController::class, 'deletePrice']);
+    Route::post('settings/person-categories', [\App\Http\Controllers\Api\PackageController::class, 'saveCategory']);
+    Route::put('settings/person-categories/{category}', [\App\Http\Controllers\Api\PackageController::class, 'saveCategory']);
     Route::get('notifications', [ProfileController::class, 'notifications']);
 
     Route::get('feed', [FeedController::class, 'index']);

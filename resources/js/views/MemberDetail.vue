@@ -5,19 +5,26 @@
         <div class="row between" style="margin:8px 0 14px">
             <div><h1>{{ m.profile.name }}</h1>
                 <span :class="['tag', m.profile.status === 'active' ? 'ok' : 'warn']">{{ m.profile.status_label }}</span>
-                <span class="tag">{{ m.profile.membership_type || 'Ingen medlemstype' }}</span>
-                <span v-if="['active', 'passive'].includes(m.profile.status)" :class="['tag', m.membership_valid ? 'ok' : 'bad']">Kontingent {{ store.user.season }} {{ m.membership_valid ? 'betalt' : 'mangler' }}</span>
+                <span v-if="m.profile.membership_type" class="tag ok">{{ m.profile.membership_type }}</span>
+                <span v-else-if="['active', 'passive'].includes(m.profile.status)" class="tag bad">Intet gyldigt medlemskab</span>
             </div>
             <button v-if="can.admin" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
         </div>
 
         <div v-if="m.profile.status === 'pending' && (can.board || store.user.roles.includes('treasurer'))" class="card" style="border-color:var(--warn)">
             <h2>Afventer betaling</h2>
-            <p class="small muted">Medlemmet bliver aktivt automatisk, når kontingentet er betalt. Har medlemmet betalt kontant eller skal være gratis (fx æresmedlem), kan du aktivere manuelt. Ved kontant betaling: brug hellere <em>Økonomi → Betalinger → Registrér betaling</em>, så pengene også bliver bogført.</p>
-            <div class="row" style="flex-wrap:nowrap">
-                <select v-model="approveType"><option v-for="t in m.types" :key="t.id" :value="t.id">{{ t.name }}</option></select>
-                <button class="btn" @click="approve">Aktivér uden betaling</button>
-            </div>
+            <p class="small muted">Medlemmet bliver aktivt automatisk, når medlemskabet er betalt. Ved kontant betaling: brug <em>Økonomi → Betalinger → Registrér betaling</em>, så pengene bliver bogført og medlemskabet gælder. "Aktivér" gør kun profilen aktiv – uden et betalt medlemskab kan medlemmet ikke tilmelde sig aktiviteter, der kræver medlemskab.</p>
+            <button class="btn" @click="approve">Aktivér profilen</button>
+        </div>
+
+        <div v-if="m.purchases?.length" class="card">
+            <h3>Medlemskaber og tilkøb</h3>
+            <ul class="list">
+                <li v-for="x in m.purchases" :key="x.id" class="row between" style="flex-wrap:nowrap">
+                    <span>{{ x.name }} <span class="small muted">· {{ dato(x.valid_from) }}<template v-if="x.valid_to"> – {{ dato(x.valid_to) }}</template></span></span>
+                    <span :class="['tag', { paid: 'ok', open: 'info', overdue: 'bad' }[x.status] || '']">{{ { paid: 'Betalt', open: 'Ubetalt', overdue: 'Forfalden', cancelled: 'Annulleret' }[x.status] || x.status }}</span>
+                </li>
+            </ul>
         </div>
 
         <div class="grid c2">
@@ -81,7 +88,7 @@
                 <label class="field"><span>E-mail</span><input v-model="edit.email"></label>
                 <label class="field"><span>Telefon</span><input v-model="edit.phone"></label>
                 <label class="field"><span>Status</span><select v-model="edit.status"><option value="pending">Afventer</option><option value="active">Aktiv</option><option value="passive">Passiv</option><option value="resigned">Udmeldt</option></select></label>
-                <label class="field"><span>Medlemstype</span><select v-model="edit.membership_type_id"><option :value="null">–</option><option v-for="t in m.types" :key="t.id" :value="t.id">{{ t.name }}</option></select></label>
+
                 <button class="btn primary block" @click="saveEdit">Gem</button>
             </div>
         </Modal>
@@ -95,11 +102,11 @@ const props = defineProps({ id: String });
 const year = new Date().getFullYear(); const today = new Date().toISOString().slice(0, 10);
 const can = computed(() => store.user.can);
 const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', auditor: 'Revisor', admin: 'Administrator' };
-const m = ref(null); const approveType = ref(null); const showRole = ref(false); const edit = ref(null);
+const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });
-async function load() { m.value = await api(`members/${props.id}`); approveType.value = m.value.types[0]?.id; }
+async function load() { m.value = await api(`members/${props.id}`); }
 onMounted(load); watch(() => props.id, load);
-async function approve() { await api(`members/${props.id}/approve`, { method: 'POST', body: { membership_type_id: approveType.value } }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
+async function approve() { await api(`members/${props.id}/approve`, { method: 'POST' }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rollen er afsluttet'); load(); }
 async function saveEdit() { try { await api(`members/${props.id}`, { method: 'PUT', body: edit.value }); edit.value = null; toast('Gemt'); load(); } catch (e) { toast(e.message, 'error'); } }

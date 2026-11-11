@@ -57,7 +57,8 @@
         <Modal v-if="showGen" title="Opkræv kontingent" @close="showGen = false">
             <div class="stack">
                 <label class="field"><span>Sæson (1. maj – 30. april)</span><select v-model.number="gYear"><option v-for="y in seasons" :key="y" :value="y">{{ y }}/{{ String(y + 1).slice(2) }}</option></select></label>
-                <p class="small muted">Der oprettes én regning pr. husstand: 1–2 personer betaler enkeltkontingent hver, 3 personer familiekontingent og 4 eller flere familiekontingent for store familier. Støttemedlemmer får hver deres regning. Priserne er dem, der gælder ved sæsonstart. Husstande, der allerede har en regning for sæsonen, springes over. Alle får besked.</p>
+                <p class="small muted">Medlemskaber med faste datoer, der udløb i sæsonen før, fornyes: samme personer og samme medlemskab (eller det medlemskab, det er sat til at fornyes som, fx halv sæson → hel sæson). Prisen er den, der gælder ved periodens start. Passer personerne ikke længere til medlemskabet (fx et barn, der er blevet voksen), eller er medlemskabet arkiveret, springes husstanden over og vises her bagefter. Udmeldte medlemmer fornyes ikke. Alle får besked.</p>
+                <ul v-if="genSkipped.length" class="small" style="margin:0;padding-left:18px;color:var(--warn)"><li v-for="(x, i) in genSkipped" :key="i">{{ x }}</li></ul>
                 <button class="btn primary block" @click="generate">Opret opkrævninger</button>
             </div>
         </Modal>
@@ -80,5 +81,13 @@ watch([status, kind], load); onMounted(load);
 async function doManual() { try { await api(`finance/invoices/${manual.value.id}/manual`, { method: 'POST', body: { method: mMethod.value, reference: mRef.value } }); manual.value = null; mRef.value = ''; toast('Betaling registreret og bogført'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function doRefund() { try { await api(`finance/invoices/${refund.value.id}/refund`, { method: 'POST', body: { amount: Math.round(rAmount.value * 100), reason: rReason.value } }); refund.value = null; rReason.value = ''; toast('Refusion godkendt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function remind(i) { await api(`finance/invoices/${i.id}/remind`, { method: 'POST' }); toast(`Påmindelse sendt til ${i.payer}`); }
-async function generate() { try { const r = await api('finance/membership/generate', { method: 'POST', body: { year: gYear.value } }); showGen.value = false; toast(`Sæson ${r.season}: ${r.created} opkrævninger oprettet (${r.total})`); load(); } catch (e) { toast(e.message, 'error'); } }
+const genSkipped = ref([]);
+async function generate() {
+    try {
+        const r = await api('finance/membership/generate', { method: 'POST', body: { year: gYear.value } });
+        genSkipped.value = r.skipped || [];
+        if (!genSkipped.value.length) showGen.value = false;
+        toast(`Sæson ${r.season}: ${r.created} opkrævninger oprettet (${r.total})` + (genSkipped.value.length ? ` – ${genSkipped.value.length} sprunget over` : '')); load();
+    } catch (e) { toast(e.message, 'error'); }
+}
 </script>

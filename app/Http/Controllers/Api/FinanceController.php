@@ -128,7 +128,7 @@ class FinanceController extends Controller
         $this->write($r);
         $d = $r->validate(['year' => 'required|integer|min:2020|max:2100']);
 
-        return \App\Support\Memberships::generateSeason((int) $d['year']);
+        return \App\Support\Packages::renew((int) $d['year']);
     }
 
     /* ---------- Regnskab ---------- */
@@ -380,23 +380,6 @@ class FinanceController extends Controller
             'id' => $l->id, 'at' => $l->created_at->toIso8601String(), 'by' => $l->user?->name ?? 'System',
             'action' => $l->action, 'subject' => $l->subject_type ? $l->subject_type.' #'.$l->subject_id : null, 'changes' => $l->changes,
         ]);
-    }
-
-    /** Til indmeldelse og visning: medlemstyper og aktuelle priser. */
-    public function membershipTypes(Request $r)
-    {
-        $half = \App\Support\Season::isHalf();
-        $P = fn ($c) => \App\Support\Prices::get($c);
-
-        return [
-            'season' => \App\Support\Season::label(),
-            'season_end' => \App\Support\Season::end()->toDateString(),
-            'half' => $half,
-            'single' => ['price' => $P($half ? 'membership.single_half' : 'membership.single'), 'full' => $P('membership.single')],
-            'passive' => ['price' => $P('membership.passive')],
-            'family3' => $P('membership.family3'),
-            'family4' => $P('membership.family4'),
-        ];
     }
 
     /** Pristabel med "gælder fra" og historik (læsning for bestyrelse og økonomi). */

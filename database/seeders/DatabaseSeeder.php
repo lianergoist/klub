@@ -373,6 +373,20 @@ class DatabaseSeeder extends Seeder
         // Indbakke til demo-medlemmet
         $sofie->notify(new ClubMessage('Ny aktivitet: Vinter-SUP i tørdragt', 'Om 3 dage kl. 18, Slipwayen.', '/aktiviteter/'.Activity::where('title', 'Vinter-SUP i tørdragt')->value('id')));
         $sofie->notify(new ClubMessage('Tilmeldt: Juniortræning – indendørs balance', 'Emil Mikkelsen er tilmeldt.', '/aktiviteter/'.Activity::where('title', 'like', 'Juniortræning – indendørs%')->value('id')));
+        // Medlemstyper, priser, kontingent og tilkøb ovenfor overføres til pakker og køb (samme kode som migrationen)
+        \App\Support\Packages::backfill();
+
+        // Eksempler på pakker, bestyrelsen selv har oprettet under Indstillinger
+        $cat = \App\Models\PersonCategory::all()->keyBy('name');
+        $mkPkg = function (array $a, array $slots, int $price) use ($henrik) {
+            $p = \App\Models\Package::create($a + ['created_by' => $henrik->id, 'position' => 50]);
+            foreach ($slots as $name => [$min, $max]) $p->slots()->create(['person_category_id' => \App\Models\PersonCategory::where('name', $name)->value('id'), 'min' => $min, 'max' => $max]);
+            \App\Support\Prices::set($p->priceCode(), $price, $this->now->toDateString(), $henrik->id);
+        };
+        $mkPkg(['kind' => 'membership', 'name' => 'Familie: 2 voksne og 1–3 børn', 'description' => 'Hele familien for én samlet pris.', 'period_type' => 'dates', 'date_from' => '05-01', 'date_to' => '04-30',
+            'total_min' => 3, 'total_max' => 5, 'account_id' => $this->acc['1000']], ['Voksen' => [2, 2], 'Barn' => [1, 3]], 220000);
+        $mkPkg(['kind' => 'product', 'name' => 'Adgang til motionsrum, 30 dage', 'description' => 'Nøglebrikken giver adgang til motionsrummet i 30 dage fra købet.', 'period_type' => 'days', 'period_days' => 30,
+            'total_min' => 1, 'total_max' => 1, 'requires_membership' => true, 'account_id' => $this->acc['1200']], ['Voksen' => [0, 1], 'Barn' => [0, 1]], 15000);
     }
 
     private function seedMessages(array $p): void

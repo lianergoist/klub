@@ -29,10 +29,7 @@ class Prices
 
     /** Grupper til visning */
     public const GROUPS = [
-        'Kontingent' => ['membership.single', 'membership.single_half', 'membership.family3', 'membership.family4', 'membership.passive'],
-        'Udstyrsleje' => ['rental.single', 'rental.family', 'rental.extra', 'rental.day'],
-        'Opbevaring' => ['storage.rack', 'storage.locker'],
-        'Kurser og andet' => ['trial', 'sup_course', 'key_deposit'],
+        'Tilbud til ikke-medlemmer' => ['trial', 'sup_course'],
     ];
 
     private static array $cache = [];

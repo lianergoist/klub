@@ -165,6 +165,7 @@ class Memberships
     /** Kaldes af Payments::markPaid, når en kontingentregning er betalt. */
     public static function onPaid(Invoice $invoice): void
     {
+        if (Packages::onPaid($invoice)) return; // køb af pakke (medlemskab eller tilkøb)
         if ($invoice->kind !== 'membership') return;
 
         if (($invoice->payload['action'] ?? null) === 'family_upgrade') {

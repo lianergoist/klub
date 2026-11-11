@@ -3,9 +3,9 @@
     <div v-else>
         <h1>{{ p.profile.name }}</h1>
         <p class="muted" style="margin-bottom:14px">
-            {{ p.profile.membership_type || 'Medlemstype ikke fastsat' }} · <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
-            <span v-if="p.membership_valid" class="tag ok">Kontingent {{ p.season }} betalt</span>
-            <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Kontingent {{ p.season }} mangler</span>
+            <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
+            <span v-if="p.membership" class="tag ok">{{ p.membership.name }}<template v-if="p.membership.valid_to"> · til {{ dato(p.membership.valid_to) }}</template></span>
+            <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Intet gyldigt medlemskab</span>
         </p>
         <div class="tabs">
             <RouterLink v-for="t in tabs" :key="t.id" :to="`/profil/${t.id}`" :class="{ on: cur === t.id }">{{ t.label }}</RouterLink>
@@ -32,43 +32,62 @@
         </form>
 
         <div v-if="cur === 'familie'">
-            <div class="card" style="padding:4px 16px">
-                <ul class="list">
-                    <li v-for="m in p.household" :key="m.id" class="row between">
-                        <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år · {{ m.membership_type || '–' }}</span></span>
-                        <span :class="['tag', m.status === 'active' ? 'ok' : 'warn']">{{ m.status_label }}</span>
-                    </li>
-                </ul>
-            </div>
-            <p class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
-            <div v-if="p.pending_upgrade" class="card" style="border-color:var(--warn)">
-                <h2>Afventer betaling</h2>
-                <p>Skiftet til familiekontingent og tilføjelsen af <strong>{{ p.pending_upgrade.members.join(', ') }}</strong> træder i kraft, når betalingen på <strong>{{ p.pending_upgrade.amount_fmt }}</strong> er gennemført.</p>
-                <div class="row">
-                    <RouterLink :to="`/betal/${p.pending_upgrade.invoice_id}`" class="btn primary">Betal nu</RouterLink>
-                    <button class="btn" @click="cancelUpgrade">Fortryd</button>
+            <div v-if="!shop" class="spinner"></div>
+            <template v-else>
+                <div class="card" style="padding:4px 16px">
+                    <ul class="list">
+                        <li v-for="m in shop.household" :key="m.id" class="row between" style="flex-wrap:nowrap">
+                            <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år</span>
+                                <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : 'Intet gyldigt medlemskab' }}</span></span>
+                            <span :class="['tag', m.membership ? 'ok' : m.status === 'pending' ? 'warn' : 'bad']">{{ m.membership ? 'Medlem' : m.status === 'pending' ? 'Afventer betaling' : 'Ikke medlem' }}</span>
+                        </li>
+                    </ul>
                 </div>
-            </div>
-            <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget kontingent. Derefter kan du tilføje familiemedlemmer.</div>
-            <form v-else-if="store.user.is_payer" class="card stack" @submit.prevent="addChild">
-                <h2>Tilføj barn eller partner</h2>
-                <div class="banner info small" style="margin:0">
-                    <p style="margin:0 0 6px">Kontingentet for sæson {{ p.season }} afhænger af, hvor mange I er i husstanden: 1–2 personer betaler enkeltkontingent hver, 3 personer betaler familiekontingent, og 4 eller flere betaler familiekontingent for store familier. I er {{ p.household_count + (p.pending_upgrade?.members.length || 0) }} nu.</p>
-                    <p v-if="p.add_quote" style="margin:0">Tilføjer du én person mere, skal I betale <strong>{{ p.add_quote_fmt }}</strong> ekstra for resten af sæsonen. Personen bliver først tilføjet, når betalingen er gennemført.</p>
-                    <p v-else style="margin:0">Det koster ikke ekstra at tilføje én person mere – vedkommende tilføjes med det samme.</p>
+                <p class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
+
+                <div v-if="openPurchases('membership').length" class="card" style="border-color:var(--warn)">
+                    <h2>Afventer betaling</h2>
+                    <ul class="list">
+                        <li v-for="x in openPurchases('membership')" :key="x.id">
+                            <div><strong>{{ x.name }}</strong> · {{ x.amount_fmt }}</div>
+                            <div class="small muted">{{ x.people.join(', ') }}. Gælder fra betalingen<template v-if="x.valid_to"> til {{ dato(x.valid_to) }}</template>. Nye personer tilføjes, når der er betalt.</div>
+                            <div class="row" style="margin-top:8px">
+                                <RouterLink :to="`/betal/${x.invoice_id}`" class="btn small primary">Betal nu</RouterLink>
+                                <button v-if="x.can_cancel && store.user.status !== 'pending'" class="btn small" @click="cancelPurchase(x)">Fortryd</button>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
-                <div class="grid c2">
-                    <label class="field"><span>Navn</span><input v-model="child.name" required></label>
-                    <label class="field"><span>Fødselsdato</span><input v-model="child.birthdate" type="date" required></label>
-                </div>
-                <label class="field"><span>E-mail (kun hvis vedkommende skal have eget login)</span><input v-model="child.email" type="email"></label>
-                <div class="grid c2">
-                    <label class="field"><span>Nødkontakt</span><input v-model="child.emergency_name" :placeholder="p.profile.name"></label>
-                    <label class="field"><span>Nødkontakt, telefon</span><input v-model="child.emergency_phone" :placeholder="p.profile.phone"></label>
-                </div>
-                <label class="check small"><input type="checkbox" v-model="child.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
-                <button class="btn primary">{{ p.add_quote ? (p.pending_upgrade ? 'Tilføj til samme betaling' : 'Tilføj og gå til betaling') : 'Tilføj' }}</button>
-            </form>
+
+                <form v-if="store.user.status !== 'pending' && (shop.can_add_people || withoutMembership.length)" class="card stack" @submit.prevent="buyMembership">
+                    <h2>Køb medlemskab</h2>
+                    <p class="small muted" style="margin:0">Vælg hvem medlemskabet skal dække. Skal der tilføjes et barn eller en partner til husstanden, gør du det her. Har resten af familien allerede medlemskab, købes et medlemskab til den nye person.</p>
+                    <div v-if="withoutMembership.length">
+                        <span class="lbl">Personer i husstanden uden medlemskab</span>
+                        <label v-for="m in withoutMembership" :key="m.id" class="check"><input type="checkbox" :value="m.id" v-model="ms.member_ids"> {{ m.name }} <span class="muted small">({{ m.age }} år)</span></label>
+                    </div>
+                    <div v-if="shop.can_add_people">
+                        <span class="lbl">Nye personer</span>
+                        <div v-for="(n, i) in ms.new_members" :key="i" class="newp">
+                            <div class="grid c2">
+                                <label class="field"><span>Navn</span><input v-model="n.name" required></label>
+                                <label class="field"><span>Fødselsdato</span><input v-model="n.birthdate" type="date" required></label>
+                            </div>
+                            <label class="field"><span>E-mail (kun hvis vedkommende skal have eget login)</span><input v-model="n.email" type="email"></label>
+                            <div class="row between"><label class="check small"><input type="checkbox" v-model="n.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
+                                <button type="button" class="btn small ghost danger" @click="ms.new_members.splice(i, 1)">Fjern</button></div>
+                        </div>
+                        <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', consent: false })">+ Tilføj ny person</button>
+                    </div>
+                    <div v-if="msPeople.length">
+                        <span class="lbl">Vælg medlemskab</span>
+                        <PackageList v-model="ms.package_id" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" />
+                    </div>
+                    <p v-if="msError" class="banner warn small" style="margin:0">{{ msError }}</p>
+                    <button class="btn primary" :disabled="!msPkg || !!msError || busy">{{ msPkg ? `Køb og betal ${msPkg.price_fmt}` : 'Vælg personer og medlemskab' }}</button>
+                </form>
+                <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget medlemskab. Derefter kan du købe medlemskab til andre i husstanden.</div>
+            </template>
         </div>
 
         <div v-if="cur === 'beskeder'" class="card">
@@ -104,22 +123,26 @@
             </div>
         </div>
 
-        <div v-if="cur === 'tilkob' && prod">
-            <div v-if="prod.mine.length" class="card">
+        <div v-if="cur === 'tilkob' && shop">
+            <div v-if="shop.purchases.filter(x => x.kind === 'product').length" class="card">
                 <h2>Mine tilkøb</h2>
-                <ul class="list"><li v-for="o in prod.mine" :key="o.id" class="row between">
-                    <span><strong>{{ o.product }}</strong><span v-if="o.resource"> · {{ o.resource }}</span> <span class="muted small">{{ o.member }}<span v-if="o.valid_to">, til {{ dato(o.valid_to) }}</span></span></span>
-                    <RouterLink v-if="['open', 'overdue'].includes(o.invoice_status)" :to="`/betal/${o.invoice_id}`" class="btn small primary">Betal</RouterLink>
-                    <span v-else class="tag ok">Betalt</span>
+                <ul class="list"><li v-for="o in shop.purchases.filter(x => x.kind === 'product')" :key="o.id" class="row between" style="flex-wrap:nowrap">
+                    <span><strong>{{ o.name }}</strong><span v-if="o.resource"> · {{ o.resource }}</span> <span class="muted small" style="display:block">{{ o.people.join(', ') }}<span v-if="o.valid_to">, til {{ dato(o.valid_to) }}</span></span></span>
+                    <span class="row" style="gap:6px;flex-wrap:nowrap">
+                        <RouterLink v-if="['open', 'overdue'].includes(o.status)" :to="`/betal/${o.invoice_id}`" class="btn small primary">Betal</RouterLink>
+                        <button v-if="o.can_cancel" class="btn small" @click="cancelPurchase(o)">Fortryd</button>
+                        <span v-if="o.status === 'paid'" class="tag ok">Betalt</span>
+                    </span>
                 </li></ul>
             </div>
             <h3>Klubbens tilbud</h3>
+            <p v-if="!shop.products.length" class="muted">Der er ingen tilkøb lige nu.</p>
             <div class="grid c2">
-                <div v-for="x in prod.catalog" :key="x.id" class="card flat" style="margin:0">
-                    <div class="row between"><strong>{{ x.name }}</strong><span class="num">{{ x.price_fmt }}</span></div>
-                    <p class="small muted" style="margin:4px 0 8px">{{ x.description }} <span>({{ billing[x.billing] }})</span></p>
+                <div v-for="x in shop.products" :key="x.id" class="card flat" style="margin:0">
+                    <div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><strong>{{ x.name }}</strong><span class="num" style="white-space:nowrap">{{ x.price_fmt }}</span></div>
+                    <p class="small muted" style="margin:4px 0 8px">{{ x.description }} <span style="display:block">{{ x.composition_label }} · {{ x.valid_to ? `til ${dato(x.valid_to)}` : x.period_label }}<template v-if="x.requires_membership"> · kræver medlemskab</template></span></p>
                     <p v-if="x.needs_resource" class="small">{{ x.free_resources.length ? `${x.free_resources.length} ledige pladser` : 'Ingen ledige pladser' }}</p>
-                    <button class="btn small" :disabled="x.needs_resource && !x.free_resources.length" @click="buy = x; buyMember = p.profile.id; buyMembers = [p.profile.id]; buyRes = x.free_resources[0]?.id">Vælg</button>
+                    <button class="btn small" :disabled="x.needs_resource && !x.free_resources.length" @click="openBuy(x)">Vælg</button>
                 </div>
             </div>
         </div>
@@ -141,16 +164,14 @@
 
         <Modal v-if="buy" :title="buy.name" @close="buy = null">
             <div class="stack">
-                <div v-if="buy.household">
-                    <span class="small" style="font-weight:600;color:var(--ink-2)">Hvem skal have udstyrsleje?</span>
-                    <label v-for="m in p.household" :key="m.id" class="check" style="margin-top:6px"><input type="checkbox" :value="m.id" v-model="buyMembers"> {{ m.name }}</label>
-                    <p class="small muted" style="margin-top:6px">1–2 personer: {{ kr(buy.tiers[1]) }} pr. person. 3 personer: familiepris. Derover: + {{ kr((buy.tiers[4] || 0) - (buy.tiers[3] || 0)) }} pr. ekstra person.</p>
+                <div>
+                    <span class="lbl">Hvem skal have det? <span class="muted">({{ buy.composition_label }})</span></span>
+                    <label v-for="m in shop.household" :key="m.id" class="check" style="margin-top:6px"><input type="checkbox" :value="m.id" v-model="buyMembers"> {{ m.name }}<span v-if="buy.requires_membership && !m.membership" class="muted small"> (intet medlemskab)</span></label>
                 </div>
-                <label v-else class="field"><span>Til hvem?</span><select v-model="buyMember"><option v-for="m in p.household" :key="m.id" :value="m.id">{{ m.name }}</option></select></label>
                 <label v-if="buy.needs_resource" class="field"><span>Plads</span><select v-model="buyRes"><option v-for="r in buy.free_resources" :key="r.id" :value="r.id">{{ r.label }}</option></select></label>
-                <p><strong>{{ buy.household ? (buyMembers.length ? kr(buy.tiers[buyMembers.length]) : 'Vælg mindst én') : buy.price_fmt }}</strong>
-                    <span class="muted">({{ buy.billing === 'season' ? `sæson ${prod.season}, gælder til ${dato(prod.season_end)}` : billing[buy.billing] }})</span></p>
-                <button class="btn primary block" :disabled="buy.household && !buyMembers.length" @click="order">Bestil og betal</button>
+                <p v-if="buyError" class="banner warn small" style="margin:0">{{ buyError }}</p>
+                <p style="margin:0"><strong>{{ buy.price_fmt }}</strong> <span class="muted">({{ buy.valid_to ? `${dato(buy.valid_from)} – ${dato(buy.valid_to)}` : buy.period_label }})</span></p>
+                <button class="btn primary block" :disabled="!!buyError || busy" @click="order">Bestil og betal</button>
             </div>
         </Modal>
     </div>
@@ -161,6 +182,8 @@ import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
+import PackageList from '../components/PackageList.vue';
+import { compositionError } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { api, store, dato, kr, toast, download, logout as doLogout } from '../api';
 
@@ -168,12 +191,23 @@ const props = defineProps({ tab: String });
 const router = useRouter();
 const tabs = [{ id: 'oplysninger', label: 'Oplysninger' }, { id: 'familie', label: 'Familie' }, { id: 'beskeder', label: 'Beskeder' }, { id: 'regninger', label: 'Regninger' }, { id: 'tilkob', label: 'Tilkøb' }, { id: 'data', label: 'Mine data' }];
 const cur = computed(() => props.tab || 'oplysninger');
-const billing = { once: 'engangsbeløb', season: 'pr. sæson', year: 'pr. år' };
 const stCls = (s) => ({ paid: 'ok', open: 'info', overdue: 'bad', refunded: '', cancelled: '' })[s];
 
-const p = ref(null); const f = reactive({}); const cats = ref([]); const invoices = ref(null); const prod = ref(null);
-const child = reactive({ name: '', birthdate: '', email: '', emergency_name: '', emergency_phone: '', consent: false });
-const buy = ref(null); const buyMember = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
+const p = ref(null); const f = reactive({}); const cats = ref([]); const invoices = ref(null); const shop = ref(null); const busy = ref(false);
+const buy = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
+const ms = reactive({ member_ids: [], new_members: [], package_id: null });
+
+const withoutMembership = computed(() => shop.value ? shop.value.household.filter(m => !m.membership && !openPurchases('membership').some(x => x.people.includes(m.name))) : []);
+const openPurchases = (kind) => shop.value ? shop.value.purchases.filter(x => x.kind === kind && ['open', 'overdue'].includes(x.status)) : [];
+const msPeople = computed(() => [...shop.value.household.filter(m => ms.member_ids.includes(m.id)), ...ms.new_members]);
+const msPkg = computed(() => shop.value?.memberships.find(x => x.id === ms.package_id) || null);
+const msError = computed(() => msPkg.value && msPeople.value.length ? compositionError(msPkg.value, msPeople.value, shop.value.categories) : null);
+const buyError = computed(() => {
+    if (!buy.value) return null;
+    const people = shop.value.household.filter(m => buyMembers.value.includes(m.id));
+    const noMember = buy.value.requires_membership ? people.find(m => !m.membership) : null;
+    return noMember ? `${buy.value.name} kræver medlemskab, og det har ${noMember.name} ikke.` : compositionError(buy.value, people, shop.value.categories);
+});
 
 async function load() { p.value = await api('profile'); Object.assign(f, p.value.profile); }
 async function saveProfile() {
@@ -181,26 +215,38 @@ async function saveProfile() {
     catch (e) { toast(e.message, 'error'); }
 }
 async function saveCats() { await api('profile/categories', { method: 'PUT', body: { items: cats.value } }); toast('Gemt'); }
-async function addChild() {
+async function loadShop() { shop.value = await api('profile/packages'); }
+async function buyMembership() {
+    busy.value = true;
     try {
-        const r = await api('profile/household', { method: 'POST', body: { ...child, email: child.email || null, emergency_name: child.emergency_name || p.value.profile.name, emergency_phone: child.emergency_phone || p.value.profile.phone } });
-        Object.assign(child, { name: '', birthdate: '', email: '', emergency_name: '', emergency_phone: '', consent: false });
-        if (!r.added) return router.push(`/betal/${r.invoice_id}`);
-        toast(`${r.member.name} er tilføjet til husstanden`); load();
-    } catch (e) { toast(e.message, 'error'); }
+        const r = await api('profile/purchases', { method: 'POST', body: { package_id: ms.package_id, member_ids: ms.member_ids, new_members: ms.new_members.map(n => ({ ...n, email: n.email || null })) } });
+        Object.assign(ms, { member_ids: [], new_members: [], package_id: null });
+        if (!r.paid) return router.push(`/betal/${r.invoice_id}`);
+        toast('Medlemskabet er oprettet'); loadShop(); load();
+    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
-async function cancelUpgrade() { await api('profile/household/upgrade', { method: 'DELETE' }); toast('Tilføjelsen er annulleret'); load(); }
+async function cancelPurchase(x) {
+    if (!confirm(`Fortryd ${x.name}? Regningen annulleres.`)) return;
+    try { await api(`profile/purchases/${x.id}/cancel`, { method: 'POST' }); toast('Købet er fortrudt'); loadShop(); } catch (e) { toast(e.message, 'error'); }
+}
+function openBuy(x) { buy.value = x; buyMembers.value = x.total_max === 1 ? [p.value.profile.id] : []; buyRes.value = x.free_resources?.[0]?.id; }
 async function order() {
-    try { const r = await api(`products/${buy.value.id}/order`, { method: 'POST', body: buy.value.household ? { member_ids: buyMembers.value } : { member_id: buyMember.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
-    catch (e) { toast(e.message, 'error'); }
+    busy.value = true;
+    try { const r = await api('profile/purchases', { method: 'POST', body: { package_id: buy.value.id, member_ids: buyMembers.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
+    catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
 async function logout() { await doLogout(); router.push('/login'); }
 
 async function onTab(t) {
     if (t === 'beskeder' && !cats.value.length) cats.value = await api('profile/categories');
     if (t === 'regninger') invoices.value = await api('profile/invoices');
-    if (t === 'tilkob') prod.value = await api('profile/products');
+    if (t === 'familie' || t === 'tilkob') await loadShop();
 }
 watch(cur, onTab);
 onMounted(async () => { await load(); onTab(cur.value); });
 </script>
+
+<style scoped>
+.lbl { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+.newp { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; display: grid; gap: 8px; }
+</style>

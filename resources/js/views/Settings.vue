@@ -31,9 +31,10 @@
                 <button class="btn primary small">Tilføj</button>
             </form>
         </div>
+        <PackagesAdmin />
         <div class="card">
-            <h2>Priser</h2>
-            <p class="small muted">Træningssæsonen løber 1. maj – 30. april; regnskabsåret er kalenderåret. En pris rettes ikke – man lægger en ny ind med den dato, den skal gælde fra. Den gamle bevares, og regninger, der allerede er sendt, ændres ikke.<span v-if="!pr?.can_edit"> Kun bestyrelse og kasserer kan ændre priser.</span></p>
+            <h2>Priser for ikke-medlemmer</h2>
+            <p class="small muted">Priser for medlemskaber og tilkøb ligger på pakkerne ovenfor. En pris rettes ikke – man lægger en ny ind med den dato, den skal gælde fra. Den gamle bevares, og regninger, der allerede er sendt, ændres ikke.<span v-if="!pr?.can_edit"> Kun bestyrelse og kasserer kan ændre priser.</span></p>
             <div v-if="!pr" class="spinner"></div>
             <template v-else v-for="g in pr.groups" :key="g.group">
                 <h3 style="margin-top:18px">{{ g.group }}</h3>
@@ -84,6 +85,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import Modal from '../components/Modal.vue';
+import PackagesAdmin from '../components/PackagesAdmin.vue';
 import { api, toast, dato } from '../api';
 const cats = ref([]); const pr = ref(null); const edit = ref(null); const error = ref('');
 const nf = reactive({ amount: '', valid_from: '' });

@@ -101,7 +101,7 @@ class ActivityController extends Controller
 
                 return [
                     'id' => $m->id, 'name' => $m->name, 'age' => $m->age(),
-                    'membership_valid' => $m->hasValidMembership(),
+                    'membership_valid' => $m->hasValidMembership(true),
                     'status' => $reg?->status, 'invoice_id' => $reg?->invoice_id,
                     'history' => $reg ? self::history($reg) : [],
                 ];
@@ -392,8 +392,8 @@ class ActivityController extends Controller
             foreach ($data['member_ids'] as $mid) {
                 $m = $allowed[$mid] ?? abort(403, 'Du kan kun tilmelde dig selv og din husstand.');
                 abort_if($activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner på aktiviteten og skal ikke tilmeldes som deltager.');
-                if ($activity->members_only && ! $m->hasValidMembership()) {
-                    abort(422, $m->name.' har ikke betalt kontingent for sæson '.\App\Support\Season::label().'.');
+                if ($activity->members_only && ! $m->hasValidMembership(true)) {
+                    abort(422, $m->name.' har ikke et gyldigt medlemskab, der giver adgang til aktiviteter.');
                 }
                 $reg = Registration::firstOrNew(['activity_id' => $activity->id, 'user_id' => $m->id]);
                 if ($reg->exists && $reg->status === 'signed_up') {
