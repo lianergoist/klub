@@ -21,6 +21,7 @@ Route::get('membership-types', [FinanceController::class, 'membershipTypes']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
 Route::post('guest/book', [GuestController::class, 'book'])->middleware('throttle:10,1');
 Route::get('feed/images/{image}', [FeedController::class, 'image'])->name('feed.image')->middleware('signed');
+Route::get('expense-claims/{claim}/file', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'file'])->name('expense.file')->middleware('signed');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'show']);
@@ -75,6 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('categories', [CategoryController::class, 'store']);
     Route::put('categories/{category}', [CategoryController::class, 'update']);
 
+    Route::get('expense-claims', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'mine']);
+    Route::post('expense-claims', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'store'])->middleware('throttle:10,1');
+
     Route::get('activities', [ActivityController::class, 'index']);
     Route::post('activities', [ActivityController::class, 'store']);
     Route::get('activities/{activity}', [ActivityController::class, 'show']);
@@ -103,6 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('finance')->group(function () {
         Route::get('invoices', [FinanceController::class, 'invoices']);
+        Route::get('expense-claims', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'index']);
+        Route::post('expense-claims/{claim}/pay', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'pay']);
+        Route::post('expense-claims/{claim}/reject', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'reject']);
         Route::post('invoices/{invoice}/manual', [FinanceController::class, 'manualPayment']);
         Route::post('invoices/{invoice}/refund', [FinanceController::class, 'refund']);
         Route::post('invoices/{invoice}/remind', [FinanceController::class, 'remind']);

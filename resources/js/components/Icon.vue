@@ -25,6 +25,7 @@ const paths = {
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     check: '<path d="M5 12l5 5 9-10"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
     file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
     download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
     logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',

@@ -356,7 +356,15 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 
 - **Kerne:** tilknytte en postering til en aktivitet eller et projekt, så man kan se, hvad en enkelt aktivitet kostede og indbragte.
 
-- **Kerne:** registrere **udlæg**, hvis en træner eller et bestyrelsesmedlem har betalt noget for klubben. Det kan godkendes og udbetales.
+- **Kerne:** **udlæg**: alle medlemmer kan under "Indsend kvittering" (Mere-menuen på mobil og i appen, sidemenuen på computer) sende et billede eller en PDF af en kvittering til kassereren med en beskrivelse og beløbet. Medlemmet vælger, om pengene skal udbetales via MobilePay (telefonnummeret fra profilen foreslås, men kan rettes) eller til en bankkonto (reg. nr. og kontonummer). Store billeder skaleres ned før upload, så teksten stadig kan læses. Medlemmet kan følge status (afventer, udbetalt, afvist).
+
+  - Kassereren ser udlæggene under Økonomi → Udlæg, overfører pengene manuelt (MobilePay/netbank) og bogfører derefter udlægget på en udgiftskonto. Kvitteringen bliver bilag på posteringen. Kassereren kan også afvise med en begrundelse. Medlemmet får besked i begge tilfælde, og kassereren får besked, når der kommer et nyt udlæg.
+
+- **Afklares:** skal udlæg være aftalt på forhånd (fx med bestyrelsen eller den ansvarlige for et budget), og er der en frist for at indsende kvitteringer (fx 3 måneder eller inden regnskabsårets afslutning)?
+
+- **Afklares:** hvem godkender kassererens egne udlæg? I proof of concept kan kassereren bogføre sine egne udlæg. Skal et andet bestyrelsesmedlem godkende dem (se Senere-punktet om to-trins-godkendelse)?
+
+- **Afklares:** hvor længe gemmes medlemmers bankoplysninger fra udlæg? Kvitteringen er bilag og skal gemmes i 5 år efter bogføringsloven, men kontonummeret kunne slettes, når udlægget er udbetalt.
 
 - **Kerne:** rettelser sker ved en ny postering, der udligner den gamle, og ikke ved at slette. Alt har dato, og hvem der indtastede det.
 
