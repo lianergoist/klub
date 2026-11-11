@@ -56,7 +56,7 @@ class PackageController extends Controller
             'id' => $p->id, 'kind' => $p->kind, 'name' => $p->name, 'description' => $p->description,
             'price' => $p->price(), 'price_fmt' => Money::fmt($p->price()),
             'period_label' => $p->periodLabel(), 'composition_label' => $p->compositionLabel(),
-            'valid_from' => $from->toDateString(), 'valid_to' => $to?->toDateString(), 'starts_later' => $from->isAfter(now()->endOfDay()),
+            'valid_from' => $from->toDateString(), 'valid_to' => $to?->toDateString(), 'starts_later' => $from->isAfter(now()->endOfDay()), 'early_access' => $p->early_access,
             'total_min' => $p->total_min, 'total_max' => $p->total_max,
             'slots' => $p->slots->map(fn ($s) => ['category_id' => $s->person_category_id, 'min' => $s->min, 'max' => $s->max])->values(),
             'gives_access' => $p->gives_access, 'requires_membership' => $p->requires_membership,
@@ -171,7 +171,7 @@ class PackageController extends Controller
                 $hist = $prices[$p->priceCode()] ?? collect();
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
-                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'total_min', 'total_max',
+                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
                     'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id') + [
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
@@ -203,6 +203,7 @@ class PackageController extends Controller
             'total_min' => 'required|integer|min:1|max:50',
             'total_max' => 'nullable|integer|min:1|max:50|gte:total_min',
             'gives_access' => 'boolean',
+            'early_access' => 'boolean',
             'requires_membership' => 'boolean',
             'self_service' => 'boolean',
             'renews_to_id' => ['nullable', Rule::exists('packages', 'id')->where('kind', 'membership')],

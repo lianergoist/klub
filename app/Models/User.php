@@ -117,7 +117,7 @@ class User extends Authenticatable
     public function upcomingMembership(): ?Purchase
     {
         return $this->purchases()->with('package')->whereHas('package', fn ($q) => $q->where('kind', 'membership'))
-            ->whereNull('cancelled_at')->where('valid_from', '>', now()->toDateString())
+            ->whereNull('cancelled_at')->whereRaw('COALESCE(access_from, valid_from) > ?', [now()->toDateString()])
             ->where(fn ($q) => $q->whereNull('invoice_id')->orWhereHas('invoice', fn ($q) => $q->where('status', 'paid')))
             ->orderBy('valid_from')->first();
     }

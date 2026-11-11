@@ -8,7 +8,7 @@ class Purchase extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['valid_from' => 'date', 'valid_to' => 'date', 'cancelled_at' => 'datetime'];
+    protected $casts = ['valid_from' => 'date', 'access_from' => 'date', 'valid_to' => 'date', 'cancelled_at' => 'datetime'];
 
     public function package() { return $this->belongsTo(Package::class); }
     public function payer() { return $this->belongsTo(User::class, 'payer_id'); }
@@ -22,14 +22,14 @@ class Purchase extends Model
         return ! $this->cancelled_at && (! $this->invoice_id || $this->invoice?->status === 'paid');
     }
 
-    /** Køb, der gælder på en dato: betalt, ikke annulleret og inden for perioden. */
+    /** Køb, der gælder på en dato: betalt, ikke annulleret og inden for perioden (eller den tidligere adgang, se access_from). */
     public function scopeActiveOn($q, $date = null)
     {
         $d = \Illuminate\Support\Carbon::parse($date ?? now())->toDateString();
 
         return $q->whereNull('cancelled_at')
             ->where(fn ($q) => $q->whereNull('invoice_id')->orWhereHas('invoice', fn ($q) => $q->where('status', 'paid')))
-            ->where('valid_from', '<=', $d)->where(fn ($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', $d));
+            ->whereRaw('COALESCE(access_from, valid_from) <= ?', [$d])->where(fn ($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', $d));
     }
 
     /** Køb, der ikke er annulleret eller udløbet (inkl. ubetalte) – til overlap-tjek. */

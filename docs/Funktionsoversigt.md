@@ -277,7 +277,11 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
   - november–april: hel sæson fra næste 1. maj (ingen halv sæson efter sæsonafslutning). Det gælder også familie og støttemedlem.
   - Medlemmet ser "Begynder 1. maj (næste sæson)" ved pakken, og profilen viser "Medlem fra 1. maj". Bestyrelsen kan ændre datoen pr. pakke. (Besluttet 11. nov. 2026; datoen 1. november er et forslag.)
 
-- **Afklares:** hvilken dato er sæsonafslutning (i proof of concept 1. november)? Og skal den, der melder sig ind efter sæsonafslutning, have adgang til vinterens aktiviteter (fx indendørs træning), før medlemskabet begynder 1. maj? I proof of concept har de ikke adgang før 1. maj.
+- **Kerne:** den, der melder sig ind efter sæsonafslutning, kan deltage i aktiviteter fra indmeldelsen og frem til sæsonstart (klubbens praksis). Det er en indstilling på hver pakke ("Nye medlemmer kan deltage i aktiviteter fra købsdatoen"), som er slået til. Beslutter bestyrelsen noget andet, slås den fra på pakken, så nye medlemmer først kan deltage fra sæsonstart. (Besluttet 11. nov. 2026.)
+
+- **Senere:** hvis der kommer flere vinteraktiviteter, kan den enkelte aktivitet markeres "kun for medlemmer i den igangværende sæson", så man kan skelne pr. aktivitet i stedet for pr. pakke.
+
+- **Afklares:** hvilken dato er sæsonafslutning? I proof of concept er den 1. november.
 
 - **Kerne:** felterne ved indmeldelse og prøvetræning er markeret, så browseren kan udfylde navn, e-mail, telefon, fødselsdato og adresse automatisk. Felterne til andre personer udfyldes ikke automatisk.
 

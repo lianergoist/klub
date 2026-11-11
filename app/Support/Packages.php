@@ -123,6 +123,8 @@ class Packages
             $purchase = Purchase::create([
                 'package_id' => $package->id, 'payer_id' => $payer->id, 'invoice_id' => $invoice->id, 'resource_id' => $resource?->id,
                 'valid_from' => $from, 'valid_to' => $to,
+                // Medlemskab til næste periode: adgang til aktiviteter fra købsdatoen, hvis pakken giver det (klubbens praksis)
+                'access_from' => $package->isMembership() && $package->early_access && $from->isAfter(now()->endOfDay()) ? now()->toDateString() : null,
             ]);
             $purchase->users()->attach($members->pluck('id'));
             $invoice->update(['payload' => $invoice->payload + ['purchase_id' => $purchase->id]]);

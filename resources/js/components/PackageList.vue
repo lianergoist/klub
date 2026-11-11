@@ -8,7 +8,7 @@
                     <span class="num price"><s v-if="pr(p).capped" class="muted small">{{ p.price_fmt }}</s><strong>{{ kr(pr(p).price) }}</strong></span>
                 </span>
                 <span class="small muted meta">{{ p.composition_label }} · {{ p.valid_to ? `${dato(p.valid_from)} – ${dato(p.valid_to)}` : p.period_label }}<template v-if="!p.gives_access"> · uden adgang til aktiviteter</template></span>
-                <span v-if="p.starts_later" class="small info-txt">Begynder {{ dato(p.valid_from) }} (næste sæson)</span>
+                <span v-if="p.starts_later" class="small info-txt">Begynder {{ dato(p.valid_from) }} (næste sæson)<template v-if="p.early_access && p.kind === 'membership'"> – du kan deltage i aktiviteter allerede fra i dag</template></span>
                 <span v-if="p.description" class="small desc">{{ p.description }}</span>
                 <span v-if="pr(p).capped" class="small ok-txt">Prisen er sat ned, så det ikke koster mere end {{ kr(pr(p).price) }}, som I ville betale for hver jeres enkeltmedlemskab.</span>
                 <span v-if="fits && fits(p)" class="small warn-txt">{{ fits(p) }}</span>
