@@ -267,6 +267,8 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** halv sæson er en pakke med faste datoer 1/8–30/4, som kan købes fra 1. august.
 
+- **Kerne:** et medlemskab til flere personer koster aldrig mere end summen af det billigste enkeltmedlemskab, hver person kunne købe samme dag (med samme adgang til aktiviteter). Fx koster "Familie med 3 personer" i november 1.200 kr. (3 × halv sæson 400 kr.) i stedet for 2.500 kr. Reglen gælder også ved fornyelse, men slår sjældent igennem ved sæsonstart, hvor familiepriserne er billigst. Medlemmet ser både den normale og den nedsatte pris, og regningen viser "højst N × enkeltkontingent". (Besluttet 11. nov. 2026.)
+
 - **Kerne:** en pakke kan have en salgsperiode (fx 1. maj – 31. juli), så den kun tilbydes i en del af året. De hidtidige helsæsonmedlemskaber (enkelt og 2 personer) sælges 1/5–31/7, så nye medlemmer fra 1. august kun får tilbudt halv sæson. Fornyelse ved ny sæson sker uanset salgsperioden. (Besluttet 11. nov. 2026.)
 
 - **Kerne:** ved indmeldelse spørges der først, om andre i husstanden også skal være medlemmer. Svarer man nej, vises kun medlemskaber, der passer til én person. Svarer man ja, tilføjer man personerne og får derefter vist de medlemskaber, der passer, med det billigste først.

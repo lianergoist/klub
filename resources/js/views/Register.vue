@@ -41,7 +41,7 @@
                     <p v-if="!f.birthdate" class="small muted" style="margin:0">Udfyld din fødselsdato ovenfor, så vises de medlemskaber, der passer.</p>
                     <p v-else-if="flere && !othersReady" class="small muted" style="margin:0">Udfyld navn og fødselsdato på dem, der skal med, så vises de medlemskaber, der passer.</p>
                     <div v-else-if="!offer" class="spinner"></div>
-                    <PackageList v-else v-model="f.package_id" :packages="choices" :fits="flere ? mismatch : null"
+                    <PackageList v-else v-model="f.package_id" :packages="choices" :fits="flere ? mismatch : null" :price-of="(p) => priceFor(p, people, offer.categories, offer.singles)"
                         :empty="flere ? 'Der er ingen medlemskaber til flere personer lige nu.' : 'Der er ikke noget medlemskab, der passer lige nu.'" />
                 </template>
 
@@ -66,7 +66,7 @@ import { reactive, ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import PackageList from '../components/PackageList.vue';
 import { api, setSession, kr, dato, store, toast } from '../api';
-import { compositionError } from '../packages';
+import { compositionError, priceFor } from '../packages';
 const router = useRouter();
 const f = reactive({ name: '', email: '', password: '', phone: '', birthdate: '', address: '', postal_code: '', city: '', package_id: null, consent: false });
 const error = ref(''); const busy = ref(false); const offer = ref(null); const others = ref([]);
@@ -93,7 +93,7 @@ const choices = computed(() => !offer.value ? [] : flere.value
 // Vises under hver pakke, hvis de valgte personer ikke passer (fx et barn, der vælger et voksenmedlemskab)
 const mismatch = (p) => compositionError(p, people.value, offer.value.categories);
 const error2 = computed(() => pkg.value ? (f.birthdate ? compositionError(pkg.value, people.value, offer.value.categories) : 'Udfyld din fødselsdato.') : null);
-const price = computed(() => pkg.value?.price || 0);
+const price = computed(() => pkg.value ? priceFor(pkg.value, people.value, offer.value.categories, offer.value.singles).price : 0);
 const credit = computed(() => Math.min(guest.value?.credit || 0, price.value));
 const toPay = computed(() => price.value - credit.value);
 async function submit() {

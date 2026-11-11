@@ -35,6 +35,7 @@ class PackageController extends Controller
         return [
             'categories' => self::categories(),
             'packages' => self::offers($kind),
+            'singles' => self::singles(),
         ];
     }
 
@@ -63,6 +64,13 @@ class PackageController extends Controller
         ];
     }
 
+    /** Enkeltmedlemskaber til salg i dag – bruges til at vise loftet "aldrig dyrere end enkeltkontingent". */
+    public static function singles()
+    {
+        return Packages::singleMemberships(true, now())->merge(Packages::singleMemberships(false, now()))
+            ->map(fn ($p) => self::offerRow($p))->values();
+    }
+
     private static function categories()
     {
         return PersonCategory::whereNull('archived_at')->orderBy('min_age')->get()
@@ -84,6 +92,7 @@ class PackageController extends Controller
         return [
             'categories' => self::categories(),
             'memberships' => self::offers('membership'),
+            'singles' => self::singles(),
             'products' => $u->status === 'pending' ? [] : self::offers('product'),
             'can_add_people' => ! $u->household_id || $u->household?->payer_id === $u->id,
             'household' => $household->map(fn ($m) => [

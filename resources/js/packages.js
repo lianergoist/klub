@@ -38,3 +38,19 @@ export function compositionError(pkg, people, categories) {
 
 /** Kan pakken overhovedet dække flere personer end den/dem, der allerede er valgt? */
 export const allowsMore = (pkg, n) => pkg.total_max === null || n < pkg.total_max;
+
+/**
+ * Pris for pakken til de valgte personer: aldrig mere end summen af det billigste enkeltmedlemskab,
+ * hver person kunne købe (samme adgang til aktiviteter). Samme regel som på serveren (Packages::priceFor).
+ */
+export function priceFor(pkg, people, categories, singles) {
+    const full = { price: pkg.price, full: pkg.price, capped: false };
+    if (pkg.kind !== 'membership' || pkg.total_max === 1 || people.length < 2 || !singles) return full;
+    let cap = 0;
+    for (const p of people) {
+        const prices = singles.filter(s => s.gives_access === pkg.gives_access && !compositionError(s, [p], categories)).map(s => s.price);
+        if (!prices.length) return full;
+        cap += Math.min(...prices);
+    }
+    return cap < pkg.price ? { price: cap, full: pkg.price, capped: true } : full;
+}

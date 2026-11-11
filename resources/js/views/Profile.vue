@@ -81,10 +81,10 @@
                     </div>
                     <div v-if="msPeople.length">
                         <span class="lbl">Vælg medlemskab</span>
-                        <PackageList v-model="ms.package_id" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" />
+                        <PackageList v-model="ms.package_id" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" :price-of="(x) => priceFor(x, msPeople, shop.categories, shop.singles)" />
                     </div>
                     <p v-if="msError" class="banner warn small" style="margin:0">{{ msError }}</p>
-                    <button class="btn primary" :disabled="!msPkg || !!msError || busy">{{ msPkg ? `Køb og betal ${msPkg.price_fmt}` : 'Vælg personer og medlemskab' }}</button>
+                    <button class="btn primary" :disabled="!msPkg || !!msError || busy">{{ msPkg ? `Køb og betal ${kr(priceFor(msPkg, msPeople, shop.categories, shop.singles).price)}` : 'Vælg personer og medlemskab' }}</button>
                 </form>
                 <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget medlemskab. Derefter kan du købe medlemskab til andre i husstanden.</div>
             </template>
@@ -183,7 +183,7 @@ import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import PackageList from '../components/PackageList.vue';
-import { compositionError } from '../packages';
+import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { api, store, dato, kr, toast, download, logout as doLogout } from '../api';
 

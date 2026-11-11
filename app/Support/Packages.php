@@ -26,6 +26,40 @@ use Illuminate\Support\Facades\DB;
  */
 class Packages
 {
+    /* ---------- Pris ---------- */
+
+    /**
+     * Prisen for at købe pakken til bestemte personer.
+     * Regel: et medlemskab til flere personer koster aldrig mere end summen af det billigste enkeltmedlemskab
+     * (til én person, til salg samme dag, samme adgang til aktiviteter), som hver person kunne købe.
+     * Fx familie 3 personer 2.500 kr. i november, hvor halv sæson er 400 kr.: højst 3 × 400 = 1.200 kr.
+     * @return array{price:int, full:int, capped:bool}
+     */
+    public static function priceFor(Package $package, array $people, $date = null): array
+    {
+        $date = Carbon::parse($date ?? now());
+        $full = $package->price($date);
+        $out = ['price' => $full, 'full' => $full, 'capped' => false];
+        if (! $package->isMembership() || $package->total_max === 1 || count($people) < 2) return $out;
+
+        $singles = self::singleMemberships($package->gives_access, $date);
+        $cap = 0;
+        foreach ($people as $p) {
+            $best = $singles->filter(fn ($s) => $s->compositionError([$p], $date) === null)->map(fn ($s) => $s->price($date))->min();
+            if ($best === null) return $out; // en person kan ikke købe enkeltmedlemskab – ingen sammenligning
+            $cap += $best;
+        }
+
+        return $cap < $full ? ['price' => $cap, 'full' => $full, 'capped' => true] : $out;
+    }
+
+    /** Enkeltmedlemskaber (til én person), der kan købes på datoen, med samme adgang til aktiviteter. */
+    public static function singleMemberships(bool $access, $date)
+    {
+        return Package::with('slots.category')->where('kind', 'membership')->whereNull('archived_at')->where('self_service', true)
+            ->where('total_max', 1)->where('gives_access', $access)->get()->filter(fn ($s) => $s->buyableOn($date))->values();
+    }
+
     /* ---------- Køb ---------- */
 
     /**
@@ -73,11 +107,14 @@ class Packages
                 abort_if(self::resourceTaken($resource->id), 422, 'Pladsen er desværre lige blevet optaget.');
             }
             $names = $members->pluck('name')->merge(array_column($newPeople, 'name'));
-            $amount = $package->price($from);
+            $people = $members->map(fn ($m) => ['name' => $m->name, 'birthdate' => $m->birthdate?->toDateString()])->merge($newPeople)->all();
+            $pr = self::priceFor($package, $people, $from);
+            $amount = $pr['price'];
             $invoice = Invoice::create([
                 'payer_id' => $payer->id, 'member_id' => $names->count() === 1 && $members->count() === 1 ? $members->first()->id : null,
                 'kind' => $package->isMembership() ? 'membership' : 'product',
-                'description' => $package->name.($resource ? ' ('.$resource->label.')' : '').self::periodText($from, $to).' – '.self::who($names),
+                'description' => $package->name.($resource ? ' ('.$resource->label.')' : '').self::periodText($from, $to).' – '.self::who($names)
+                    .($pr['capped'] ? ' (højst '.count($people).' × enkeltkontingent)' : ''),
                 'amount' => $amount, 'due_on' => now()->addDays($package->isMembership() ? 0 : 14),
                 'period' => Season::label($from), 'product_id' => $package->product_id,
                 'account_id' => $package->account_id,
@@ -223,10 +260,11 @@ class Packages
             }
             if ($people->contains(fn ($m) => self::overlapping($m, $from, $to))) continue; // har allerede købt
             DB::transaction(function () use ($p, $target, $people, $from, $to, &$created, &$sum) {
-                $amount = $target->price($from);
+                $pr = self::priceFor($target, $people->map(fn ($m) => ['name' => $m->name, 'birthdate' => $m->birthdate?->toDateString()])->all(), $from);
+                $amount = $pr['price'];
                 $inv = Invoice::create([
                     'payer_id' => $p->payer_id, 'member_id' => $people->count() === 1 ? $people->first()->id : null, 'kind' => 'membership',
-                    'description' => $target->name.self::periodText($from, $to).' – '.self::who($people->pluck('name')),
+                    'description' => $target->name.self::periodText($from, $to).' – '.self::who($people->pluck('name')).($pr['capped'] ? ' (højst '.$people->count().' × enkeltkontingent)' : ''),
                     'amount' => $amount, 'due_on' => now()->max($from)->addDays(14), 'period' => Season::label($from),
                     'account_id' => $target->account_id, 'payload' => ['action' => 'purchase', 'package_id' => $target->id, 'renewal' => true],
                 ]);
