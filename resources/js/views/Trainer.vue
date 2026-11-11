@@ -69,8 +69,7 @@
                 </button>
             </div>
             <p class="small muted cal-help">
-                <template v-if="detail">{{ detail }}</template>
-                <template v-else><span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> aktivitet · <span class="miss">1</span> mangler træner · tryk for detaljer</template>
+                <span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> aktivitet · <span class="miss">1</span> mangler træner · tryk for detaljer
             </p>
             <div v-if="!cal" class="spinner"></div>
             <div v-else ref="scroller" class="cal-scroll" :style="{ height: calHeight }">
@@ -81,8 +80,8 @@
                     <tbody>
                         <template v-for="(d, i) in cal.days" :key="d">
                             <tr :data-day="d" :class="{ we: isWeekend(d), today: d === todayIso, mon: isMonday(d) }">
-                                <th :class="['dcol', { open: cal.open[i]?.length }]" @click="cal.open[i]?.length && (detail = openTip(i))">{{ ugedag(d) }} {{ Number(d.slice(8)) }}<span v-if="isMonday(d)" class="wk">u{{ uge(d) }}</span><span v-if="cal.open[i]?.length" class="miss" :title="openTip(i)">{{ cal.open[i].length }}</span></th>
-                                <td v-for="t in cal.trainers" :key="t.id" @click="detail = tip(t, t.days[i], i)">
+                                <th :class="['dcol', { open: cal.open[i]?.length }]" @click="cal.open[i]?.length && showPop($event, openTip(i))">{{ ugedag(d) }} {{ Number(d.slice(8)) }}<span v-if="isMonday(d)" class="wk">u{{ uge(d) }}</span><span v-if="cal.open[i]?.length" class="miss" :title="openTip(i)">{{ cal.open[i].length }}</span></th>
+                                <td v-for="t in cal.trainers" :key="t.id" @click="showPop($event, tip(t, t.days[i], i))">
                                     <span v-if="t.days[i].off" class="cell off">✕</span>
                                     <span v-else-if="t.days[i].busy.length" class="cell busy">●</span>
                                 </td>
@@ -92,6 +91,11 @@
                 </table>
             </div>
         </template>
+
+        <!-- Lille tekstboks ved det punkt, man har trykket på -->
+        <Teleport to="body">
+            <div v-if="pop" class="cal-pop" :class="{ above: pop.above }" :style="{ left: pop.left + 'px', top: pop.top + 'px', '--arrow': pop.arrow + 'px' }" role="tooltip" @click.stop="pop = null">{{ pop.text }}</div>
+        </Teleport>
     </div>
 </template>
 
@@ -104,7 +108,24 @@ import { api, store, klok, dato, toast, dagNr, maanedKort, ugedagKort } from '..
 const isTrainer = store.user.roles.includes('trainer');
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);
-const cal = ref(null); const detail = ref('');
+const cal = ref(null); const pop = ref(null);
+const POP_W = 240;
+/** Vis teksten i en lille boks under (eller over) det punkt, der blev trykket på. Tryk igen samme sted lukker den. */
+function showPop(e, text) {
+    const el = e.currentTarget;
+    if (pop.value?.el === el) { pop.value = null; return; }
+    const r = el.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const width = Math.min(POP_W, vw - 32);
+    const left = Math.max(16, Math.min(r.left + r.width / 2 - width / 2, vw - 16 - width));
+    const above = r.bottom + 90 > window.innerHeight - 84; // plads til bundmenuen på mobil
+    pop.value = { el, text, left, top: above ? r.top - 8 : r.bottom + 8, above, arrow: r.left + r.width / 2 - left };
+}
+function closePop(e) { if (pop.value && !pop.value.el.contains(e.target)) pop.value = null; }
+const closeOnScroll = () => { pop.value = null; };
+document.addEventListener('click', closePop, true);
+window.addEventListener('scroll', closeOnScroll, true);
+onBeforeUnmount(() => { document.removeEventListener('click', closePop, true); window.removeEventListener('scroll', closeOnScroll, true); });
 const scroller = ref(null); const calHeight = ref('60vh');
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -138,7 +159,7 @@ function toToday() {
     el.scrollTop = row ? row.offsetTop - el.querySelector('thead').offsetHeight : 0;
 }
 async function loadCal(month) {
-    detail.value = '';
+    pop.value = null;
     cal.value = await api('availability' + (month ? `?month=${month}` : ''));
     await nextTick(); fitHeight(); await nextTick(); toToday();
 }
@@ -201,4 +222,12 @@ onMounted(() => { loadActs(); loadOpenCount(); });
 .cell.off { background: var(--bad-soft); color: var(--bad); }
 .cell.busy { background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 899.98px) { .cal-scroll { margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; } }
+</style>
+
+<style>
+/* Tekstboksen ligger i body (Teleport) og er derfor ikke scoped */
+.cal-pop { position: fixed; z-index: 60; width: min(240px, calc(100vw - 32px)); background: var(--ink); color: var(--bg); font-size: .85rem; line-height: 1.35; padding: 9px 12px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.cal-pop.above { transform: translateY(-100%); }
+.cal-pop::after { content: ''; position: absolute; left: calc(var(--arrow) - 6px); top: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--ink); }
+.cal-pop.above::after { top: auto; bottom: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--ink); }
 </style>
