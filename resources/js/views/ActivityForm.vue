@@ -33,7 +33,7 @@
                 <label class="field"><span>Min deltagere</span><input v-model.number="f.min_participants" type="number" min="1"></label>
             </div>
             <div class="grid c2">
-                <label class="field"><span>Svarfrist</span><input v-model="f.signup_deadline" type="datetime-local"></label>
+                <label class="field"><span>Svarfrist</span><input v-model="f.signup_deadline" type="datetime-local" :disabled="repeat"><small v-if="repeat" class="muted">Ingen svarfrist ved faste aktiviteter</small></label>
                 <label class="field"><span>Afmelding lukker (timer før start)</span><input v-model.number="f.cancel_hours" type="number" min="0"></label>
             </div>
             <div class="grid c2">
@@ -44,9 +44,10 @@
                 <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning</option><option value="sup_course">Ja, som SUP-kursus</option></select>
             </label>
             <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
-            <div>
+            <p v-if="repeat" class="small muted" style="margin:0"><strong>Trænere:</strong> en fast aktivitet oprettes uden træner. Trænerne melder sig selv på de enkelte gange bagefter (Trænerportalen → Mangler træner).</p>
+            <div v-else>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
-                <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner – så kan trænerne selv tage den bagefter.<span v-if="repeat"> Valgte trænere sættes på alle gange.</span></p>
+                <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner – så kan trænerne selv tage den bagefter.</p>
                 <div class="chips">
                     <button v-for="t in trainers.filter(t => !t.unavailable || f.trainer_ids.includes(t.id))" :key="t.id" type="button" :class="['chip', { on: f.trainer_ids.includes(t.id) }]" @click="toggle(f.trainer_ids, t.id)">
                         {{ t.name }}<span v-if="t.unavailable" class="tag warn">utilgængelig</span>
@@ -86,6 +87,8 @@ const weekdayLabel = computed(() => {
     return 'Hver ' + s.toLocaleDateString('da-DK', { weekday: 'long' }) + ' kl. ' + t(s) + (e ? '–' + t(e) : '');
 });
 watch(repeat, (on) => {
+    // Faste aktiviteter: ingen svarfrist og ingen trænere ved oprettelsen – trænerne melder sig selv på bagefter
+    if (on) { f.signup_deadline = ''; f.trainer_ids = []; }
     if (on && !f.repeat_until && f.starts_at) { const d = new Date(f.starts_at); d.setDate(d.getDate() + 7 * 11); f.repeat_until = local(d).slice(0, 10); }
 });
 const hidden = computed(() => trainers.value.filter(t => t.unavailable && !f.trainer_ids.includes(t.id)));
@@ -97,7 +100,7 @@ function autoFill() {
     if (!f.starts_at) return;
     const s = new Date(f.starts_at);
     if (!f.ends_at || new Date(f.ends_at) <= s) f.ends_at = local(new Date(s.getTime() + 2 * 3600e3));
-    if (!f.signup_deadline) { const d = new Date(s); d.setDate(d.getDate() - 1); d.setHours(20, 0); f.signup_deadline = local(d); }
+    if (!f.signup_deadline && !repeat.value) { const d = new Date(s); d.setDate(d.getDate() - 1); d.setHours(20, 0); f.signup_deadline = local(d); }
 }
 
 async function loadTrainers() { trainers.value = await api(`trainer-options?date=${(f.starts_at || new Date().toISOString()).slice(0, 10)}`); }
@@ -115,7 +118,8 @@ onMounted(async () => {
 
 async function save() {
     busy.value = true; error.value = '';
-    const body = { ...f, max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
+    const body = { ...f, max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: repeat.value ? null : f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
+    if (repeat.value) body.trainer_ids = [];
     try {
         const r = await api(props.id ? `activities/${props.id}` : 'activities', { method: props.id ? 'PUT' : 'POST', body });
         toast(props.id ? 'Ændringerne er gemt' : r.count ? `Den faste aktivitet er oprettet (${r.count} gange)` : 'Aktiviteten er oprettet');

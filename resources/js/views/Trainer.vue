@@ -70,7 +70,7 @@
             </div>
             <p class="small muted cal-help">
                 <template v-if="detail">{{ detail }}</template>
-                <template v-else><span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> aktivitet · tryk for detaljer</template>
+                <template v-else><span class="cell off">✕</span> utilgængelig · <span class="cell busy">●</span> aktivitet · <span class="miss">1</span> mangler træner · tryk for detaljer</template>
             </p>
             <div v-if="!cal" class="spinner"></div>
             <div v-else ref="scroller" class="cal-scroll" :style="{ height: calHeight }">
@@ -81,7 +81,7 @@
                     <tbody>
                         <template v-for="(d, i) in cal.days" :key="d">
                             <tr :data-day="d" :class="{ we: isWeekend(d), today: d === todayIso, mon: isMonday(d) }">
-                                <th class="dcol">{{ ugedag(d) }} {{ Number(d.slice(8)) }}<span v-if="isMonday(d)" class="wk">u{{ uge(d) }}</span></th>
+                                <th :class="['dcol', { open: cal.open[i]?.length }]" @click="cal.open[i]?.length && (detail = openTip(i))">{{ ugedag(d) }} {{ Number(d.slice(8)) }}<span v-if="isMonday(d)" class="wk">u{{ uge(d) }}</span><span v-if="cal.open[i]?.length" class="miss" :title="openTip(i)">{{ cal.open[i].length }}</span></th>
                                 <td v-for="t in cal.trainers" :key="t.id" @click="detail = tip(t, t.days[i], i)">
                                     <span v-if="t.days[i].off" class="cell off">✕</span>
                                     <span v-else-if="t.days[i].busy.length" class="cell busy">●</span>
@@ -146,6 +146,7 @@ window.addEventListener('resize', fitHeight);
 onBeforeUnmount(() => window.removeEventListener('resize', fitHeight));
 
 const isWeekend = (d) => [0, 6].includes(new Date(d).getDay());
+const openTip = (i) => `${dato(cal.value.days[i])} mangler træner: ${cal.value.open[i].join(', ')}`;
 const tip = (t, x, i) => `${t.name}, ${dato(cal.value.days[i])}: ` + (x.off ? `utilgængelig (${x.reason || 'ikke angivet'})` : x.busy.length ? x.busy.join(', ') : 'ledig');
 
 const openCount = ref(0);
@@ -194,7 +195,9 @@ onMounted(() => { loadActs(); loadOpenCount(); });
 .avail tr.today .dcol { color: var(--accent); }
 .avail tr.today .cell.busy { background: var(--surface); }
 .cal-month { min-width: 8.5em; text-align: center; }
-.cell { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-size: .7rem; font-weight: 700; }
+.cell { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-size: .7rem; font-weight: 700; box-shadow: 0 0 0 2px var(--surface); }
+.miss { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 5px; border-radius: 999px; background: var(--bad); color: #fff; font-size: .62rem; font-weight: 700; vertical-align: 1px; box-shadow: 0 0 0 2px var(--surface); }
+.avail .dcol.open { color: var(--bad); cursor: pointer; }
 .cell.off { background: var(--bad-soft); color: var(--bad); }
 .cell.busy { background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 899.98px) { .cal-scroll { margin: 0 -16px; border-radius: 0; border-left: 0; border-right: 0; } }

@@ -81,7 +81,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** oprettelsen sender notifikation til alle medlemmer (se afsnittet om notifikationer).
 
-- **Kerne:** faste aktiviteter: samme ugedag og tidspunkt hver uge (fx hver onsdag kl. 18–20) fra en startdato til og med en slutdato, højst 60 gange. Ugedag og tidspunkt tages fra starttidspunktet. Hver gang bliver sin egen aktivitet med egen tilmelding, deltagerliste og fremmøde, og svarfristen flyttes med (fx dagen før kl. 20 hver gang). Medlemmer, der følger kategorien, får én samlet besked om den faste aktivitet.
+- **Kerne:** faste aktiviteter: samme ugedag og tidspunkt hver uge (fx hver onsdag kl. 18–20) fra en startdato til og med en slutdato, højst 60 gange. Ugedag og tidspunkt tages fra starttidspunktet. Hver gang bliver sin egen aktivitet med egen tilmelding, deltagerliste og fremmøde. En fast aktivitet har ingen svarfrist og oprettes uden træner – trænerne melder sig selv på de enkelte gange bagefter. Medlemmer, der følger kategorien, får én samlet besked om den faste aktivitet.
 
 - **Kerne:** aktiviteter (også faste) kan oprettes uden træner/tovholder. De vises med mærket "Mangler træner" for trænere og bestyrelse.
 
@@ -157,6 +157,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** trænere og bestyrelse kan se en samlet kalender over, hvem der er til rådighed hvornår, når nye aktiviteter skal planlægges.
 
+  - Dage med en aktivitet uden træner er markeret med rødt i datokolonnen (med antal); tryk viser hvilke.
   - Kalenderen viser én måned ad gangen med trænerne som kolonner og dagene som rækker. Den åbner på aktuel måned ved dags dato; knapper over oversigten skifter til forrige/næste måned. Navnerækken står fast, og mandage viser ugenummer.
 
 - **Kerne:** hvis en træner har markeret sig utilgængelig, advarer systemet ved forsøg på at sætte vedkommende på en aktivitet i perioden.

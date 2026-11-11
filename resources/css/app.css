@@ -151,6 +151,7 @@ html[data-tema=klub] .brand-default { display: none; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--accent); padding-inline: 8px; }
 .btn.small { min-height: 32px; padding: 5px 10px; font-size: .85rem; }
 .btn.block { width: 100%; }
+input:disabled, select:disabled, textarea:disabled { background: var(--surface-2); color: var(--ink-3); opacity: .7; cursor: not-allowed; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn.mobilepay { background: var(--mp); border-color: var(--mp); color: #fff; font-size: 1.05rem; min-height: 52px; }
 label.field { display: block; }

@@ -67,6 +67,9 @@ class TrainerController extends Controller
             'prev' => $start->copy()->subMonth()->format('Y-m'),
             'next' => $start->copy()->addMonth()->format('Y-m'),
             'days' => $days->map(fn ($d) => $d->toDateString()),
+            // Aktiviteter uden træner pr. dag (vises med rødt i datokolonnen)
+            'open' => $days->map(fn ($d) => ($acts[$d->toDateString()] ?? collect())->filter(fn ($a) => $a->trainers->isEmpty())
+                ->map(fn ($a) => $a->starts_at->format('H.i').' '.$a->title)->values()),
             'trainers' => $trainers->map(fn ($t) => [
                 'id' => $t->id, 'name' => $t->name,
                 'days' => $days->map(function ($d) use ($t, $acts) {
