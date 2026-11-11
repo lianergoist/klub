@@ -139,7 +139,9 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** trænere på en aktivitet tilmeldes ikke selv som deltagere. De kan dog tilmelde deres familiemedlemmer.
 
-- **Kerne:** trænere tilmelder sig ikke som deltagere – hverken på egne eller andres aktiviteter. En træner kan stadig tilmelde sine familiemedlemmer, der ikke selv er trænere. (Besluttet 11. nov. 2026.)
+- **Kerne:** trænere kan tilmelde sig aktiviteter som almindelige medlemmer (knappen "Tilmeld mig som deltager"), men ikke aktiviteter, hvor de selv er træner. Melder en træner sig som træner på en aktivitet, hvor vedkommende er tilmeldt, afmeldes deltagelsen.
+
+- **Afklares:** må trænere deltage gratis i andre træneres aktiviteter, eller betaler de som alle andre? I proof of concept betaler de som alle andre.
 
 - **Afklares:** hvad sker der med betalingen, hvis man melder fra? Refunderes ved frameldingen før en bestemt frist, ellers ikke? (se afsnittet om betaling)
 

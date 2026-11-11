@@ -42,9 +42,9 @@
 
         <!-- Tilmelding -->
         <div v-else-if="!a.is_past && a.is_leader" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
-        <!-- Trænere tilmelder sig ikke som deltagere; boksen vises kun, hvis der er nogen at tilmelde (fx en træners børn) -->
+        <!-- Trænere tilmelder sig som almindelige deltagere (ikke på aktiviteter, hvor de selv er træner) -->
         <div v-if="!a.cancelled && !a.is_past && a.household.length" class="card">
-            <div class="row between"><h2 style="margin:0">{{ a.can_take ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
+            <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
             <div v-if="a.deadline_passed" class="banner warn" style="margin-top:12px">Svarfristen er overskredet. Kontakt træneren, hvis du vil med.</div>
@@ -186,7 +186,7 @@ const btnLabel = computed(() => {
     const n = picked.value.length;
     if (!n) return 'Vælg hvem der skal med';
     const self = solo.value && picked.value[0] === store.user.id;
-    const who = self ? 'Tilmeld mig' : n > 1 ? `Tilmeld ${n} personer` : 'Tilmeld';
+    const who = self ? (store.user.roles.includes('trainer') ? 'Tilmeld mig som deltager' : 'Tilmeld mig') : n > 1 ? `Tilmeld ${n} personer` : 'Tilmeld';
     return a.value.price ? `${who} og betal ${kr(a.value.price * n)}` : who;
 });
 const warnUnavailable = computed(() => trainerOpts.value.filter(t => t.unavailable && selTrainers.value.includes(t.id)).map(t => t.name).join(', '));

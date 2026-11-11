@@ -74,8 +74,8 @@ class ActivityController extends Controller
         $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator', 'series');
         $isStaff = $u->isTrainer();
         $regs = $activity->registrations()->with('user', 'events.by')->get();
-        // Trænere tilmelder sig ikke som deltagere (hverken på egne eller andres aktiviteter)
-        $managed = $u->managedMembers()->reject(fn ($m) => $m->hasRole('trainer') || $activity->trainers->contains('id', $m->id))->values();
+        // Trænere på aktiviteten tilmeldes ikke som deltagere. På andre aktiviteter tilmelder trænere sig som almindelige medlemmer.
+        $managed = $u->managedMembers()->reject(fn ($m) => $activity->trainers->contains('id', $m->id))->values();
 
         return self::row($activity) + [
             'description' => $activity->description,
@@ -258,6 +258,14 @@ class ActivityController extends Controller
         abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
         abort_if($activity->ends_at->isPast(), 422, 'Aktiviteten er afholdt.');
         if (! $activity->trainers()->whereKey($u->id)->exists()) {
+            // Var træneren tilmeldt som deltager, afmeldes deltagelsen (åben betaling annulleres)
+            if ($reg = $activity->registrations()->where('user_id', $u->id)->whereIn('status', ['signed_up', 'pending_payment'])->first()) {
+                $reg->update(['status' => 'cancelled']);
+                $reg->log('cancel', $u);
+                if ($reg->invoice && $reg->invoice->status === 'open') {
+                    $reg->invoice->update(['status' => 'cancelled']);
+                }
+            }
             $this->syncTrainers($activity, array_merge($activity->trainers()->pluck('users.id')->all(), [$u->id]), $u);
         }
 
@@ -383,7 +391,7 @@ class ActivityController extends Controller
             Activity::whereKey($activity->id)->lockForUpdate()->first();
             foreach ($data['member_ids'] as $mid) {
                 $m = $allowed[$mid] ?? abort(403, 'Du kan kun tilmelde dig selv og din husstand.');
-                abort_if($m->hasRole('trainer') || $activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner og skal ikke tilmeldes som deltager.');
+                abort_if($activity->trainers()->whereKey($m->id)->exists(), 422, $m->name.' er træner på aktiviteten og skal ikke tilmeldes som deltager.');
                 if ($activity->members_only && ! $m->hasValidMembership()) {
                     abort(422, $m->name.' har ikke betalt kontingent for sæson '.\App\Support\Season::label().'.');
                 }
