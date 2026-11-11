@@ -4,18 +4,18 @@
         <h1 style="margin-top:8px">Meld dig ind</h1>
         <p class="muted">Udfyld dine oplysninger, vælg medlemskab og betal, så er du medlem med det samme.</p>
         <div v-if="guest?.credit" class="banner ok">Du har betalt <strong>{{ guest.credit_fmt }}</strong> for {{ guest.bookings.length ? 'prøvetræning/kursus' : 'et tilbud' }} som gæst. Beløbet trækkes fra kontingentet.</div>
-        <form class="card stack" @submit.prevent="submit">
-            <label class="field"><span>Fulde navn</span><input v-model="f.name" required autocomplete="name"></label>
-            <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="email"></label>
-            <label class="field"><span>Adgangskode (mindst 8 tegn)</span><input v-model="f.password" type="password" minlength="8" required autocomplete="new-password"></label>
+        <form class="card stack" autocomplete="on" @submit.prevent="submit">
+            <label class="field"><span>Fulde navn</span><input v-model="f.name" name="name" id="name" required autocomplete="name"></label>
+            <label class="field"><span>E-mail</span><input v-model="f.email" name="email" id="email" type="email" required autocomplete="email" autocapitalize="off" spellcheck="false"></label>
+            <label class="field"><span>Adgangskode (mindst 8 tegn)</span><input v-model="f.password" name="new-password" id="new-password" type="password" minlength="8" required autocomplete="new-password"></label>
             <div class="grid c2">
-                <label class="field"><span>Telefon</span><input v-model="f.phone" inputmode="tel" autocomplete="tel"></label>
-                <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" type="date" required></label>
+                <label class="field"><span>Telefon</span><input v-model="f.phone" name="tel" id="tel" type="tel" autocomplete="tel"></label>
+                <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" name="bday" id="bday" type="date" required autocomplete="bday"></label>
             </div>
-            <label class="field"><span>Adresse</span><input v-model="f.address" autocomplete="street-address"></label>
+            <label class="field"><span>Adresse</span><input v-model="f.address" name="address" id="address" autocomplete="address-line1"></label>
             <div class="grid c2">
-                <label class="field"><span>Postnr.</span><input v-model="f.postal_code" inputmode="numeric" autocomplete="postal-code"></label>
-                <label class="field"><span>By</span><input v-model="f.city" autocomplete="address-level2"></label>
+                <label class="field"><span>Postnr.</span><input v-model="f.postal_code" name="postal-code" id="postal-code" inputmode="numeric" autocomplete="postal-code"></label>
+                <label class="field"><span>By</span><input v-model="f.city" name="city" id="city" autocomplete="address-level2"></label>
             </div>
 
             <div class="card flat" style="margin:4px 0 0;background:var(--surface-2)">
@@ -29,8 +29,8 @@
                 <template v-if="flere === true">
                     <h3 style="margin-top:16px">Hvem skal ellers med?</h3>
                     <div v-for="(m, i) in others" :key="i" class="grid other">
-                        <label class="field"><span>Navn</span><input v-model="m.name" required></label>
-                        <label class="field"><span>Fødselsdato</span><input v-model="m.birthdate" type="date" required></label>
+                        <label class="field"><span>Navn</span><input v-model="m.name" :name="`other-name-${i}`" autocomplete="off" data-1p-ignore data-lpignore="true" required></label>
+                        <label class="field"><span>Fødselsdato</span><input v-model="m.birthdate" :name="`other-bday-${i}`" type="date" autocomplete="off" required></label>
                         <button v-if="others.length > 1" type="button" class="btn small ghost danger" style="align-self:end" @click="others.splice(i, 1)">Fjern</button>
                     </div>
                     <button type="button" class="btn small" @click="others.push({ name: '', birthdate: '' })">+ Tilføj person</button>

@@ -40,8 +40,26 @@ class Package extends Model
         return match ($this->period_type) {
             'once' => [$d, null],
             'days' => [$d, $d->copy()->addDays(max(1, (int) $this->period_days) - 1)],
-            'dates' => $this->dateWindowContaining($d),
+            'dates' => $this->dateWindowFor($d),
         };
+    }
+
+    /**
+     * Faste datoer: resten af den periode, der dækker datoen – eller hele næste periode,
+     * hvis datoen ligger efter sæsonafslutning (next_from), fx købt i november → 1/5–30/4 året efter.
+     */
+    private function dateWindowFor(Carbon $d): ?array
+    {
+        $w = $this->dateWindowContaining($d);
+        if (! $w) return null;
+        [$start, $end] = $w;
+        if ($this->next_from) {
+            $nf = Carbon::parse($start->year.'-'.$this->next_from);
+            if ($nf->lt($start)) $nf->addYear();
+            if ($nf->lte($end) && $d->gte($nf)) return $this->dateWindowStartingIn($start->year + 1);
+        }
+
+        return [$d, $end];
     }
 
     /** Er pakken til salg på datoen? Uden salgsperiode kan den købes, så længe den gælder. */
@@ -59,6 +77,13 @@ class Package extends Model
     public function buyableOn($date = null): bool
     {
         return $this->onSale($date) && $this->windowFor($date) !== null;
+    }
+
+    /** Fx "fra 1. nov. sælges den til næste sæson" */
+    public function nextLabel(): ?string
+    {
+        return $this->next_from && $this->period_type === 'dates'
+            ? 'fra '.Carbon::parse('2000-'.$this->next_from)->locale('da')->isoFormat('D. MMM').' til næste periode' : null;
     }
 
     public function saleLabel(): ?string
@@ -83,7 +108,7 @@ class Package extends Model
     {
         foreach ([$d->year - 1, $d->year] as $y) {
             [$from, $to] = $this->dateWindowStartingIn($y);
-            if ($d->betweenIncluded($from, $to)) return [$d, $to];
+            if ($d->betweenIncluded($from, $to)) return [$from, $to];
         }
 
         return null;

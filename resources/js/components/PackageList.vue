@@ -8,6 +8,7 @@
                     <span class="num price"><s v-if="pr(p).capped" class="muted small">{{ p.price_fmt }}</s><strong>{{ kr(pr(p).price) }}</strong></span>
                 </span>
                 <span class="small muted meta">{{ p.composition_label }} · {{ p.valid_to ? `${dato(p.valid_from)} – ${dato(p.valid_to)}` : p.period_label }}<template v-if="!p.gives_access"> · uden adgang til aktiviteter</template></span>
+                <span v-if="p.starts_later" class="small info-txt">Begynder {{ dato(p.valid_from) }} (næste sæson)</span>
                 <span v-if="p.description" class="small desc">{{ p.description }}</span>
                 <span v-if="pr(p).capped" class="small ok-txt">Prisen er sat ned, så det ikke koster mere end {{ kr(pr(p).price) }}, som I ville betale for hver jeres enkeltmedlemskab.</span>
                 <span v-if="fits && fits(p)" class="small warn-txt">{{ fits(p) }}</span>
@@ -28,8 +29,8 @@ const props = defineProps({ packages: Array, modelValue: Number, fits: Function,
 defineEmits(['update:modelValue']);
 const showAll = ref(false);
 const pr = (p) => props.priceOf && !(props.fits && props.fits(p)) ? props.priceOf(p) : { price: p.price, full: p.price, capped: false };
-// Pakker, der passer, vises med den billigste først
-const ok = computed(() => (props.fits ? props.packages.filter(p => !props.fits(p)) : props.packages).slice().sort((a, b) => pr(a).price - pr(b).price));
+// Pakker, der passer, vises først: medlemskaber med adgang til aktiviteter før støttemedlemskab, derefter billigste først
+const ok = computed(() => (props.fits ? props.packages.filter(p => !props.fits(p)) : props.packages).slice().sort((a, b) => (b.gives_access - a.gives_access) || pr(a).price - pr(b).price));
 const others = computed(() => props.fits ? props.packages.filter(p => props.fits(p)) : []);
 const shown = computed(() => showAll.value || !ok.value.length ? [...ok.value, ...others.value] : [...ok.value, ...others.value.filter(p => p.id === props.modelValue)]);
 </script>
@@ -44,5 +45,6 @@ const shown = computed(() => showAll.value || !ok.value.length ? [...ok.value, .
 .desc { color: var(--ink-2); }
 .warn-txt { color: var(--warn); }
 .ok-txt { color: var(--ok); }
+.info-txt { color: var(--accent); font-weight: 600; }
 .pkg.off:not(.on) { opacity: .75; }
 </style>

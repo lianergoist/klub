@@ -25,21 +25,21 @@
             <p class="small muted" style="text-align:center">Allerede medlem? <RouterLink to="/login">Log ind</RouterLink></p>
         </template>
 
-        <form v-else class="card stack" @submit.prevent="book">
+        <form v-else class="card stack" autocomplete="on" @submit.prevent="book">
             <a href="#" class="small" @click.prevent="picked = null">‹ Vælg en anden dato</a>
             <div class="banner info" style="margin:0">
                 <strong>{{ picked.offer.label }}</strong>: {{ picked.activity.title }}<br>
                 <span>{{ datoLang(picked.activity.starts_at) }}</span> kl. {{ klok(picked.activity.starts_at) }}–{{ klok(picked.activity.ends_at) }} · <strong>{{ picked.offer.price_fmt }}</strong>
             </div>
-            <label class="field"><span>Fulde navn</span><input v-model="f.name" required autocomplete="name"></label>
+            <label class="field"><span>Fulde navn</span><input v-model="f.name" name="name" id="name" required autocomplete="name"></label>
             <div class="grid c2">
-                <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="email"></label>
-                <label class="field"><span>Telefon</span><input v-model="f.phone" inputmode="tel" required autocomplete="tel"></label>
+                <label class="field"><span>E-mail</span><input v-model="f.email" name="email" id="email" type="email" required autocomplete="email" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><span>Telefon</span><input v-model="f.phone" name="tel" id="tel" type="tel" required autocomplete="tel"></label>
             </div>
-            <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" type="date" required></label>
+            <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" name="bday" id="bday" type="date" required autocomplete="bday"></label>
             <div v-if="minor" class="grid c2">
-                <label class="field"><span>Forælders navn</span><input v-model="f.guardian_name" required></label>
-                <label class="field"><span>Forælders telefon</span><input v-model="f.guardian_phone" inputmode="tel" required></label>
+                <label class="field"><span>Forælders navn</span><input v-model="f.guardian_name" name="guardian-name" autocomplete="off" required></label>
+                <label class="field"><span>Forælders telefon</span><input v-model="f.guardian_phone" name="guardian-tel" type="tel" autocomplete="off" required></label>
             </div>
             <p class="small muted" style="margin:0">Vi bruger dine oplysninger til tilmeldingen og til at kontakte dig om {{ picked.offer.label.toLowerCase() }}. Melder du dig ikke ind, slettes de efter den frist, klubben har fastsat.</p>
             <label class="check small"><input type="checkbox" v-model="f.consent"> Jeg giver samtykke til ovenstående<span v-if="minor"> (som forælder)</span>.</label>

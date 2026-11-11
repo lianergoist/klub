@@ -56,7 +56,7 @@ class PackageController extends Controller
             'id' => $p->id, 'kind' => $p->kind, 'name' => $p->name, 'description' => $p->description,
             'price' => $p->price(), 'price_fmt' => Money::fmt($p->price()),
             'period_label' => $p->periodLabel(), 'composition_label' => $p->compositionLabel(),
-            'valid_from' => $from->toDateString(), 'valid_to' => $to?->toDateString(),
+            'valid_from' => $from->toDateString(), 'valid_to' => $to?->toDateString(), 'starts_later' => $from->isAfter(now()->endOfDay()),
             'total_min' => $p->total_min, 'total_max' => $p->total_max,
             'slots' => $p->slots->map(fn ($s) => ['category_id' => $s->person_category_id, 'min' => $s->min, 'max' => $s->max])->values(),
             'gives_access' => $p->gives_access, 'requires_membership' => $p->requires_membership,
@@ -98,6 +98,7 @@ class PackageController extends Controller
             'household' => $household->map(fn ($m) => [
                 'id' => $m->id, 'name' => $m->name, 'birthdate' => $m->birthdate?->toDateString(), 'age' => $m->age(), 'status' => $m->status,
                 'membership' => ($c = $m->currentMembership()) ? ['name' => $c->package->name, 'valid_to' => $c->valid_to?->toDateString()] : null,
+                'upcoming' => ($n = $m->upcomingMembership()) ? ['name' => $n->package->name, 'valid_from' => $n->valid_from->toDateString()] : null,
             ])->values(),
             'purchases' => $purchases->map(fn ($p) => [
                 'id' => $p->id, 'kind' => $p->package->kind, 'name' => $p->package->name, 'resource' => $p->resource?->label,
@@ -170,13 +171,13 @@ class PackageController extends Controller
                 $hist = $prices[$p->priceCode()] ?? collect();
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
-                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'total_min', 'total_max',
+                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'total_min', 'total_max',
                     'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id') + [
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
                     'slots' => $p->slots->map(fn ($s) => ['person_category_id' => $s->person_category_id, 'min' => $s->min, 'max' => $s->max])->values(),
                     'period_label' => $p->periodLabel(), 'composition_label' => $p->compositionLabel(),
-                    'sale_label' => $p->saleLabel(), 'on_sale' => $p->buyableOn(now()),
+                    'sale_label' => $p->saleLabel(), 'next_label' => $p->nextLabel(), 'on_sale' => $p->buyableOn(now()),
                     'current' => $current ? $row($current) : null,
                     'upcoming' => $hist->filter(fn ($x) => $x->valid_from > $today)->sortBy('valid_from')->map($row)->values(),
                     'previous' => $hist->filter(fn ($x) => $x->valid_from <= $today && $x->id !== $current?->id)->map($row)->values(),
@@ -198,6 +199,7 @@ class PackageController extends Controller
             'date_to' => ['required_if:period_type,dates', 'nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
             'sale_from' => ['nullable', 'required_with:sale_to', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
             'sale_to' => ['nullable', 'required_with:sale_from', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
+            'next_from' => ['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
             'total_min' => 'required|integer|min:1|max:50',
             'total_max' => 'nullable|integer|min:1|max:50|gte:total_min',
             'gives_access' => 'boolean',
@@ -232,10 +234,11 @@ class PackageController extends Controller
         if ($d['period_type'] === 'dates') {
             foreach (['date_from', 'date_to'] as $f) abort_unless(checkdate((int) substr($d[$f], 0, 2), (int) substr($d[$f], 3, 2), 2024), 422, 'Ugyldig dato: '.$d[$f]);
         }
-        foreach (['sale_from', 'sale_to'] as $f) {
+        foreach (['sale_from', 'sale_to', 'next_from'] as $f) {
             if (! empty($d[$f])) abort_unless(checkdate((int) substr($d[$f], 0, 2), (int) substr($d[$f], 3, 2), 2024), 422, 'Ugyldig dato: '.$d[$f]);
         }
         $d['sale_from'] ??= null; $d['sale_to'] ??= null;
+        $d['next_from'] = $d['period_type'] === 'dates' ? ($d['next_from'] ?? null) : null;
         abort_if(($d['renews_to_id'] ?? null) && ($d['period_type'] !== 'dates' || ($p && $d['renews_to_id'] == $p->id)), 422, 'Kun pakker med faste datoer kan fornyes som en anden pakke.');
         $d['period_days'] = $d['period_type'] === 'days' ? $d['period_days'] : null;
         [$d['date_from'], $d['date_to']] = $d['period_type'] === 'dates' ? [$d['date_from'], $d['date_to']] : [null, null];

@@ -8,8 +8,8 @@
         </div>
         <div class="card login-card">
             <form @submit.prevent="login" class="stack">
-                <label class="field"><span>E-mail</span><input v-model="email" type="email" autocomplete="username" required></label>
-                <label class="field"><span>Adgangskode</span><input v-model="password" type="password" autocomplete="current-password" required></label>
+                <label class="field"><span>E-mail</span><input v-model="email" name="email" id="email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
+                <label class="field"><span>Adgangskode</span><input v-model="password" name="password" id="password" type="password" autocomplete="current-password" required></label>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink> <template v-if="!IS_APP">eller <RouterLink to="/prov">prøv en træning eller et SUP-kursus</RouterLink></template></p>

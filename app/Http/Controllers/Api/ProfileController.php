@@ -24,6 +24,7 @@ class ProfileController extends Controller
             'household' => $u->managedMembers()->map(fn ($m) => self::profile($m))->values(),
             'membership_valid' => $u->hasValidMembership(),
             'membership' => ($c = $u->currentMembership()) ? ['name' => $c->package->name, 'valid_to' => $c->valid_to?->toDateString()] : null,
+            'upcoming' => ($n = $u->upcomingMembership()) ? ['name' => $n->package->name, 'valid_from' => $n->valid_from->toDateString()] : null,
             'signup_invoice_id' => $u->status === 'pending' ? Invoice::where('member_id', $u->id)->where('kind', 'membership')->where('status', 'open')->value('id') : null,
             'roles' => $u->roleAssignments->sortByDesc('starts_on')->map(fn ($ra) => [
                 'role' => $ra->role, 'label' => User::ROLE_LABELS[$ra->role] ?? $ra->role,

@@ -13,7 +13,7 @@
                     <div class="row between" style="flex-wrap:nowrap;align-items:flex-start;gap:10px">
                         <div style="min-width:0">
                             <strong>{{ p.name }}</strong> <span v-if="!p.on_sale" class="tag">Ikke til salg nu</span>
-                            <div class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
+                            <div class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="p.next_label"> · {{ p.next_label }}</template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
                             <div class="small muted">{{ p.active_purchases }} gældende køb<template v-if="p.current"> · pris fra {{ dato(p.current.valid_from) }}</template>
                                 <a v-if="p.previous.length" href="#" @click.prevent="p.showHist = !p.showHist"> · {{ p.showHist ? 'skjul' : 'vis' }} tidligere priser ({{ p.previous.length }})</a></div>
                             <div v-for="u in p.upcoming" :key="u.id" class="upcoming small">
@@ -89,6 +89,11 @@
                         <div class="field"><span>Til og med</span><div class="row dm"><select v-model="ed.toD"><option v-for="n in 31" :key="n" :value="n">{{ n }}.</option></select><select v-model="ed.toM"><option v-for="(m, i) in months" :key="i" :value="i + 1">{{ m }}</option></select></div></div>
                     </div>
                     <p class="small muted" style="margin:6px 0 0">{{ periodHelp }}</p>
+                    <template v-if="ed.period_type === 'dates'">
+                        <label class="check" style="margin-top:4px"><input type="checkbox" v-model="ed.hasNext"> Efter sæsonafslutning sælges den til næste periode</label>
+                        <div v-if="ed.hasNext" class="field"><span>Sæsonafslutning</span><div class="row dm"><select v-model="ed.nD"><option v-for="n in 31" :key="n" :value="n">{{ n }}.</option></select><select v-model="ed.nM"><option v-for="(m, i) in months" :key="i" :value="i + 1">{{ m }}</option></select></div></div>
+                        <p v-if="ed.hasNext" class="small muted" style="margin:0">Køber man fra {{ ed.nD }}. {{ months[ed.nM - 1] }}, gælder den fra næste periodes start ({{ ed.fromD }}. {{ months[ed.fromM - 1] }}). Husk at sætte salgsperioden på evt. halvsæsonpakker, så de ikke sælges efter sæsonafslutning.</p>
+                    </template>
                     <template v-if="ed.period_type !== 'once'">
                         <label class="check" style="margin-top:4px"><input type="checkbox" v-model="ed.hasSale"> Kun til salg i en del af året</label>
                         <div v-if="ed.hasSale" class="grid c2">
@@ -186,8 +191,8 @@ function blank(over = {}) {
     const p = { id: null, name: '', description: '', period_type: 'dates', period_days: 30, date_from: '05-01', date_to: '04-30', total_min: 1, total_max: 1,
         gives_access: true, requires_membership: false, self_service: true, renews_to_id: null, slots: [], price: '', purchases: 0, ...over };
     const f = md(p.date_from) || { d: 1, m: 5 }; const t = md(p.date_to) || { d: 30, m: 4 };
-    const sf = md(p.sale_from) || { d: 1, m: 5 }; const st = md(p.sale_to) || { d: 31, m: 7 };
-    return { ...p, fromD: f.d, fromM: f.m, toD: t.d, toM: t.m, hasSale: !!p.sale_from, sFromD: sf.d, sFromM: sf.m, sToD: st.d, sToM: st.m,
+    const sf = md(p.sale_from) || { d: 1, m: 5 }; const st = md(p.sale_to) || { d: 31, m: 7 }; const nx = md(p.next_from) || { d: 1, m: 11 };
+    return { ...p, fromD: f.d, fromM: f.m, toD: t.d, toM: t.m, hasSale: !!p.sale_from, hasNext: !!p.next_from, nD: nx.d, nM: nx.m, sFromD: sf.d, sFromM: sf.m, sToD: st.d, sToM: st.m,
         slotRows: d.value.categories.filter(c => !c.archived || p.slots.some(s => s.person_category_id === c.id)).map(c => {
             const s = p.slots.find(s => s.person_category_id === c.id);
             return { person_category_id: c.id, label: `${c.name} (${c.min_age}${c.max_age === null ? '+' : '–' + c.max_age} år)`, on: !!s || !p.id, min: s?.min ?? 0, max: s?.max ?? (p.total_max || 1) };
@@ -220,6 +225,7 @@ async function savePkg() {
         date_to: e.period_type === 'dates' ? `${pad(e.toM)}-${pad(e.toD)}` : null,
         sale_from: e.hasSale && e.period_type !== 'once' ? `${pad(e.sFromM)}-${pad(e.sFromD)}` : null,
         sale_to: e.hasSale && e.period_type !== 'once' ? `${pad(e.sToM)}-${pad(e.sToD)}` : null,
+        next_from: e.hasNext && e.period_type === 'dates' ? `${pad(e.nM)}-${pad(e.nD)}` : null,
         total_min: e.total_min, total_max: e.total_max || null,
         gives_access: e.gives_access, requires_membership: e.requires_membership, self_service: e.self_service,
         renews_to_id: e.period_type === 'dates' ? e.renews_to_id : null, account_id: e.account_id,

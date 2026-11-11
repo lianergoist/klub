@@ -383,7 +383,7 @@ class DatabaseSeeder extends Seeder
             foreach ($slots as $name => [$min, $max]) $p->slots()->create(['person_category_id' => \App\Models\PersonCategory::where('name', $name)->value('id'), 'min' => $min, 'max' => $max]);
             \App\Support\Prices::set($p->priceCode(), $price, $this->now->toDateString(), $henrik->id);
         };
-        $mkPkg(['kind' => 'membership', 'name' => 'Familie: 2 voksne og 1–3 børn', 'description' => 'Hele familien for én samlet pris.', 'period_type' => 'dates', 'date_from' => '05-01', 'date_to' => '04-30',
+        $mkPkg(['kind' => 'membership', 'name' => 'Familie: 2 voksne og 1–3 børn', 'description' => 'Hele familien for én samlet pris.', 'period_type' => 'dates', 'date_from' => '05-01', 'date_to' => '04-30', 'next_from' => '11-01',
             'total_min' => 3, 'total_max' => 5, 'account_id' => $this->acc['1000']], ['Voksen' => [2, 2], 'Barn' => [1, 3]], 220000);
         $mkPkg(['kind' => 'product', 'name' => 'Adgang til motionsrum, 30 dage', 'description' => 'Nøglebrikken giver adgang til motionsrummet i 30 dage fra købet.', 'period_type' => 'days', 'period_days' => 30,
             'total_min' => 1, 'total_max' => 1, 'requires_membership' => true, 'account_id' => $this->acc['1200']], ['Voksen' => [0, 1], 'Barn' => [0, 1]], 15000);

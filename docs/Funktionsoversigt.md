@@ -269,7 +269,17 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** et medlemskab til flere personer koster aldrig mere end summen af det billigste enkeltmedlemskab, hver person kunne købe samme dag (med samme adgang til aktiviteter). Fx koster "Familie med 3 personer" i november 1.200 kr. (3 × halv sæson 400 kr.) i stedet for 2.500 kr. Reglen gælder også ved fornyelse, men slår sjældent igennem ved sæsonstart, hvor familiepriserne er billigst. Medlemmet ser både den normale og den nedsatte pris, og regningen viser "højst N × enkeltkontingent". (Besluttet 11. nov. 2026.)
 
-- **Kerne:** en pakke kan have en salgsperiode (fx 1. maj – 31. juli), så den kun tilbydes i en del af året. De hidtidige helsæsonmedlemskaber (enkelt og 2 personer) sælges 1/5–31/7, så nye medlemmer fra 1. august kun får tilbudt halv sæson. Fornyelse ved ny sæson sker uanset salgsperioden. (Besluttet 11. nov. 2026.)
+- **Kerne:** en pakke kan have en salgsperiode (fx 1. august – 31. oktober), så den kun tilbydes i en del af året. Fornyelse ved ny sæson sker uanset salgsperioden. (Besluttet 11. nov. 2026.)
+
+- **Kerne:** en pakke med faste datoer kan have en **sæsonafslutning**. Fra den dato sælges den til næste periode i stedet for den igangværende. Med sæsonafslutning 1. november gælder for medlemskaberne:
+  - maj–juli: hel sæson til 30. april,
+  - august–oktober: halv sæson (1/8–30/4),
+  - november–april: hel sæson fra næste 1. maj (ingen halv sæson efter sæsonafslutning). Det gælder også familie og støttemedlem.
+  - Medlemmet ser "Begynder 1. maj (næste sæson)" ved pakken, og profilen viser "Medlem fra 1. maj". Bestyrelsen kan ændre datoen pr. pakke. (Besluttet 11. nov. 2026; datoen 1. november er et forslag.)
+
+- **Afklares:** hvilken dato er sæsonafslutning (i proof of concept 1. november)? Og skal den, der melder sig ind efter sæsonafslutning, have adgang til vinterens aktiviteter (fx indendørs træning), før medlemskabet begynder 1. maj? I proof of concept har de ikke adgang før 1. maj.
+
+- **Kerne:** felterne ved indmeldelse og prøvetræning er markeret, så browseren kan udfylde navn, e-mail, telefon, fødselsdato og adresse automatisk. Felterne til andre personer udfyldes ikke automatisk.
 
 - **Kerne:** ved indmeldelse spørges der først, om andre i husstanden også skal være medlemmer. Svarer man nej, vises kun medlemskaber, der passer til én person. Svarer man ja, tilføjer man personerne og får derefter vist de medlemskaber, der passer, med det billigste først.
 

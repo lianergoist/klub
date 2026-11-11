@@ -113,6 +113,15 @@ class User extends Authenticatable
         return $this->currentMembership($access) !== null;
     }
 
+    /** Betalt medlemskab, der først begynder senere (fx købt efter sæsonafslutning til næste sæson). */
+    public function upcomingMembership(): ?Purchase
+    {
+        return $this->purchases()->with('package')->whereHas('package', fn ($q) => $q->where('kind', 'membership'))
+            ->whereNull('cancelled_at')->where('valid_from', '>', now()->toDateString())
+            ->where(fn ($q) => $q->whereNull('invoice_id')->orWhereHas('invoice', fn ($q) => $q->where('status', 'paid')))
+            ->orderBy('valid_from')->first();
+    }
+
     public function currentMembership(bool $access = false): ?Purchase
     {
         return $this->purchases()->activeOn()->with('package')

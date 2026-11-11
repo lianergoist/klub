@@ -5,6 +5,7 @@
         <p class="muted" style="margin-bottom:14px">
             <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
             <span v-if="p.membership" class="tag ok">{{ p.membership.name }}<template v-if="p.membership.valid_to"> · til {{ dato(p.membership.valid_to) }}</template></span>
+            <span v-else-if="p.upcoming" class="tag info">{{ p.upcoming.name }} · fra {{ dato(p.upcoming.valid_from) }}</span>
             <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Intet gyldigt medlemskab</span>
         </p>
         <div class="tabs">
@@ -38,8 +39,8 @@
                     <ul class="list">
                         <li v-for="m in shop.household" :key="m.id" class="row between" style="flex-wrap:nowrap">
                             <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år</span>
-                                <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : 'Intet gyldigt medlemskab' }}</span></span>
-                            <span :class="['tag', m.membership ? 'ok' : m.status === 'pending' ? 'warn' : 'bad']">{{ m.membership ? 'Medlem' : m.status === 'pending' ? 'Afventer betaling' : 'Ikke medlem' }}</span>
+                                <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : m.upcoming ? m.upcoming.name + ' · fra ' + dato(m.upcoming.valid_from) : 'Intet gyldigt medlemskab' }}</span></span>
+                            <span :class="['tag', m.membership ? 'ok' : m.upcoming ? 'info' : m.status === 'pending' ? 'warn' : 'bad']">{{ m.membership ? 'Medlem' : m.upcoming ? 'Medlem fra ' + dato(m.upcoming.valid_from) : m.status === 'pending' ? 'Afventer betaling' : 'Ikke medlem' }}</span>
                         </li>
                     </ul>
                 </div>
@@ -197,7 +198,7 @@ const p = ref(null); const f = reactive({}); const cats = ref([]); const invoice
 const buy = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
 const ms = reactive({ member_ids: [], new_members: [], package_id: null });
 
-const withoutMembership = computed(() => shop.value ? shop.value.household.filter(m => !m.membership && !openPurchases('membership').some(x => x.people.includes(m.name))) : []);
+const withoutMembership = computed(() => shop.value ? shop.value.household.filter(m => !m.membership && !m.upcoming && !openPurchases('membership').some(x => x.people.includes(m.name))) : []);
 const openPurchases = (kind) => shop.value ? shop.value.purchases.filter(x => x.kind === kind && ['open', 'overdue'].includes(x.status)) : [];
 const msPeople = computed(() => [...shop.value.household.filter(m => ms.member_ids.includes(m.id)), ...ms.new_members]);
 const msPkg = computed(() => shop.value?.memberships.find(x => x.id === ms.package_id) || null);
