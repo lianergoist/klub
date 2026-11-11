@@ -219,7 +219,7 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 .timeline li::before { content: ''; position: absolute; left: 3px; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
 @media print {
-    .sidebar, .tabbar, .noprint, .demo-ribbon { display: none !important; }
+    .sidebar, .tabbar, .noprint, .demo-ribbon, .test-ribbon { display: none !important; }
     .main { padding: 0; max-width: none; }
     .card { box-shadow: none; border: 0; padding: 0; }
     body { background: #fff; color: #000; }
