@@ -137,7 +137,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** trænere og bestyrelse kan se en samlet kalender over, hvem der er til rådighed hvornår, når nye aktiviteter skal planlægges.
 
-  - Kalenderen viser hele træningssæsonen (1. maj – 30. april) med trænerne som kolonner og dagene som rækker. Navnerækken står fast, og visningen åbner ved dags dato; tidligere dage ses ved at scrolle op. Mandage viser ugenummer, og der er en overskrift ved hver ny måned. Man kan bladre til forrige/næste sæson.
+  - Kalenderen viser én måned ad gangen med trænerne som kolonner og dagene som rækker. Den åbner på aktuel måned ved dags dato; knapper over oversigten skifter til forrige/næste måned. Navnerækken står fast, og mandage viser ugenummer.
 
 - **Kerne:** hvis en træner har markeret sig utilgængelig, advarer systemet ved forsøg på at sætte vedkommende på en aktivitet i perioden.
 

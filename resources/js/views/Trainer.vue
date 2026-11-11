@@ -56,11 +56,11 @@
         <template v-if="tab === 'cal'">
             <div class="row between cal-bar">
                 <div class="row" style="gap:4px">
-                    <button class="btn small ghost" @click="loadCal(season - 1)" aria-label="Forrige sæson">‹</button>
-                    <strong>Sæson {{ cal?.season.label }}</strong>
-                    <button class="btn small ghost" @click="loadCal(season + 1)" aria-label="Næste sæson">›</button>
+                    <button class="btn small ghost" :disabled="!cal" @click="loadCal(cal.prev)" aria-label="Forrige måned">‹</button>
+                    <strong class="cal-month">{{ cal ? maaned(cal.month + '-01') : '' }}</strong>
+                    <button class="btn small ghost" :disabled="!cal" @click="loadCal(cal.next)" aria-label="Næste måned">›</button>
                 </div>
-                <button class="btn small" @click="toToday">I dag</button>
+                <button class="btn small" @click="loadCal()">I dag</button>
             </div>
             <p class="small muted cal-help">
                 <template v-if="detail">{{ detail }}</template>
@@ -74,7 +74,6 @@
                     </thead>
                     <tbody>
                         <template v-for="(d, i) in cal.days" :key="d">
-                            <tr v-if="i === 0 || d.endsWith('-01')" class="month"><th class="dcol">{{ maaned(d) }}</th><td :colspan="cal.trainers.length"></td></tr>
                             <tr :data-day="d" :class="{ we: isWeekend(d), today: d === todayIso, mon: isMonday(d) }">
                                 <th class="dcol">{{ ugedag(d) }} {{ Number(d.slice(8)) }}<span v-if="isMonday(d)" class="wk">u{{ uge(d) }}</span></th>
                                 <td v-for="t in cal.trainers" :key="t.id" @click="detail = tip(t, t.days[i], i)">
@@ -99,7 +98,7 @@ import { api, store, klok, dato, toast, dagNr, maanedKort } from '../api';
 const isTrainer = store.user.roles.includes('trainer');
 const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);
-const cal = ref(null); const detail = ref(''); const season = ref(null);
+const cal = ref(null); const detail = ref('');
 const scroller = ref(null); const calHeight = ref('60vh');
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -128,16 +127,12 @@ function fitHeight() {
 }
 function toToday() {
     const el = scroller.value; if (!el) return;
-    const days = cal.value.days;
-    const target = days.includes(todayIso) ? todayIso : (todayIso < days[0] ? days[0] : days[days.length - 1]);
-    const row = el.querySelector(`tr[data-day="${target}"]`);
-    const head = el.querySelector('thead').offsetHeight;
-    if (row) el.scrollTop = row.offsetTop - head;
+    const row = el.querySelector(`tr[data-day="${todayIso}"]`);
+    el.scrollTop = row ? row.offsetTop - el.querySelector('thead').offsetHeight : 0;
 }
-async function loadCal(y) {
+async function loadCal(month) {
     detail.value = '';
-    cal.value = await api('availability' + (y ? `?season=${y}` : ''));
-    season.value = cal.value.season.start_year;
+    cal.value = await api('availability' + (month ? `?month=${month}` : ''));
     await nextTick(); fitHeight(); await nextTick(); toToday();
 }
 window.addEventListener('resize', fitHeight);
@@ -163,6 +158,7 @@ onMounted(loadActs);
 
 <style scoped>
 .cal-bar { margin-bottom: 6px; }
+.cal-bar .ghost { font-size: 1.2rem; padding-inline: 14px; }
 .cal-help { min-height: 1.4em; margin: 0 0 8px; }
 .cal-help .cell { width: 16px; height: 16px; font-size: .6rem; vertical-align: -3px; }
 .cal-scroll { overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
@@ -178,7 +174,7 @@ onMounted(loadActs);
 .avail tr.today > * { background: var(--accent-soft) !important; }
 .avail tr.today .dcol { color: var(--accent); }
 .avail tr.today .cell.busy { background: var(--surface); }
-.avail tr.month th, .avail tr.month td { background: var(--surface-2); color: var(--ink); font-size: .78rem; font-weight: 700; padding: 6px 8px; text-transform: none; }
+.cal-month { min-width: 8.5em; text-align: center; }
 .cell { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-size: .7rem; font-weight: 700; }
 .cell.off { background: var(--bad-soft); color: var(--bad); }
 .cell.busy { background: var(--accent-soft); color: var(--accent); }

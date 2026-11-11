@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\Unavailability;
 use App\Models\User;
-use App\Support\Season;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -43,13 +42,14 @@ class TrainerController extends Controller
 
     /**
      * Samlet oversigt: hvem er til rådighed hvornår (trænere).
-     * Viser en hel træningssæson (1. maj – 30. april). ?season=2026 vælger sæsonen, der starter i 2026.
+     * Viser én måned ad gangen. ?month=2026-11 vælger måneden (standard: aktuel måned).
      */
     public function availability(Request $r)
     {
         abort_unless($r->user()->isTrainer(), 403);
-        $start = $r->filled('season') ? Season::fromStartYear((int) $r->query('season')) : Season::start();
-        $end = $start->copy()->addYear()->subDay();
+        $month = $r->query('month');
+        $start = (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) ? Carbon::parse($month.'-01') : now())->startOfMonth()->startOfDay();
+        $end = $start->copy()->endOfMonth()->startOfDay();
         $days = collect();
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
             $days->push($d->copy());
@@ -63,7 +63,9 @@ class TrainerController extends Controller
             ->groupBy(fn ($a) => $a->starts_at->toDateString());
 
         return [
-            'season' => ['start_year' => $start->year, 'label' => Season::label($start), 'current' => Season::start()->year],
+            'month' => $start->format('Y-m'),
+            'prev' => $start->copy()->subMonth()->format('Y-m'),
+            'next' => $start->copy()->addMonth()->format('Y-m'),
             'days' => $days->map(fn ($d) => $d->toDateString()),
             'trainers' => $trainers->map(fn ($t) => [
                 'id' => $t->id, 'name' => $t->name,
