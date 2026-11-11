@@ -101,12 +101,14 @@
 
 <script setup>
 import { ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import CatTags from '../components/CatTags.vue';
 import Icon from '../components/Icon.vue';
 import { api, store, klok, dato, toast, dagNr, maanedKort, ugedagKort } from '../api';
 
 const isTrainer = store.user.roles.includes('trainer');
-const tab = ref('mine'); const when = ref('future'); const acts = ref(null);
+const route = useRoute();
+const tab = ref('mine'); const when = ref(route.query.vis === 'mangler' ? 'open' : 'future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);
 const cal = ref(null); const pop = ref(null);
 const POP_W = 240;

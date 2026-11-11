@@ -124,7 +124,7 @@ async function save() {
     try {
         const r = await api(props.id ? `activities/${props.id}` : 'activities', { method: props.id ? 'PUT' : 'POST', body });
         toast(props.id ? 'Ændringerne er gemt' : r.count ? `Den faste aktivitet er oprettet (${r.count} gange)` : 'Aktiviteten er oprettet');
-        router.replace(`/aktiviteter/${r.id}`);
+        router.replace(r.count ? '/traener?vis=mangler' : `/aktiviteter/${r.id}`);
     } catch (e) { error.value = e.message; } finally { busy.value = false; }
 }
 </script>
