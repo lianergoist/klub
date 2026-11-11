@@ -23,6 +23,7 @@
                 <div class="small" style="opacity:.8">{{ store.user.roles.map(r => roleLabel[r]).join(' · ') }}</div>
                 <ThemeSwitch style="margin:10px 0 2px" />
                 <button class="btn small" @click="logout"><Icon name="logout" style="width:16px" /> Log ud</button>
+                <AppVersion style="opacity:.75" />
             </div>
         </aside>
         <main :class="['main', { wide: route.matched.some(r => r.meta.wide) }]">
@@ -45,6 +46,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
+import AppVersion from './components/AppVersion.vue';
 import { store, api, roleLabel, IS_APP, logout as doLogout } from './api';
 
 const route = useRoute();
