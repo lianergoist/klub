@@ -6,6 +6,10 @@
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kameraet bruges til at tage billeder af kvitteringer og til opslag på opslagstavlen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fotobiblioteket bruges til at vælge billeder af kvitteringer og til opslag på opslagstavlen.</string>
 	<key>CFBundleDisplayName</key>
         <string>SurfHorsens</string>
 	<key>CFBundleExecutable</key>
