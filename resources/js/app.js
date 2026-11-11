@@ -63,8 +63,10 @@ const WEB_ONLY = ['/okonomi'];
 
 router.beforeEach(async (to, from) => {
     if (IS_APP && !siteAccess() && to.path !== '/adgang') return '/adgang';
-    if (IS_APP && WEB_ONLY.some(p => to.path === p || to.path.startsWith(p + '/'))) {
-        import('./native').then((m) => m.openWeb(to.fullPath));
+    // I appen findes Økonomi ikke, så routeren omdirigerer til /aktiviteter, før denne vagt kører – se på den oprindelige adresse
+    const asked = to.redirectedFrom || to;
+    if (IS_APP && WEB_ONLY.some(p => asked.path === p || asked.path.startsWith(p + '/'))) {
+        import('./native').then((m) => m.openWeb(asked.fullPath));
         // Bliv hvor man er – eller gå til forsiden, hvis linket åbnede appen (fx et tryk på en push-besked)
         return from.matched.length ? false : '/aktiviteter';
     }
