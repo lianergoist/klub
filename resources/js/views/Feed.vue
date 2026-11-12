@@ -59,7 +59,7 @@
                 <div v-else class="vwait small">{{ v.status === 'failed' ? 'Videoen kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
             </div>
             <div v-if="pics(p).length" :class="['gallery', 'n' + Math.min(pics(p).length, 5)]">
-                <button v-for="(img, i) in pics(p)" :key="i" type="button" @click="lightbox = img.url"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
+                <button v-for="(img, i) in pics(p)" :key="i" type="button" @click="openShow(pics(p), i)"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
             </div>
 
             <footer class="row" style="gap:4px;margin-top:10px">
@@ -97,7 +97,18 @@
             <label class="field"><span>Hvad er problemet?</span><input v-model="reportReason" placeholder="Fx jeg er på billedet og vil ikke vises"></label>
             <button class="btn primary block" style="margin-top:12px" :disabled="!reportReason.trim()" @click="report">Anmeld</button>
         </Modal>
-        <div v-if="lightbox" class="lightbox" @click="lightbox = null"><img :src="lightbox" alt=""></div>
+        <!-- Lysbilledvisning: bladr med pilene, tastaturet (← →) eller ved at swipe; Esc eller klik udenfor lukker -->
+        <Teleport to="body">
+        <div v-if="lightbox" class="lightbox" role="dialog" aria-label="Billeder" @click.self="closeShow" @touchstart.passive="touchStart" @touchend="touchEnd">
+            <img :src="lightbox.list[lightbox.i].url" alt="" @click.stop>
+            <button type="button" class="lb-close" aria-label="Luk" @click="closeShow"><Icon name="x" /></button>
+            <template v-if="lightbox.list.length > 1">
+                <button type="button" class="lb-nav prev" aria-label="Forrige billede" @click.stop="step(-1)">‹</button>
+                <button type="button" class="lb-nav next" aria-label="Næste billede" @click.stop="step(1)">›</button>
+                <div class="lb-count">{{ lightbox.i + 1 }} / {{ lightbox.list.length }}</div>
+            </template>
+        </div>
+        </Teleport>
     </div>
 </template>
 
@@ -131,6 +142,13 @@ function schedulePoll() {
     if (filter.value === 'all' && posts.value?.some(p => p.images.some(i => i.kind === 'video' && i.status === 'processing'))) poll = setTimeout(() => load().then(schedulePoll), 15000);
 }
 const hidePost = ref(null); const hideReason = ref(''); const reportPost = ref(null); const reportReason = ref(''); const lightbox = ref(null);
+function openShow(list, i) { lightbox.value = { list, i }; document.addEventListener('keydown', onKey); }
+function closeShow() { lightbox.value = null; document.removeEventListener('keydown', onKey); }
+function step(d) { const l = lightbox.value; if (l) l.i = (l.i + d + l.list.length) % l.list.length; }
+function onKey(e) { if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'Escape') closeShow(); }
+let tx = null;
+function touchStart(e) { tx = e.touches[0].clientX; }
+function touchEnd(e) { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1); }
 
 const initials = (n) => n.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
 function ago(iso) {
@@ -207,7 +225,7 @@ async function dismiss(p) { await api(`feed/${p.id}/dismiss`, { method: 'POST' }
 async function report() { await api(`feed/${reportPost.value.id}/report`, { method: 'POST', body: { reason: reportReason.value } }); reportPost.value.reported_by_me = true; reportPost.value = null; reportReason.value = ''; toast('Tak. Trænere og bestyrelse kigger på det.'); }
 
 onMounted(() => load().then(schedulePoll));
-onUnmounted(() => clearTimeout(poll));
+onUnmounted(() => { clearTimeout(poll); document.removeEventListener('keydown', onKey); });
 </script>
 
 <style scoped>
@@ -243,6 +261,13 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .thumb .vsize { position: absolute; left: 4px; bottom: 4px; background: rgba(0,0,0,.6); color: #fff; font-size: .7rem; padding: 1px 5px; border-radius: 6px; }
 .prog { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
 .prog > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
-.lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.88); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
-.lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+.lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.94); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; cursor: default; user-select: none; }
+.lb-close, .lb-nav { position: absolute; border: 0; color: #fff; background: rgba(255,255,255,.14); border-radius: 999px; cursor: pointer; display: grid; place-items: center; }
+.lb-close { top: 12px; right: 12px; width: 40px; height: 40px; }
+.lb-close svg { width: 22px; height: 22px; }
+.lb-nav { top: 50%; transform: translateY(-50%); width: 44px; height: 44px; font-size: 2rem; line-height: 1; padding-bottom: 4px; }
+.lb-nav.prev { left: 10px; } .lb-nav.next { right: 10px; }
+.lb-close:hover, .lb-nav:hover { background: rgba(255,255,255,.28); }
+.lb-count { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #fff; font-size: .9rem; background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 999px; }
 </style>
