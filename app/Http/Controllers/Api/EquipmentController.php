@@ -29,7 +29,8 @@ class EquipmentController extends Controller
     private function canSee(User $u): bool
     {
         return $u->may('equipment.manage') || $u->may('equipment.types') || $u->may('activities.manage') || Equipment::canBook($u)
-            || EquipmentBooking::where('user_id', $u->id)->whereIn('status', ['confirmed', 'requested'])->where('ends_at', '>', now())->exists();
+            || EquipmentBooking::where('user_id', $u->id)->whereIn('status', ['confirmed', 'requested'])->where('ends_at', '>', now())->exists()
+            || Equipment::unpaidRentalInvoiceIds($u);
     }
 
     /* ---------- Udstyrslisten ---------- */
@@ -46,6 +47,7 @@ class EquipmentController extends Controller
 
         return [
             'can' => ['manage' => $u->may('equipment.manage'), 'types' => $u->may('equipment.types'), 'book' => Equipment::canBook($u)],
+            'unpaid_rental' => Equipment::canBook($u) ? [] : Equipment::unpaidRentalInvoiceIds($u),
             'statuses' => Item::STATUS,
             'categories' => Category::orderBy('name')->get()->filter(fn ($c) => ! $c->archived_at || isset($types[$c->id]))->map(fn ($c) => [
                 'id' => $c->id, 'name' => $c->name, 'color' => $c->color,

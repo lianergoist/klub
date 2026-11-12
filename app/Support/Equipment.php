@@ -29,6 +29,18 @@ class Equipment
         return $u->purchases()->activeOn($date)->whereHas('package', fn ($q) => $q->where('equipment_booking', true))->exists();
     }
 
+    /** Regninger for købt udstyrsleje/dagsleje, der ikke er betalt endnu (så man kan se, hvorfor man ikke kan booke). */
+    public static function unpaidRentalInvoiceIds(User $u): array
+    {
+        $today = now()->toDateString();
+
+        return $u->purchases()->whereNull('cancelled_at')
+            ->where(fn ($q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', $today))
+            ->whereHas('package', fn ($q) => $q->where('equipment_booking', true))
+            ->whereHas('invoice', fn ($q) => $q->where('status', 'open'))
+            ->pluck('invoice_id')->unique()->values()->all();
+    }
+
     /** Udstyr en (evt. kommende) aktivitet booker. */
     public static function itemIdsFor(string $mode, array $categoryIds, array $selectedIds = []): array
     {

@@ -1,6 +1,10 @@
 <template>
     <div>
         <div class="topbar"><h1>Udstyr</h1></div>
+        <div v-if="d?.unpaid_rental?.length" class="banner warn row between" style="margin-bottom:12px">
+            <span>Din udstyrsleje er ikke betalt endnu. Når regningen er betalt, kan du booke udstyr.</span>
+            <RouterLink :to="`/betal/${d.unpaid_rental.join(',')}`" class="btn small primary">Betal nu</RouterLink>
+        </div>
         <div class="tabs">
             <button :class="{ on: tab === 'list' }" @click="tab = 'list'">Udstyr</button>
             <button v-if="store.user.can.equipment_book_any" :class="{ on: tab === 'book' }" @click="tab = 'book'">Book udstyr</button>
