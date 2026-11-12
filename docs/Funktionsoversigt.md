@@ -202,7 +202,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – i stedet for (eller som supplement til) en lukket Facebook-gruppe.
 
-- **Kerne:** alle aktive medlemmer kan lægge opslag op med tekst og op til 4 billeder, synes godt om (hjerte) og kommentere. Man kan slette sine egne opslag og kommentarer.
+- **Kerne:** alle aktive medlemmer kan lægge opslag op med tekst, op til 10 billeder og 1 video, synes godt om (hjerte) og kommentere. Man kan slette sine egne opslag og kommentarer.
 
 - **Kerne:** ved upload af billeder skal man bekræfte, at de afbildede er okay med at blive vist. Billeder skaleres ned, og metadata (fx GPS-position) fjernes automatisk. Billeder kan kun ses af indloggede medlemmer.
 
