@@ -31,6 +31,10 @@ Et medlem kan have flere roller samtidigt (fx træner og bestyrelsesmedlem). Rol
 
 - **Kerne: rollestyring som ovenfor, og at roller kan tildeles og fjernes af administrator med dato (historik).**
 
+- **Kerne:** administrator tildeler og afslutter roller under Medlemmer → medlemmets side → Roller → "Tildel rolle" (knappen vises kun for administratorer).
+- **Afklares:** skal oprettelse af aktivitetskategorier (SUP, windsurf m.m.) kun kunne foretages af admin? I dag kan bestyrelse og admin.
+- **Afklares:** hvilke af disse skal være admin-opgaver: spærre/genåbne et login og sende nyt login-link, slette/anonymisere medlemmer (GDPR), se hele ændringsloggen, klubindstillinger (navn, logo, kontaktoplysninger, sæsondatoer), opsætning af betaling og e-mail, import/eksport af medlemsdata? Forslag: admin er en teknisk rolle, mens priser, pakker og kategorier forbliver bestyrelsens.
+
 
 ## Medlemskartotek
 
@@ -371,6 +375,22 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 - **Senere:** ventelister på opbevaringspladser.
 
 - **Afklares:** er det kun medlemmer, der kan leje, eller også gæster? Skal der være depositum?
+
+## Udstyr og booking
+
+Oversigten viser, hvad klubben har af udstyr, og i hvilken stand det er. Den kan ikke forventes at være 100 % opdateret i en forening med mange brugere, så den bruges til at **advare om konflikter**, ikke til at styre alt automatisk.
+
+- **Kerne:** udstyrstyper (fx SUP-board, windsurfbræt, sejl, våddragt) og udstyr (navn/nummer, type, note). Trænere og bestyrelse kan oprette udstyr og rette stand.
+- **Kerne:** stand pr. stykke udstyr: **OK**, **Skal serviceres** (kan stadig bruges og bookes) eller **Defekt** (kan ikke bookes eller bruges). Hver ændring gemmes med hvem, hvornår og en bemærkning, så man kan se historikken.
+- **Kerne:** kasseret udstyr arkiveres (forsvinder fra listen, men historikken bevares).
+- **Kerne:** booking sker som **antal af en type** i et tidsrum (fx 5 SUP-boards lørdag 10–12), ikke som bestemte numre. Ledigt antal = udstyr af typen, der ikke er defekt eller arkiveret, minus andre bookinger i samme tidsrum.
+- **Kerne:** når en træner opretter en aktivitet, kan der angives udstyrsbehov. Er udstyret allerede booket i tidsrummet, vises hvem der har booket, og træneren kan vælge: opret alligevel, flyt tidspunktet, eller opret aktiviteten som **Afventer** og skrive direkte til den, der har booket.
+- **Kerne:** ønsker nogen at booke udstyr i et tidsrum, hvor en aktivitet har reserveret det, afvises bookingen i første omgang, med en knap til at skrive til træneren/tovholderen. Træneren kan så sætte aktivitetens behov ned, hvorefter bookingen kan gå igennem.
+- **Afklares:** hvem må booke udstyr uden for aktiviteter – kun trænere og bestyrelse, alle medlemmer, eller kun medlemmer med udstyrsleje?
+- **Afklares:** skal udstyrsbehovet på en aktivitet følge antallet af tilmeldte automatisk (5 tilmeldte = 5 boards), eller angiver træneren det selv (fx lig med max deltagere)?
+- **Afklares:** må en aktivitet, der står som **Afventer**, have tilmeldinger, eller åbnes den først for tilmelding, når konflikten er løst?
+- **Afklares:** hvem må oprette nye udstyrstyper – trænere og bestyrelse, eller kun admin?
+- **Senere:** retur-registrering og skadesmelding direkte fra aktiviteten (træneren markerer udstyr, der trænger til reparation).
 
 ## Online betaling
 
