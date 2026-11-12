@@ -10,10 +10,15 @@
             <div v-if="previews.length" class="thumbs">
                 <div v-for="(pv, i) in previews" :key="pv" class="thumb"><img :src="pv" alt=""><button type="button" aria-label="Fjern billede" @click="removeImage(i)"><Icon name="x" /></button></div>
             </div>
-            <label v-if="files.length" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på billederne er okay med, at de bliver vist for klubbens medlemmer.</label>
-            <div v-if="open || files.length" class="row between" style="margin-top:10px">
-                <label class="btn ghost small" :class="{ disabled: files.length >= 4 }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden @change="addImages"></label>
-                <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length)">{{ busy ? 'Deler …' : 'Del' }}</button>
+            <div v-if="video" class="thumbs"><div class="thumb vid"><video :src="videoPreview + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(video.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo"><Icon name="x" /></button></div></div>
+            <label v-if="files.length || video" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ video ? 'videoen' : 'billederne' }} er okay med, at de bliver vist for klubbens medlemmer.</label>
+            <div v-if="busy && progress !== null" class="prog" :aria-label="`Uploader ${progress} %`"><i :style="{ width: progress + '%' }"></i></div>
+            <div v-if="open || files.length || video" class="row between" style="margin-top:10px">
+                <div class="row" style="gap:4px">
+                    <label class="btn ghost small" :class="{ disabled: files.length >= 4 || video }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="!!video" @change="addImages"></label>
+                    <label class="btn ghost small" :class="{ disabled: files.length || video }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" hidden :disabled="files.length > 0 || !!video" @change="addVideo"></label>
+                </div>
+                <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length && !video)">{{ busy ? (progress !== null && progress < 100 ? `Uploader ${progress} %` : 'Deler …') : 'Del' }}</button>
             </div>
         </form>
 
@@ -50,7 +55,11 @@
 
             <p v-if="p.body" class="body">{{ p.body }}</p>
             <div v-if="p.images.length" :class="['gallery', 'n' + p.images.length]">
-                <button v-for="(img, i) in p.images" :key="i" type="button" @click="lightbox = img.url"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
+                <template v-for="(img, i) in p.images" :key="i">
+                    <video v-if="img.kind === 'video' && img.status === 'ready'" class="vplay" :src="img.url" :poster="img.poster" :width="img.w" :height="img.h" controls playsinline preload="none"></video>
+                    <div v-else-if="img.kind === 'video'" class="vwait small">{{ img.status === 'failed' ? 'Videoen kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
+                    <button v-else type="button" @click="lightbox = img.url"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
+                </template>
             </div>
 
             <footer class="row" style="gap:4px;margin-top:10px">
@@ -93,17 +102,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
-import { api, store, toast } from '../api';
+import { api, upload, store, toast } from '../api';
 
 const route = useRoute(); const router = useRouter();
 async function messageTo(id) { try { const r = await api('messages/start', { method: 'POST', body: { user_ids: [id] } }); router.push(`/beskeder/${r.id}`); } catch (e) { toast(e.message, 'error'); } }
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);
+const video = ref(null); const videoPreview = ref(null); const progress = ref(null);
+const MAX_VIDEO = 100 * 1024 * 1024;
+const mb = (b) => (b / 1024 / 1024).toLocaleString('da-DK', { maximumFractionDigits: 1 }) + ' MB';
+function addVideo(e) {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    if (f.size > MAX_VIDEO) return toast(`Videoen fylder ${mb(f.size)}. Den må højst fylde 100 MB – vælg en kortere video.`, 'error');
+    video.value = f; videoPreview.value = URL.createObjectURL(f);
+}
+function removeVideo() { if (videoPreview.value) URL.revokeObjectURL(videoPreview.value); video.value = null; videoPreview.value = null; }
+// Opslag med en video, der stadig behandles: hent listen igen med jævne mellemrum
+let poll = null;
+function schedulePoll() {
+    clearTimeout(poll);
+    if (filter.value === 'all' && posts.value?.some(p => p.images.some(i => i.kind === 'video' && i.status === 'processing'))) poll = setTimeout(() => load().then(schedulePoll), 15000);
+}
 const hidePost = ref(null); const hideReason = ref(''); const reportPost = ref(null); const reportReason = ref(''); const lightbox = ref(null);
 
 const initials = (n) => n.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
@@ -148,18 +173,22 @@ async function addImages(e) {
 function removeImage(i) { URL.revokeObjectURL(previews.value[i]); files.value.splice(i, 1); previews.value.splice(i, 1); }
 
 async function post() {
-    if (files.value.length && !consent.value) return toast('Bekræft, at personerne på billederne er okay med at blive vist.', 'error');
-    busy.value = true;
+    if ((files.value.length || video.value) && !consent.value) return toast(`Bekræft, at personerne på ${video.value ? 'videoen' : 'billederne'} er okay med at blive vist.`, 'error');
+    busy.value = true; progress.value = video.value ? 0 : null;
     const fd = new FormData();
     fd.append('body', body.value);
     files.value.forEach(f => fd.append('images[]', f));
+    if (video.value) fd.append('video', video.value);
     if (consent.value) fd.append('consent', '1');
+    const hadVideo = !!video.value;
     try {
-        await api('feed', { method: 'POST', form: fd });
-        body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; consent.value = false; open.value = false;
+        if (hadVideo) await upload('feed', fd, (p) => (progress.value = p));
+        else await api('feed', { method: 'POST', form: fd });
+        body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; removeVideo(); consent.value = false; open.value = false;
         if (filter.value !== 'all') filter.value = 'all';
-        await load(); toast('Dit opslag er delt');
-    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+        await load(); schedulePoll();
+        toast(hadVideo ? 'Dit opslag er delt. Videoen vises, når den er behandlet (typisk et minut eller to).' : 'Dit opslag er delt');
+    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; progress.value = null; }
 }
 async function like(p) { const r = await api(`feed/${p.id}/like`, { method: 'POST' }); p.likes = r.likes; p.liked = r.liked; }
 async function comment(p) {
@@ -175,7 +204,8 @@ async function unhide(p) { await api(`feed/${p.id}/moderate`, { method: 'PUT', b
 async function dismiss(p) { await api(`feed/${p.id}/dismiss`, { method: 'POST' }); toast('Anmeldelsen er afvist'); load(); }
 async function report() { await api(`feed/${reportPost.value.id}/report`, { method: 'POST', body: { reason: reportReason.value } }); reportPost.value.reported_by_me = true; reportPost.value = null; reportReason.value = ''; toast('Tak. Trænere og bestyrelse kigger på det.'); }
 
-onMounted(load);
+onMounted(() => load().then(schedulePoll));
+onUnmounted(() => clearTimeout(poll));
 </script>
 
 <style scoped>
@@ -204,6 +234,12 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .comment { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
 .comment.hidden { opacity: .6; }
 .bubble { background: var(--surface-2); border-radius: 12px; padding: 6px 10px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.gallery .vplay { width: 100%; height: auto; max-height: 560px; background: #000; display: block; grid-column: 1 / -1; }
+.gallery .vwait { grid-column: 1 / -1; padding: 28px 16px; text-align: center; color: var(--ink-2); background: var(--surface-2); }
+.thumb.vid video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; }
+.thumb .vsize { position: absolute; left: 4px; bottom: 4px; background: rgba(0,0,0,.6); color: #fff; font-size: .7rem; padding: 1px 5px; border-radius: 6px; }
+.prog { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.88); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
 .lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
 </style>

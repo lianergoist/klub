@@ -44,6 +44,30 @@ export async function api(path, { method = 'GET', body, form } = {}) {
     return data;
 }
 
+/** Upload med statuslinje (fx video i opslag). onProgress får 0–100. Fejl håndteres som i api(). */
+export function upload(path, form, onProgress) {
+    return new Promise((resolve, reject) => {
+        const x = new XMLHttpRequest();
+        x.open('POST', `${API_BASE}/api/${path}`);
+        x.setRequestHeader('Accept', 'application/json');
+        if (store.token) x.setRequestHeader('Authorization', `Bearer ${store.token}`);
+        if (IS_APP && siteAccess()) x.setRequestHeader('X-Site-Access', siteAccess());
+        x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100)); };
+        x.onerror = () => reject(new ApiError('Forbindelsen blev afbrudt. Prøv igen.', 0));
+        x.onload = () => {
+            let data = null; try { data = JSON.parse(x.responseText); } catch {}
+            if (x.status === 401) { setSession(null, null); location.href = '/login'; return reject(new ApiError('Log ind igen', 401)); }
+            if (x.status === 413) return reject(new ApiError('Filen er for stor. En video må højst fylde 100 MB.', 413));
+            if (x.status < 200 || x.status >= 300) {
+                const first = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+                return reject(new ApiError(first || data?.message || 'Noget gik galt. Prøv igen.', x.status, data?.errors, data));
+            }
+            resolve(data);
+        };
+        x.send(form);
+    });
+}
+
 /** Hent fil med login (CSV, bilag, dataudtræk) og åbn/gem den. */
 export async function download(path, filename) {
     const res = await fetch(`${API_BASE}/api/${path}`, { headers: { Authorization: `Bearer ${store.token}`, ...(IS_APP && siteAccess() ? { 'X-Site-Access': siteAccess() } : {}) } });

@@ -210,6 +210,10 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Senere:** opslag knyttet til en aktivitet (fx billeder fra kurset), fastgjorte opslag fra bestyrelsen, push-besked ved nye kommentarer.
 
+- **Kerne (afprøves):** et opslag kan have én **video** i stedet for billeder (MP4, MOV eller WebM, højst 100 MB og 5 minutter). Videoen uploades med en statuslinje og komprimeres i baggrunden til højst 1280 px, 30 billeder/sek. og H.264 (typisk få MB pr. minut); metadata som GPS-position fjernes, og der laves et stillbillede. Indtil den er klar, står der "Videoen behandles …". Kan den ikke behandles, får forfatteren besked.
+
+- **Afklares:** skal video være tilladt fast, og er 100 MB / 5 minutter de rigtige grænser? Videoer fylder mere på serveren end billeder.
+
 - **Afklares:** regler for opslagstavlen (hvad må deles, reklame/salg, billeder af børn) – bør formuleres af bestyrelsen og vises for medlemmerne.
 
 - **Afklares:** skal alle trænere kunne moderere, eller kun udvalgte personer? Hvor længe gemmes opslag og billeder, og skal de slettes, når et medlem melder sig ud?

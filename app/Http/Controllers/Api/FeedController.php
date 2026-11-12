@@ -78,8 +78,10 @@ class FeedController extends Controller
             'body' => $p->body,
             'created_at' => $p->created_at->toIso8601String(),
             'images' => $p->images->map(fn ($i) => [
-                'url' => URL::temporarySignedRoute('feed.image', now()->addHours(12), ['image' => $i->id]),
-                'w' => $i->width, 'h' => $i->height,
+                'kind' => $i->kind, 'status' => $i->status,
+                'url' => $i->status === 'ready' ? URL::temporarySignedRoute('feed.image', now()->addHours(12), ['image' => $i->id]) : null,
+                'poster' => $i->poster_path ? URL::temporarySignedRoute('feed.image', now()->addHours(12), ['image' => $i->id, 'poster' => 1]) : null,
+                'w' => $i->width, 'h' => $i->height, 'duration' => $i->duration,
             ]),
             'likes' => $p->likes_count,
             'liked' => $liked,
@@ -100,24 +102,36 @@ class FeedController extends Controller
     {
         $u = $this->member($r);
         $r->validate([
-            'body' => 'nullable|string|max:3000|required_without:images',
-            'images' => 'array|max:4',
+            'body' => 'nullable|string|max:3000|required_without_all:images,video',
+            'images' => 'array|max:4|prohibits:video',
             'images.*' => 'file|mimes:jpg,jpeg,png,webp|max:15360',
+            // Video: højst 100 MB og 5 minutter; komprimeres i baggrunden (App\Jobs\ProcessVideo)
+            'video' => 'nullable|file|max:102400|mimetypes:video/mp4,video/quicktime,video/webm,video/x-m4v,video/3gpp,video/x-matroska',
         ], [
-            'body.required_without' => 'Skriv noget eller vælg et billede.',
+            'body.required_without_all' => 'Skriv noget eller vælg et billede eller en video.',
             'images.max' => 'Du kan højst vedhæfte 4 billeder.',
+            'images.prohibits' => 'Et opslag kan have billeder eller én video – ikke begge dele.',
+            'video.max' => 'Videoen må højst fylde 100 MB.',
+            'video.mimetypes' => 'Videoen skal være MP4, MOV eller WebM.',
+            'video.uploaded' => 'Videoen kunne ikke uploades. Den må højst fylde 100 MB.',
         ]);
-        abort_if($r->hasFile('images') && ! $r->boolean('consent'), 422, 'Bekræft, at personerne på billederne er okay med at blive vist.');
+        abort_if(($r->hasFile('images') || $r->hasFile('video')) && ! $r->boolean('consent'), 422, 'Bekræft, at personerne på billederne/videoen er okay med at blive vist.');
 
         $post = DB::transaction(function () use ($r, $u) {
             $post = Post::create(['user_id' => $u->id, 'body' => trim((string) $r->input('body')) ?: null]);
             foreach (array_values($r->file('images', [])) as $i => $file) {
                 $post->images()->create(Images::store($file) + ['position' => $i]);
             }
+            if ($video = $r->file('video')) {
+                // Originalen gemmes midlertidigt; ProcessVideo komprimerer den og sletter originalen
+                $tmp = $video->storeAs('feed-tmp', \Illuminate\Support\Str::uuid().'.'.($video->guessExtension() ?: 'mp4'));
+                $post->images()->create(['kind' => 'video', 'status' => 'processing', 'path' => $tmp, 'position' => 0, 'original_bytes' => $video->getSize()]);
+            }
 
             return $post;
         });
-        Audit::log('post.created', $post, ['images' => $post->images()->count()]);
+        foreach ($post->images()->where('status', 'processing')->pluck('id') as $id) \App\Jobs\ProcessVideo::dispatch($id);
+        Audit::log('post.created', $post, ['images' => $post->images()->where('kind', 'image')->count(), 'video' => $r->hasFile('video')]);
 
         return ['id' => $post->id];
     }
@@ -126,7 +140,7 @@ class FeedController extends Controller
     {
         $u = $this->member($r);
         abort_unless($post->user_id === $u->id, 403, 'Du kan kun slette dine egne opslag.');
-        foreach ($post->images as $i) Storage::delete($i->path);
+        foreach ($post->images as $i) Storage::delete(array_filter([$i->path, $i->poster_path]));
         Audit::log('post.deleted', $post);
         $post->delete();
 
@@ -221,12 +235,14 @@ class FeedController extends Controller
     }
 
     /** Billeder hentes via tidsbegrænset signeret link (img-tags kan ikke sende login-token). */
-    public function image(PostImage $image)
+    public function image(Request $r, PostImage $image)
     {
-        abort_unless(Storage::exists($image->path), 404);
+        $path = $r->boolean('poster') ? $image->poster_path : $image->path;
+        abort_unless($path && $image->status === 'ready' && Storage::exists($path), 404);
 
-        return response(Storage::get($image->path), 200, [
-            'Content-Type' => 'image/jpeg',
+        // Filen sendes med understøttelse af Range-forespørgsler, så videoer kan spoles og afspilles på iPhone
+        return response()->file(Storage::path($path), [
+            'Content-Type' => str_ends_with($path, '.mp4') ? 'video/mp4' : 'image/jpeg',
             'Cache-Control' => 'private, max-age=43200',
         ]);
     }

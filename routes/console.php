@@ -14,3 +14,7 @@ Artisan::command('inspire', function () {
 // Påmindelser om anmodninger om at flytte bookinger og aktiviteter, der afventer (se App\Support\Reminders)
 \Illuminate\Support\Facades\Schedule::call(fn () => \App\Support\Reminders::run())
     ->everyFifteenMinutes()->name('paamindelser')->withoutOverlapping();
+
+// Videoer i opslag komprimeres i baggrunden (App\Jobs\ProcessVideo): hvert minut behandles køen "video", til den er tom
+\Illuminate\Support\Facades\Schedule::command('queue:work database --queue=video --stop-when-empty --tries=1 --timeout=900')
+    ->everyMinute()->name('video-koe')->withoutOverlapping(20)->runInBackground();
