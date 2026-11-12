@@ -81,7 +81,7 @@
                 <label class="check"><input type="checkbox" v-model="mv.on"> Bed dem, der har booket, om at flytte deres booking</label>
                 <template v-if="mv.on">
                     <input v-model="mv.message" placeholder="Besked (valgfri), fx hvorfor udstyret skal bruges">
-                    <p class="small muted" style="margin:0">De får besked og kan flytte, annullere eller sige nej. Svarer de ikke inden fristen (højst 24 timer), kan du annullere bookingen på aktivitetens side.</p>
+                    <p class="small muted" style="margin:0">De får besked og kan flytte, annullere eller sige nej. Svarer de ikke inden fristen (højst 24 timer), kan bookingen annulleres på aktivitetens side.</p>
                 </template>
             </div>
             <div class="stack" style="margin-top:12px">

@@ -194,6 +194,7 @@ class Equipment
     /** En anmodning om at flytte bookingen, der er overskredet, og som brugeren står bag (eller er træner/tovholder på). */
     public static function overdueRequestFor(User $u, EquipmentBooking $b): ?\App\Models\EquipmentMoveRequest
     {
+        if (! $u->may('equipment.cancel_overdue')) return null;
         return $b->moveRequests()->with('activity.trainers')->where('status', 'pending')->where('deadline_at', '<=', now())->get()
             ->first(fn ($m) => $m->requested_by === $u->id || \App\Http\Controllers\Api\EquipmentController::mayDecide($u, $m->activity));
     }

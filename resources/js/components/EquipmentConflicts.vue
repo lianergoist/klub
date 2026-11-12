@@ -14,7 +14,7 @@
                     <span class="tag warn">Anmodet om at flytte</span> Svarfrist {{ tidspunkt(h.move.deadline_at) }}
                 </template>
                 <template v-else-if="h.move.status === 'pending'">
-                    <span class="tag bad">Intet svar</span> Fristen ({{ tidspunkt(h.move.deadline_at) }}) er overskredet<template v-if="h.can_cancel"> – du kan annullere bookingen</template>.
+                    <span class="tag bad">Intet svar</span> Fristen ({{ tidspunkt(h.move.deadline_at) }}) er overskredet<template v-if="h.can_cancel"> – du kan annullere bookingen</template><template v-else> – bestyrelsen kan annullere bookingen</template>.
                 </template>
                 <template v-else-if="h.move.status === 'declined'">
                     <span class="tag bad">Sagt nej</span> "{{ h.move.reply }}"<span class="muted"> – bestyrelsen kan annullere bookingen, hvis det er nødvendigt.</span>
@@ -31,7 +31,7 @@
             </div>
             <div v-if="ask === i" class="stack" style="gap:6px;margin-top:8px">
                 <input v-model="msg" placeholder="Besked (valgfri), fx hvorfor udstyret skal bruges">
-                <p class="small muted" style="margin:0">{{ first(h.name) }} får besked og kan flytte, annullere eller sige nej. Svarer {{ first(h.name) }} ikke inden fristen, kan du annullere bookingen.</p>
+                <p class="small muted" style="margin:0">{{ first(h.name) }} får besked og kan flytte, annullere eller sige nej. Svarer {{ first(h.name) }} ikke inden fristen, kan bookingen annulleres.</p>
                 <div><button type="button" class="btn small primary" :disabled="busy" @click="request(h)">Send anmodning</button></div>
             </div>
         </li>
