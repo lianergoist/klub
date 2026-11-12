@@ -103,14 +103,13 @@ class FeedController extends Controller
         $u = $this->member($r);
         $r->validate([
             'body' => 'nullable|string|max:3000|required_without_all:images,video',
-            'images' => 'array|max:4|prohibits:video',
+            'images' => 'array|max:10', // højst 10 billeder og 1 video pr. opslag
             'images.*' => 'file|mimes:jpg,jpeg,png,webp|max:15360',
             // Video: højst 100 MB og 5 minutter; komprimeres i baggrunden (App\Jobs\ProcessVideo)
             'video' => 'nullable|file|max:102400|mimetypes:video/mp4,video/quicktime,video/webm,video/x-m4v,video/3gpp,video/x-matroska',
         ], [
             'body.required_without_all' => 'Skriv noget eller vælg et billede eller en video.',
-            'images.max' => 'Du kan højst vedhæfte 4 billeder.',
-            'images.prohibits' => 'Et opslag kan have billeder eller én video – ikke begge dele.',
+            'images.max' => 'Du kan højst vedhæfte 10 billeder.',
             'video.max' => 'Videoen må højst fylde 100 MB.',
             'video.mimetypes' => 'Videoen skal være MP4, MOV eller WebM.',
             'video.uploaded' => 'Videoen kunne ikke uploades. Den må højst fylde 100 MB.',
@@ -125,7 +124,7 @@ class FeedController extends Controller
             if ($video = $r->file('video')) {
                 // Originalen gemmes midlertidigt; ProcessVideo komprimerer den og sletter originalen
                 $tmp = $video->storeAs('feed-tmp', \Illuminate\Support\Str::uuid().'.'.($video->guessExtension() ?: 'mp4'));
-                $post->images()->create(['kind' => 'video', 'status' => 'processing', 'path' => $tmp, 'position' => 0, 'original_bytes' => $video->getSize()]);
+                $post->images()->create(['kind' => 'video', 'status' => 'processing', 'path' => $tmp, 'position' => 99, 'original_bytes' => $video->getSize()]);
             }
 
             return $post;

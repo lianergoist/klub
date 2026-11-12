@@ -11,12 +11,12 @@
                 <div v-for="(pv, i) in previews" :key="pv" class="thumb"><img :src="pv" alt=""><button type="button" aria-label="Fjern billede" @click="removeImage(i)"><Icon name="x" /></button></div>
             </div>
             <div v-if="video" class="thumbs"><div class="thumb vid"><video :src="videoPreview + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(video.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo"><Icon name="x" /></button></div></div>
-            <label v-if="files.length || video" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ video ? 'videoen' : 'billederne' }} er okay med, at de bliver vist for klubbens medlemmer.</label>
+            <label v-if="files.length || video" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ video && files.length ? 'billederne og videoen' : video ? 'videoen' : 'billederne' }} er okay med, at de bliver vist for klubbens medlemmer.</label>
             <div v-if="busy && progress !== null" class="prog" :aria-label="`Uploader ${progress} %`"><i :style="{ width: progress + '%' }"></i></div>
             <div v-if="open || files.length || video" class="row between" style="margin-top:10px">
                 <div class="row" style="gap:4px">
-                    <label class="btn ghost small" :class="{ disabled: files.length >= 4 || video }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="!!video" @change="addImages"></label>
-                    <label class="btn ghost small" :class="{ disabled: files.length || video }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" hidden :disabled="files.length > 0 || !!video" @change="addVideo"></label>
+                    <label class="btn ghost small" :class="{ disabled: files.length >= MAX_IMAGES }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="files.length >= MAX_IMAGES" @change="addImages"></label>
+                    <label class="btn ghost small" :class="{ disabled: video }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" hidden :disabled="!!video" @change="addVideo"></label>
                 </div>
                 <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length && !video)">{{ busy ? (progress !== null && progress < 100 ? `Uploader ${progress} %` : 'Deler …') : 'Del' }}</button>
             </div>
@@ -54,12 +54,12 @@
             </header>
 
             <p v-if="p.body" class="body">{{ p.body }}</p>
-            <div v-if="p.images.length" :class="['gallery', 'n' + p.images.length]">
-                <template v-for="(img, i) in p.images" :key="i">
-                    <video v-if="img.kind === 'video' && img.status === 'ready'" class="vplay" :src="img.url" :poster="img.poster" :width="img.w" :height="img.h" controls playsinline preload="none"></video>
-                    <div v-else-if="img.kind === 'video'" class="vwait small">{{ img.status === 'failed' ? 'Videoen kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
-                    <button v-else type="button" @click="lightbox = img.url"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
-                </template>
+            <div v-for="(v, i) in p.images.filter(x => x.kind === 'video')" :key="'v' + i" class="gallery">
+                <video v-if="v.status === 'ready'" class="vplay" :src="v.url" :poster="v.poster" :width="v.w" :height="v.h" controls playsinline preload="none"></video>
+                <div v-else class="vwait small">{{ v.status === 'failed' ? 'Videoen kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
+            </div>
+            <div v-if="pics(p).length" :class="['gallery', 'n' + Math.min(pics(p).length, 5)]">
+                <button v-for="(img, i) in pics(p)" :key="i" type="button" @click="lightbox = img.url"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
             </div>
 
             <footer class="row" style="gap:4px;margin-top:10px">
@@ -114,7 +114,8 @@ const posts = ref(null); const more = ref(false); const isMod = ref(false); cons
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);
 const video = ref(null); const videoPreview = ref(null); const progress = ref(null);
-const MAX_VIDEO = 100 * 1024 * 1024;
+const MAX_VIDEO = 100 * 1024 * 1024; const MAX_IMAGES = 10;
+const pics = (p) => p.images.filter(x => x.kind !== 'video');
 const mb = (b) => (b / 1024 / 1024).toLocaleString('da-DK', { maximumFractionDigits: 1 }) + ' MB';
 function addVideo(e) {
     const f = e.target.files[0]; e.target.value = '';
@@ -166,14 +167,15 @@ async function shrink(file, max = 2000) {
 }
 async function addImages(e) {
     const input = e.target;
-    const picked = [...input.files].slice(0, 4 - files.value.length);
+    if (input.files.length > MAX_IMAGES - files.value.length) toast(`Du kan højst vedhæfte ${MAX_IMAGES} billeder pr. opslag.`, 'error');
+    const picked = [...input.files].slice(0, MAX_IMAGES - files.value.length);
     for (const f of picked) { const s = await shrink(f); files.value.push(s); previews.value.push(URL.createObjectURL(s)); }
     input.value = '';
 }
 function removeImage(i) { URL.revokeObjectURL(previews.value[i]); files.value.splice(i, 1); previews.value.splice(i, 1); }
 
 async function post() {
-    if ((files.value.length || video.value) && !consent.value) return toast(`Bekræft, at personerne på ${video.value ? 'videoen' : 'billederne'} er okay med at blive vist.`, 'error');
+    if ((files.value.length || video.value) && !consent.value) return toast(`Bekræft, at personerne på ${video.value && files.value.length ? 'billederne og videoen' : video.value ? 'videoen' : 'billederne'} er okay med at blive vist.`, 'error');
     busy.value = true; progress.value = video.value ? 0 : null;
     const fd = new FormData();
     fd.append('body', body.value);
@@ -228,6 +230,7 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .gallery.n2 { grid-template-columns: 1fr 1fr; } .gallery.n2 button { aspect-ratio: 1; }
 .gallery.n3 { grid-template-columns: 1fr 1fr; } .gallery.n3 button:first-child { grid-row: span 2; } .gallery.n3 button { aspect-ratio: 1; } .gallery.n3 button:first-child { aspect-ratio: auto; }
 .gallery.n4 { grid-template-columns: 1fr 1fr; } .gallery.n4 button { aspect-ratio: 1; }
+.gallery.n5 { grid-template-columns: 1fr 1fr 1fr; } .gallery.n5 button { aspect-ratio: 1; } /* 5–10 billeder */
 .like.on { color: #d6336c; }
 .like.on svg { fill: currentColor; }
 .comments { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 10px; }
