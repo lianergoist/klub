@@ -1,12 +1,13 @@
 <template>
     <!-- Vælg bestemte stykker udstyr, grupperet efter kategori og underkategori, med hvad der er optaget i tidsrummet -->
     <div>
-        <p v-if="anyAct" class="small legend"><span class="sw"></span>Booket til en aktivitet – {{ mode === 'book' ? 'du kan sende et ønske til træneren om at låne det' : 'aktiviteten skal afklares med træneren' }}</p>
+        <p v-if="anyAct" class="small legend"><span class="sw"></span>Booket til en aktivitet</p>
         <p v-if="!groups.length" class="small muted" style="margin:0">Der er ikke registreret udstyr{{ categoryIds?.length ? ' i de valgte kategorier' : '' }}.</p>
         <div v-for="g in groups" :key="g.key" class="grp">
             <div class="row between" style="flex-wrap:nowrap">
                 <div><strong class="small">{{ g.category }} · {{ g.type }}</strong>
-                    <div v-for="(h, k) in g.common" :key="k" class="small d warnc">{{ label(h) }}</div></div>
+                    <div v-for="(h, k) in g.common" :key="k" class="small d warnc">{{ label(h) }}</div>
+                    <div v-if="mode === 'book' && g.items.some(i => byActivity(i) && pickable(i))" class="small d ask">Du kan vælge det udstyr, du gerne vil booke, og sende et ønske til træneren, som så kan sige ja eller nej.</div></div>
                 <button type="button" class="btn small ghost" @click="all(g)">{{ g.items.every(i => !pickable(i) || model.includes(i.id)) ? 'Fravælg alle' : 'Vælg alle' }}</button>
             </div>
             <div class="items">
@@ -71,4 +72,5 @@ function all(g) {
 .it.warn > span > .d { color: var(--warn); }
 .d { display: block; }
 .warnc { color: var(--warn); }
+.ask { color: var(--ink-2); margin-top: 2px; }
 </style>

@@ -74,7 +74,6 @@
                 <div v-if="avail === null && validTime" class="spinner"></div>
                 <p v-else-if="!validTime" class="small muted" style="margin:0">Vælg tidsrum for at se, hvad der er ledigt.</p>
                 <EquipmentPicker v-else v-model="bf.equipment_ids" :items="avail" :category-ids="bookCats" mode="book" />
-                <p v-if="pickedHeld.length" class="banner warn small" style="margin:0">{{ pickedHeld.join(', ') }} er booket til en aktivitet i tidsrummet. Du kan sende et ønske til træneren, som så kan sige ja eller nej.</p>
                 <label class="field"><span>Bemærkning (valgfri)</span><input v-model="bf.note" placeholder="Fx hvad du skal bruge det til"></label>
                 <button class="btn primary block" :disabled="busy || !bf.equipment_ids.length || !validTime" @click="book(pickedHeld.length > 0)">
                     {{ pickedHeld.length ? 'Send ønske til træneren' : bf.replaces ? 'Flyt booking' : `Book ${bf.equipment_ids.length || ''} stk.` }}</button>
