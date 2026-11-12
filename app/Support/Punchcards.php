@@ -34,6 +34,13 @@ class Punchcards
             && (! $p->valid_to || $p->valid_to->gte($a->starts_at->copy()->startOfDay())));
     }
 
+    /** Kategorier, som et klippekort (der ikke er arkiveret) dækker. */
+    public static function categoryIds(): array
+    {
+        return \Illuminate\Support\Facades\DB::table('category_package')->join('packages', 'packages.id', '=', 'category_package.package_id')
+            ->where('packages.uses', '>', 0)->whereNull('packages.archived_at')->distinct()->pluck('category_id')->all();
+    }
+
     /** Aktiviteter, gæsten kan se: kommende, ikke aflyst, åben for klippekort og i en kategori, et klippekort dækker. */
     public static function activitiesFor(User $u)
     {

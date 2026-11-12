@@ -18,8 +18,9 @@ class CategoryController extends Controller
     public function index(Request $r)
     {
         $all = Category::orderBy('name')->get();
+        $punch = \App\Support\Punchcards::categoryIds(); // kategorier, der findes klippekort til
         if (! $r->user()->may('categories.manage')) {
-            return $all->whereNull('archived_at')->values()->map->only('id', 'name', 'color');
+            return $all->whereNull('archived_at')->values()->map(fn ($c) => $c->only('id', 'name', 'color') + ['punchcard' => in_array($c->id, $punch)]);
         }
 
         // Medlemmer følger som standard alle kategorier, medmindre de har slået notifikationer fra
@@ -27,7 +28,7 @@ class CategoryController extends Controller
         $optedOut = DB::table('category_user')->where('notify', false)->selectRaw('category_id, count(*) n')->groupBy('category_id')->pluck('n', 'category_id');
         $activities = DB::table('activity_category')->selectRaw('category_id, count(*) n')->groupBy('category_id')->pluck('n', 'category_id');
 
-        return $all->map(fn ($c) => self::row($c) + [
+        return $all->map(fn ($c) => self::row($c) + ['punchcard' => in_array($c->id, $punch),
             'followers' => $members - ($optedOut[$c->id] ?? 0),
             'activities' => (int) ($activities[$c->id] ?? 0),
         ])->values();

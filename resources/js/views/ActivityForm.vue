@@ -53,7 +53,7 @@
             <label class="field"><span>Åben for ikke-medlemmer</span>
                 <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning</option><option value="sup_course">Ja, som SUP-kursus</option></select>
             </label>
-            <label class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
+            <label v-if="punchOk" class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
             <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
             <p v-if="repeat" class="small muted" style="margin:0"><strong>Trænere:</strong> en fast aktivitet oprettes uden træner. Trænerne melder sig selv på de enkelte gange bagefter (Trænerportalen → Mangler træner).</p>
             <div v-else>
@@ -153,6 +153,9 @@ onMounted(async () => {
 });
 
 /* ---- udstyr ---- */
+// Klippekort: kun når der findes et klippekort til en af de valgte kategorier
+const punchOk = computed(() => cats.value.some(c => c.punchcard && f.category_ids.includes(c.id)));
+watch(punchOk, (ok) => { if (!ok && cats.value.length) f.punchcard = false; });
 const avail = ref(null); const conflicts = ref(null);
 const mv = reactive({ on: true, message: '' });
 const hasBookings = computed(() => (conflicts.value?.equipment_conflicts || []).some(c => c.holders.some(h => h.kind === 'booking')));

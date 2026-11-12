@@ -189,6 +189,8 @@ class ActivityController extends Controller
     {
         abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate($this->rules(), [], ['category_ids' => 'kategori']);
+        // Kun åben for klippekort, hvis der findes et klippekort til en af kategorierne
+        if (! empty($data['punchcard']) && ! array_intersect($data['category_ids'], \App\Support\Punchcards::categoryIds())) $data['punchcard'] = false;
         $this->rejectArchived($data['category_ids']);
 
         if (! empty($data['repeat_until'])) {
@@ -349,6 +351,8 @@ class ActivityController extends Controller
     {
         abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate($this->rules());
+        // Kun åben for klippekort, hvis der findes et klippekort til en af kategorierne
+        if (! empty($data['punchcard']) && ! array_intersect($data['category_ids'], \App\Support\Punchcards::categoryIds())) $data['punchcard'] = false;
         $this->rejectArchived($data['category_ids'], $activity);
         $before = $activity->only('starts_at', 'ends_at', 'location');
         // Udstyret tjekkes kun, når tid, kategorier eller udstyr ændres
@@ -362,6 +366,9 @@ class ActivityController extends Controller
             return $this->conflictResponse([['date' => $data['starts_at'], 'holders' => $c]], true);
         }
 
+        if (Carbon::parse($data['starts_at'])->ne($activity->starts_at)) {
+            $data += ['pending_reminded_at' => null, 'pending_board_notified_at' => null]; // nyt tidspunkt: påmind igen
+        }
         DB::transaction(function () use ($r, $data, $activity) {
             $activity->update(collect($data)->except(self::NOT_COLUMNS)->all());
             $activity->categories()->sync($data['category_ids']);
