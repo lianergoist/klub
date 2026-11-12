@@ -12,7 +12,7 @@
                 <label class="field"><span>Adgangskode</span><input v-model="password" name="password" id="password" type="password" autocomplete="current-password" required></label>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
-                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink> <template v-if="!IS_APP">eller <RouterLink to="/prov">prøv en træning eller et SUP-kursus</RouterLink></template></p>
+                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink><template v-if="!IS_APP"><br>eller<br><RouterLink to="/prov">prøv en træning eller et SUP-kursus</RouterLink></template></p>
                 <p class="small muted" style="text-align:center;margin-top:4px">Ikke medlem, men vil med til SUP? <RouterLink to="/klippekort">Køb et klippekort</RouterLink></p>
             </form>
         </div>
