@@ -174,7 +174,7 @@ class PackageController extends Controller
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
                 return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
-                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only') + [
+                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only', 'equipment_booking') + [
                     'category_ids' => $p->categories->pluck('id')->values(),
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
@@ -211,6 +211,7 @@ class PackageController extends Controller
             'self_service' => 'boolean',
             'uses' => 'nullable|integer|min:1|max:100',
             'guest_only' => 'boolean',
+            'equipment_booking' => 'boolean',
             'category_ids' => 'array',
             'category_ids.*' => 'exists:categories,id',
             'renews_to_id' => ['nullable', Rule::exists('packages', 'id')->where('kind', 'membership')],
@@ -251,7 +252,7 @@ class PackageController extends Controller
         $d['period_days'] = $d['period_type'] === 'days' ? $d['period_days'] : null;
         [$d['date_from'], $d['date_to']] = $d['period_type'] === 'dates' ? [$d['date_from'], $d['date_to']] : [null, null];
         $kind = $p?->kind ?? $d['kind'];
-        if ($kind === 'membership') { $d['requires_membership'] = false; $d['uses'] = null; $d['guest_only'] = false; $d['category_ids'] = []; }
+        if ($kind === 'membership') { $d['requires_membership'] = false; $d['uses'] = null; $d['guest_only'] = false; $d['category_ids'] = []; $d['equipment_booking'] = false; }
         else { $d['gives_access'] = true; $d['renews_to_id'] = null; }
         abort_if(! empty($d['uses']) && empty($d['category_ids']), 422, 'Vælg hvilke aktiviteter (kategorier) klippekortet gælder til.');
         if (empty($d['uses'])) { $d['uses'] = null; $d['category_ids'] = []; }

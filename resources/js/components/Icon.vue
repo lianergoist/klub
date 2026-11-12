@@ -5,6 +5,7 @@
 defineProps({ name: String });
 const paths = {
     cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+    board: '<path d="M12 2c3 3 4 8 4 12s-1.8 8-4 8-4-4-4-8 1-9 4-12z"/><path d="M12 6v12"/>',
     whistle: '<circle cx="9" cy="14" r="5"/><path d="M13 11h8v4h-4M9 14h.01"/>',
     inbox: '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5 5h14l1 8v6H4v-6z"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',

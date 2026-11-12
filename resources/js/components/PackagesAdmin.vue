@@ -13,7 +13,7 @@
                     <div class="row between" style="flex-wrap:nowrap;align-items:flex-start;gap:10px">
                         <div style="min-width:0">
                             <strong>{{ p.name }}</strong> <span v-if="!p.on_sale" class="tag">Ikke til salg nu</span>
-                            <div class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="p.next_label"> · {{ p.next_label }}<template v-if="p.kind === 'membership'">{{ p.early_access ? ' (adgang fra køb)' : ' (adgang fra periodens start)' }}</template></template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.uses"> · {{ p.uses }} klip til {{ catNames(p.category_ids) }}</template><template v-if="p.guest_only"> · kun for ikke-medlemmer</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
+                            <div class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="p.next_label"> · {{ p.next_label }}<template v-if="p.kind === 'membership'">{{ p.early_access ? ' (adgang fra køb)' : ' (adgang fra periodens start)' }}</template></template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.uses"> · {{ p.uses }} klip til {{ catNames(p.category_ids) }}</template><template v-if="p.guest_only"> · kun for ikke-medlemmer</template><template v-if="p.equipment_booking"> · giver ret til at booke udstyr</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
                             <div class="small muted">{{ p.active_purchases }} gældende køb<template v-if="p.current"> · pris fra {{ dato(p.current.valid_from) }}</template>
                                 <a v-if="p.previous.length" href="#" @click.prevent="p.showHist = !p.showHist"> · {{ p.showHist ? 'skjul' : 'vis' }} tidligere priser ({{ p.previous.length }})</a></div>
                             <div v-for="u in p.upcoming" :key="u.id" class="upcoming small">
@@ -129,6 +129,7 @@
                     <legend>Indstillinger</legend>
                     <label v-if="ed.kind === 'membership'" class="check"><input type="checkbox" v-model="ed.gives_access"> Giver adgang til aktiviteter <span class="small muted">(fra for fx støttemedlem)</span></label>
                     <template v-else>
+                        <label class="check"><input type="checkbox" v-model="ed.equipment_booking"> Giver ret til at booke udstyr <span class="small muted">(fx udstyrsleje og dagsleje – gælder i pakkens periode)</span></label>
                         <label class="check"><input type="checkbox" v-model="ed.isPunch"> Klippekort med klip <span class="small muted">(tilmelding til en aktivitet bruger et klip)</span></label>
                         <template v-if="ed.isPunch">
                             <label class="field"><span>Antal klip</span><input v-model.number="ed.uses" type="number" min="1" max="100" required></label>
@@ -199,7 +200,7 @@ function openNew() {
 }
 function blank(over = {}) {
     const p = { id: null, name: '', description: '', period_type: 'dates', period_days: 30, date_from: '05-01', date_to: '04-30', total_min: 1, total_max: 1,
-        gives_access: true, early_access: true, requires_membership: false, uses: null, guest_only: false, category_ids: [], self_service: true, renews_to_id: null, slots: [], price: '', purchases: 0, ...over };
+        gives_access: true, early_access: true, requires_membership: false, uses: null, guest_only: false, equipment_booking: false, category_ids: [], self_service: true, renews_to_id: null, slots: [], price: '', purchases: 0, ...over };
     const f = md(p.date_from) || { d: 1, m: 5 }; const t = md(p.date_to) || { d: 30, m: 4 };
     const sf = md(p.sale_from) || { d: 1, m: 5 }; const st = md(p.sale_to) || { d: 31, m: 7 }; const nx = md(p.next_from) || { d: 1, m: 11 };
     return { ...p, fromD: f.d, fromM: f.m, toD: t.d, toM: t.m, isPunch: !!p.uses, hasSale: !!p.sale_from, hasNext: !!p.next_from, nD: nx.d, nM: nx.m, sFromD: sf.d, sFromM: sf.m, sToD: st.d, sToM: st.m,
@@ -240,7 +241,7 @@ async function savePkg() {
         next_from: e.hasNext && e.period_type === 'dates' ? `${pad(e.nM)}-${pad(e.nD)}` : null,
         total_min: e.total_min, total_max: e.total_max || null,
         gives_access: e.gives_access, early_access: e.early_access, requires_membership: e.guest_only ? false : e.requires_membership,
-        uses: e.isPunch ? e.uses : null, guest_only: e.guest_only, category_ids: e.isPunch ? e.category_ids : [], self_service: e.self_service,
+        uses: e.isPunch ? e.uses : null, guest_only: e.guest_only, equipment_booking: e.kind === 'product' && !!e.equipment_booking, category_ids: e.isPunch ? e.category_ids : [], self_service: e.self_service,
         renews_to_id: e.period_type === 'dates' ? e.renews_to_id : null, account_id: e.account_id,
         slots: e.slotRows.filter(s => s.on).map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: s.max || 0 })),
         ...(e.id ? {} : { kind: e.kind, price: e.price }),

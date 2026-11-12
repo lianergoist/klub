@@ -11,7 +11,7 @@ class Package extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean', 'guest_only' => 'boolean',
+        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean', 'guest_only' => 'boolean', 'equipment_booking' => 'boolean',
         'archived_at' => 'datetime',
     ];
 

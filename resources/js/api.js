@@ -17,7 +17,7 @@ export function setSession(token, user) {
 }
 
 export class ApiError extends Error {
-    constructor(message, status, errors) { super(message); this.status = status; this.errors = errors || {}; }
+    constructor(message, status, errors, data) { super(message); this.status = status; this.errors = errors || {}; this.data = data || {}; }
 }
 
 export async function api(path, { method = 'GET', body, form } = {}) {
@@ -39,7 +39,7 @@ export async function api(path, { method = 'GET', body, form } = {}) {
     if (!res.ok) {
         const first = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
         const msg = first || data?.message || (res.status === 403 ? 'Det har du ikke adgang til.' : 'Noget gik galt. Prøv igen.');
-        throw new ApiError(msg, res.status, data?.errors);
+        throw new ApiError(msg, res.status, data?.errors, data);
     }
     return data;
 }

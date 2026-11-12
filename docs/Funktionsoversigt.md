@@ -381,19 +381,20 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 ## Udstyr og booking
 
-Oversigten viser, hvad klubben har af udstyr, og i hvilken stand det er. Den kan ikke forventes at være 100 % opdateret i en forening med mange brugere, så den bruges til at **advare om konflikter**, ikke til at styre alt automatisk.
+Oversigten viser, hvad klubben har af udstyr, og i hvilken stand det er. Den kan ikke forventes at være 100 % opdateret i en forening med mange brugere, men en booking angiver altid præcis, hvilket udstyr der bookes.
 
-- **Kerne:** udstyrstyper (fx SUP-board, windsurfbræt, sejl, våddragt) og udstyr (navn/nummer, type, note). Trænere og bestyrelse kan oprette udstyr og rette stand.
-- **Kerne:** stand pr. stykke udstyr: **OK**, **Skal serviceres** (kan stadig bruges og bookes) eller **Defekt** (kan ikke bookes eller bruges). Hver ændring gemmes med hvem, hvornår og en bemærkning, så man kan se historikken.
-- **Kerne:** kasseret udstyr arkiveres (forsvinder fra listen, men historikken bevares).
-- **Kerne:** booking sker som **antal af en type** i et tidsrum (fx 5 SUP-boards lørdag 10–12), ikke som bestemte numre. Ledigt antal = udstyr af typen, der ikke er defekt eller arkiveret, minus andre bookinger i samme tidsrum.
-- **Kerne:** når en træner opretter en aktivitet, kan der angives udstyrsbehov. Er udstyret allerede booket i tidsrummet, vises hvem der har booket, og træneren kan vælge: opret alligevel, flyt tidspunktet, eller opret aktiviteten som **Afventer** og skrive direkte til den, der har booket.
-- **Kerne:** ønsker nogen at booke udstyr i et tidsrum, hvor en aktivitet har reserveret det, afvises bookingen i første omgang, med en knap til at skrive til træneren/tovholderen. Træneren kan så sætte aktivitetens behov ned, hvorefter bookingen kan gå igennem.
-- **Afklares:** hvem må booke udstyr uden for aktiviteter – kun trænere og bestyrelse, alle medlemmer, eller kun medlemmer med udstyrsleje?
-- **Afklares:** skal udstyrsbehovet på en aktivitet følge antallet af tilmeldte automatisk (5 tilmeldte = 5 boards), eller angiver træneren det selv (fx lig med max deltagere)?
-- **Afklares:** må en aktivitet, der står som **Afventer**, have tilmeldinger, eller åbnes den først for tilmelding, når konflikten er løst?
-- **Kerne:** oprettelse af udstyrstyper og vedligehold af udstyr bliver egne rettigheder under Indstillinger → Rettigheder, så admin kan vælge, om trænere må.
+- **Kerne:** udstyr er ordnet i **underkategorier** under aktivitetskategorierne, fx Windsurf → Boards, Sejl, Master, Bomme og SUP → Boards, Padler. Administrator opretter og retter underkategorier (rettigheden "Oprette og rette underkategorier af udstyr").
+- **Kerne:** trænere og bestyrelse vedligeholder listen under **Udstyr**: tilføjer udstyr (også flere ens på én gang, fx SUP 1–10), retter navn og bemærkning og sætter stand: **OK**, **Skal serviceres** (kan stadig bruges og bookes) eller **Defekt** (kan ikke bookes eller bruges). Hver ændring gemmes med hvem, hvornår og en bemærkning. Meldes noget defekt, får dem, der har booket det, besked.
+- **Kerne:** kasseret udstyr arkiveres. Det forsvinder fra listen og kan ikke bookes, men historikken bevares.
+- **Kerne:** en aktivitet booker som udgangspunkt **alt udstyr i underkategorierne til aktivitetens kategorier** (en windsurf-aktivitet booker alle boards, sejl, master og bomme). Træneren kan i stedet vælge **kun bestemt udstyr** – så kan resten bookes af andre.
+- **Kerne:** er noget af udstyret allerede booket, når en aktivitet oprettes eller flyttes, vises hvad og af hvem, med knapper til at skrive til den, der har booket. Træneren kan vælge: opret alligevel, ret tidspunkt/udstyr, eller opret som **Afventer**.
+- **Kerne:** en aktivitet, der **afventer**, er ikke rigtig oprettet endnu: medlemmerne kan ikke se den eller tilmelde sig, de får ikke besked, og den optager ikke udstyr. Trænere ser den med mærket "Afventer" og opretter den på aktivitetens side ("Opret aktiviteten nu"), når det er afklaret. Ved faste aktiviteter afventer kun de gange, hvor udstyret er booket.
+- **Kerne:** trænere, bestyrelse og medlemmer med betalt **udstyrsleje eller dagsleje** (pakker med "Giver ret til at booke udstyr", gælder i pakkens periode) kan booke bestemte stykker udstyr i et tidsrum (højst 14 dage). Udstyr, som en anden har booket, kan ikke vælges.
+- **Kerne:** vil man booke udstyr, som en aktivitet har booket, sendes et **ønske** til træneren/tovholderen (ellers den, der oprettede aktiviteten), som får besked og svarer **Ja** eller **Nej** med én knap – på aktivitetens side eller under Udstyr → Bookinger. Ved ja er udstyret lånt ud og ikke længere booket af aktiviteten. Den, der ønskede, får besked om svaret. Bestyrelsen kan også svare (rettigheden "Svare på ønsker om udstyr på alle aktiviteter").
+- **Kerne:** under Udstyr → Bookinger ser man sine egne bookinger og ønsker og kan annullere dem. Trænere og bestyrelse kan se alle kommende bookinger.
 - **Senere:** retur-registrering og skadesmelding direkte fra aktiviteten (træneren markerer udstyr, der trænger til reparation).
+- **Afklares:** skal en booking kunne vare mere end 14 dage (fx til en lejr)?
+- **Afklares:** demo-listen over udstyr er et eksempel. Hvem lægger klubbens rigtige udstyr ind, og skal hvert stykke have et fysisk nummer/mærkat?
 
 ## Online betaling
 

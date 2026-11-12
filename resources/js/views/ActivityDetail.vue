@@ -11,6 +11,18 @@
         </div>
         <CatTags :cats="a.categories" />
 
+        <div v-if="a.status === 'pending' && !a.cancelled" class="card pend noprint">
+            <strong>Afventer</strong>
+            <p class="small" style="margin:4px 0 0">Aktiviteten er ikke åben for tilmelding, og medlemmerne har ikke fået besked. Afklar udstyret med dem, der har booket det, og opret så aktiviteten.</p>
+            <template v-if="a.equipment?.conflicts.length">
+                <p class="small" style="margin:10px 0 0"><strong>Booket i tidsrummet:</strong></p>
+                <EquipmentConflicts :holders="a.equipment.conflicts" />
+            </template>
+            <p v-else class="small" style="margin:10px 0 0;color:var(--ok)">Udstyret er ikke længere booket af andre.</p>
+            <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="notifyOnActivate"> Send besked til medlemmer, der følger kategorien</label>
+            <button class="btn primary" style="margin-top:10px" :disabled="busy" @click="activate(false)">Opret aktiviteten nu</button>
+        </div>
+
         <div class="card" style="margin-top:14px">
             <div class="stack">
                 <div class="inf"><Icon name="cal" /><span><span>{{ datoLang(a.starts_at) }}</span>, kl. {{ klok(a.starts_at) }}–{{ klok(a.ends_at) }}</span></div>
@@ -41,7 +53,7 @@
         <!-- Tilmelding -->
         <div v-else-if="!a.is_past && a.is_leader" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
         <!-- Trænere tilmelder sig som almindelige deltagere (ikke på aktiviteter, hvor de selv er træner) -->
-        <div v-if="!a.cancelled && !a.is_past && a.household.length" class="card">
+        <div v-if="!a.cancelled && !a.is_past && a.household.length && a.status !== 'pending'" class="card">
             <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
@@ -147,6 +159,24 @@
             <button class="btn danger block" style="margin-top:12px" :disabled="busy" @click="leave">Meld fra</button>
         </Modal>
 
+        <div v-if="a.equipment && !a.cancelled" class="card noprint">
+            <h2>Udstyr</h2>
+            <p class="small muted" style="margin-top:0">{{ a.equipment.mode === 'all' ? 'Aktiviteten har booket alt udstyr i kategorien.' : 'Aktiviteten har kun booket det valgte udstyr – resten kan bookes af andre.' }}</p>
+            <ul class="list">
+                <li v-for="g in a.equipment.summary" :key="g.type"><strong>{{ g.type }}</strong> <span class="muted small">({{ g.count }})</span><div class="small muted">{{ g.names.join(', ') }}</div></li>
+                <li v-if="!a.equipment.summary.length" class="small muted">Intet udstyr.</li>
+            </ul>
+            <p v-if="a.equipment.released.length" class="small" style="margin:8px 0 0">Lånt ud: {{ a.equipment.released.join(', ') }}</p>
+            <template v-if="a.equipment.requests.length">
+                <h3 style="margin:14px 0 4px;font-size:1rem">Ønsker om at låne udstyr</h3>
+                <p v-if="!a.equipment.can_decide" class="small muted" style="margin:0">Kun træneren eller tovholderen kan svare.</p>
+                <ul class="list"><li v-for="x in a.equipment.requests" :key="x.id">
+                    <EquipmentRequest v-if="a.equipment.can_decide" :x="x" :show-activity="false" @done="load" />
+                    <div v-else class="small"><strong>{{ x.user }}</strong>: {{ x.items.join(', ') }} – {{ { pending: 'venter på svar', accepted: 'ja', rejected: 'nej' }[x.status] }}</div>
+                </li></ul>
+            </template>
+        </div>
+
         <Modal v-if="showCancel" title="Aflys aktivitet" @close="showCancel = false">
             <p>Alle tilmeldte får besked.<span v-if="a.price"> Betalinger skal refunderes af kassereren.</span></p>
             <div v-if="a.series && a.series.remaining > 1" class="stack" style="gap:6px;margin-bottom:10px">
@@ -165,6 +195,8 @@ import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import CatTags from '../components/CatTags.vue';
+import EquipmentConflicts from '../components/EquipmentConflicts.vue';
+import EquipmentRequest from '../components/EquipmentRequest.vue';
 import { api, store, kr, klok, datoLang, tidspunkt, toast, refreshMe } from '../api';
 
 const props = defineProps({ id: String });
@@ -191,6 +223,15 @@ const warnUnavailable = computed(() => trainerOpts.value.filter(t => t.unavailab
 
 async function load() { a.value = await api(`activities/${props.id}`); picked.value = []; att.value = false; }
 onMounted(load);
+const notifyOnActivate = ref(true);
+async function activate(force) {
+    busy.value = true;
+    try { await api(`activities/${props.id}/activate`, { method: 'POST', body: { force, notify: notifyOnActivate.value } }); toast('Aktiviteten er oprettet og åben for tilmelding'); load(); }
+    catch (e) {
+        if (e.status === 409 && confirm('Udstyret er stadig booket af andre i tidsrummet. Opret aktiviteten alligevel?')) { busy.value = false; return activate(true); }
+        if (e.status !== 409) toast(e.message, 'error'); else load();
+    } finally { busy.value = false; }
+}
 watch(() => props.id, load);
 
 async function signup() {
@@ -240,6 +281,7 @@ function print() { window.print(); }
 </script>
 
 <style scoped>
+.pend { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
 .inf { display: flex; gap: 10px; align-items: flex-start; }
 .need { border: 1px solid var(--warn); }
 .inf svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; color: var(--ink-3); }

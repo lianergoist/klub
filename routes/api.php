@@ -105,6 +105,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('activities/{activity}/signup', [ActivityController::class, 'signup']);
     Route::post('activities/{activity}/unsignup', [ActivityController::class, 'cancelSignup']);
     Route::get('trainer-options', [ActivityController::class, 'trainerOptions']);
+    Route::post('activities/{activity}/activate', [ActivityController::class, 'activate']);
+
+    Route::get('equipment', [\App\Http\Controllers\Api\EquipmentController::class, 'index']);
+    Route::post('equipment', [\App\Http\Controllers\Api\EquipmentController::class, 'store']);
+    Route::get('equipment/availability', [\App\Http\Controllers\Api\EquipmentController::class, 'availability']);
+    Route::get('equipment/{equipment}', [\App\Http\Controllers\Api\EquipmentController::class, 'show']);
+    Route::put('equipment/{equipment}', [\App\Http\Controllers\Api\EquipmentController::class, 'update']);
+    Route::post('equipment/{equipment}/status', [\App\Http\Controllers\Api\EquipmentController::class, 'setStatus']);
+    Route::post('equipment/{equipment}/archive', [\App\Http\Controllers\Api\EquipmentController::class, 'archive']);
+    Route::post('equipment-types', [\App\Http\Controllers\Api\EquipmentController::class, 'storeType']);
+    Route::put('equipment-types/{type}', [\App\Http\Controllers\Api\EquipmentController::class, 'updateType']);
+    Route::get('equipment-bookings', [\App\Http\Controllers\Api\EquipmentController::class, 'bookings']);
+    Route::post('equipment-bookings', [\App\Http\Controllers\Api\EquipmentController::class, 'book'])->middleware('throttle:30,1');
+    Route::post('equipment-bookings/{booking}/cancel', [\App\Http\Controllers\Api\EquipmentController::class, 'cancel']);
+    Route::post('equipment-approvals/{approval}/decide', [\App\Http\Controllers\Api\EquipmentController::class, 'decide']);
 
     Route::get('unavailability', [TrainerController::class, 'unavailability']);
     Route::post('unavailability', [TrainerController::class, 'addUnavailability']);

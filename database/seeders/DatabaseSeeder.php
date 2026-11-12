@@ -388,6 +388,7 @@ class DatabaseSeeder extends Seeder
         $mkPkg(['kind' => 'product', 'name' => 'Adgang til motionsrum, 30 dage', 'description' => 'Nøglebrikken giver adgang til motionsrummet i 30 dage fra købet.', 'period_type' => 'days', 'period_days' => 30,
             'total_min' => 1, 'total_max' => 1, 'requires_membership' => true, 'account_id' => $this->acc['1200']], ['Voksen' => [0, 1], 'Barn' => [0, 1]], 15000);
         \App\Support\Punchcards::createDemo($this->acc['1100'], $henrik->id, $this->now->toDateString());
+        \App\Support\Equipment::createDemo();
     }
 
     private function seedMessages(array $p): void

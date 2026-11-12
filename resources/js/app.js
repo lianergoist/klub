@@ -29,6 +29,7 @@ const routes = [
     { path: '/aktiviteter/:id/rediger', component: v('ActivityForm'), props: true, meta: { can: 'activities_manage' } },
     { path: '/betal/:id', component: v('Pay'), props: true },
     { path: '/traener', component: v('Trainer'), meta: { can: 'portal' } },
+    { path: '/udstyr', component: v('Equipment'), meta: { can: 'equipment', wide: true } },
     { path: '/indbakke', component: v('Inbox') },
     { path: '/beskeder', component: v('Inbox') },
     { path: '/beskeder/:id', component: v('Conversation'), props: true },

@@ -7,6 +7,7 @@
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
                 <RouterLink v-if="can.portal" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
+                <RouterLink v-if="can.equipment" to="/udstyr"><Icon name="board" /> Udstyr</RouterLink>
                 <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
                 <RouterLink to="/kvittering"><Icon name="receipt" /> Indsend kvittering</RouterLink>

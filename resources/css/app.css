@@ -160,7 +160,7 @@ input, select, textarea { width: 100%; font: inherit; color: var(--ink); backgro
 /* iOS zoomer ind på felter med under 16px skrift og zoomer ikke ud igen */
 input, select, textarea { font-size: 16px; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-input[type=checkbox] { width: 20px; height: 20px; min-height: 0; accent-color: var(--accent); }
+input[type=checkbox], input[type=radio] { width: 20px; height: 20px; min-height: 0; padding: 0; flex: none; accent-color: var(--accent); }
 textarea { min-height: 90px; }
 .check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 12px; margin-bottom: 14px; overflow-x: auto; }

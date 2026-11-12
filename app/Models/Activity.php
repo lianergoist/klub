@@ -23,6 +23,16 @@ class Activity extends Model
     public function registrations() { return $this->hasMany(Registration::class); }
     public function series() { return $this->belongsTo(ActivitySeries::class, 'series_id'); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function equipment() { return $this->belongsToMany(Equipment::class, 'activity_equipment'); }
+    public function equipmentApprovals() { return $this->hasMany(EquipmentBookingApproval::class); }
+
+    public function isPending(): bool { return $this->status === 'pending'; }
+
+    /** Træner(e) på aktiviteten – eller den, der oprettede den, hvis der ingen træner er. */
+    public function contacts()
+    {
+        return $this->trainers->isNotEmpty() ? $this->trainers : collect([$this->creator])->filter();
+    }
 
     /** Tilmeldte + igangværende betalinger (plads reserveres i 15 min). */
     public function takenSeats(): int

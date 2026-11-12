@@ -10,6 +10,7 @@ use App\Models\Registration;
 use App\Models\User;
 use App\Notifications\ClubMessage;
 use App\Support\Audit;
+use App\Support\Equipment;
 use App\Support\Money;
 use App\Support\Payments;
 use Illuminate\Http\Request;
@@ -37,6 +38,9 @@ class ActivityController extends Controller
             default => $q->where('ends_at', '>=', now())->orderBy('starts_at'),
         };
 
+        if (! $u->may('activities.manage')) {
+            $q->where('status', 'active');
+        }
         if ($cats = $r->query('categories')) {
             $q->whereHas('categories', fn ($q) => $q->whereIn('categories.id', explode(',', $cats)));
         }
@@ -65,6 +69,7 @@ class ActivityController extends Controller
             'categories' => $a->categories->map->only('id', 'name', 'color'),
             'trainers' => $a->trainers->map->brief(),
             'series_id' => $a->series_id,
+            'pending' => $a->status === 'pending',
         ];
     }
 
@@ -73,6 +78,7 @@ class ActivityController extends Controller
         $u = $r->user();
         $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator', 'series');
         $isStaff = $u->may('activities.manage');
+        abort_if($activity->isPending() && ! $isStaff, 404);
         $regs = $activity->registrations()->with('user', 'events.by')->get();
         // Trænere på aktiviteten tilmeldes ikke som deltagere. På andre aktiviteter tilmelder trænere sig som almindelige medlemmer.
         $managed = $u->managedMembers()->reject(fn ($m) => $activity->trainers->contains('id', $m->id))->values();
@@ -88,6 +94,7 @@ class ActivityController extends Controller
             'guest_offer' => $activity->guest_offer,
             'punchcard' => $activity->punchcard,
             'is_past' => $activity->ends_at->isPast(),
+            'status' => $activity->status,
             'created_by' => $activity->creator?->name,
             // Medlemmer ser kun navne på deltagerlisten
             'participants' => $regs->where('status', 'signed_up')->map(fn ($reg) => [
@@ -116,6 +123,7 @@ class ActivityController extends Controller
             'can_edit' => $isStaff,
             'is_leader' => $activity->trainers->contains('id', $u->id),
             'can_take' => $u->may('activities.take'),
+            'equipment' => $isStaff || EquipmentController::mayDecide($u, $activity) ? $this->equipmentInfo($activity, $u) : null,
             'series' => $activity->series ? [
                 'id' => $activity->series->id,
                 'label' => $activity->series->label(),
@@ -156,6 +164,11 @@ class ActivityController extends Controller
             'trainer_ids' => 'array',
             'trainer_ids.*' => 'exists:users,id',
             'notify' => 'boolean',
+            'equipment_mode' => 'in:all,selected',
+            'equipment_ids' => 'array',
+            'equipment_ids.*' => 'integer|exists:equipment,id',
+            'force' => 'boolean',       // opret/gem selv om udstyret er booket
+            'as_pending' => 'boolean',  // opret som "Afventer" (ikke åben for tilmelding)
             'repeat_until' => 'nullable|date|after:starts_at|before_or_equal:'.now()->addYear()->toDateString(),
         ];
     }
@@ -180,20 +193,27 @@ class ActivityController extends Controller
             return $this->storeSeries($r, $data);
         }
 
+        $conflicts = $this->equipmentConflicts($data, $data['starts_at'], $data['ends_at']);
+        if ($conflicts && empty($data['force']) && empty($data['as_pending'])) {
+            return $this->conflictResponse([['date' => $data['starts_at'], 'holders' => $conflicts]]);
+        }
+        $data['status'] = ! empty($data['as_pending']) ? 'pending' : 'active';
+
         $activity = DB::transaction(function () use ($r, $data) {
-            $a = Activity::create(collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until')->all() + ['created_by' => $r->user()->id]);
+            $a = Activity::create(collect($data)->except(self::NOT_COLUMNS)->all() + ['created_by' => $r->user()->id]);
             $a->categories()->sync($data['category_ids']);
+            $a->equipment()->sync(($data['equipment_mode'] ?? 'all') === 'selected' ? ($data['equipment_ids'] ?? []) : []);
             $this->syncTrainers($a, $data['trainer_ids'] ?? [], $r->user());
             Audit::log('activity.created', $a);
 
             return $a;
         });
 
-        if ($data['notify'] ?? true) {
+        if (($data['notify'] ?? true) && $activity->status === 'active') {
             $this->notifyNew($activity);
         }
 
-        return ['id' => $activity->id];
+        return ['id' => $activity->id, 'status' => $activity->status];
     }
 
     /**
@@ -213,20 +233,35 @@ class ActivityController extends Controller
         }
         abort_if(count($dates) > 60, 422, 'En fast aktivitet kan højst have 60 gange. Vælg en tidligere slutdato.');
 
-        $series = DB::transaction(function () use ($r, $data, $dates, $length, $deadlineOffset, $start, $until) {
+        // Udstyr: tjek hver gang for sig. "Afventer" gælder kun de gange, hvor udstyret er booket.
+        $pendingDates = []; $all = [];
+        foreach ($dates as $d) {
+            if ($c = $this->equipmentConflicts($data, $d, $d->copy()->addMinutes($length))) {
+                $all[] = ['date' => $d->toIso8601String(), 'holders' => $c];
+                $pendingDates[] = $d->toIso8601String();
+            }
+        }
+        if ($all && empty($data['force']) && empty($data['as_pending'])) {
+            return $this->conflictResponse($all);
+        }
+        if (empty($data['as_pending'])) $pendingDates = [];
+
+        $series = DB::transaction(function () use ($r, $data, $dates, $length, $deadlineOffset, $start, $until, $pendingDates) {
             $series = ActivitySeries::create([
                 'title' => $data['title'], 'weekday' => $start->isoWeekday(),
                 'start_time' => $start->format('H:i'), 'end_time' => $start->copy()->addMinutes($length)->format('H:i'),
                 'from_date' => $start->toDateString(), 'to_date' => end($dates)->toDateString(), 'created_by' => $r->user()->id,
             ]);
-            $base = collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until', 'starts_at', 'ends_at', 'signup_deadline')->all();
+            $base = collect($data)->except(array_merge(self::NOT_COLUMNS, ['starts_at', 'ends_at', 'signup_deadline']))->all();
             foreach ($dates as $d) {
                 $a = Activity::create($base + [
                     'series_id' => $series->id, 'starts_at' => $d, 'ends_at' => $d->copy()->addMinutes($length),
                     'signup_deadline' => $deadlineOffset !== null ? $d->copy()->subMinutes($deadlineOffset) : null,
                     'created_by' => $r->user()->id,
+                    'status' => in_array($d->toIso8601String(), $pendingDates) ? 'pending' : 'active',
                 ]);
                 $a->categories()->sync($data['category_ids']);
+                $a->equipment()->sync(($data['equipment_mode'] ?? 'all') === 'selected' ? ($data['equipment_ids'] ?? []) : []);
                 $this->syncTrainers($a, $data['trainer_ids'] ?? [], $r->user());
             }
             Audit::log('activity_series.created', $series, ['count' => count($dates)]);
@@ -234,12 +269,12 @@ class ActivityController extends Controller
             return $series;
         });
 
-        $first = $series->activities()->first();
-        if ($data['notify'] ?? true) {
+        $first = $series->activities()->where('status', 'active')->first();
+        if (($data['notify'] ?? true) && $first) {
             $this->notifyNew($first, $series);
         }
 
-        return ['id' => $first->id, 'series_id' => $series->id, 'count' => count($dates)];
+        return ['id' => $series->activities()->first()->id, 'series_id' => $series->id, 'count' => count($dates), 'pending' => count($pendingDates)];
     }
 
     /** Aktiviteterne en handling gælder: kun denne, eller denne og alle senere gange i serien, der ikke er aflyst. */
@@ -308,10 +343,23 @@ class ActivityController extends Controller
         $data = $r->validate($this->rules());
         $this->rejectArchived($data['category_ids'], $activity);
         $before = $activity->only('starts_at', 'ends_at', 'location');
+        // Udstyret tjekkes kun, når tid, kategorier eller udstyr ændres
+        $activity->load('categories', 'equipment');
+        $changed = Carbon::parse($data['starts_at'])->ne($activity->starts_at) || Carbon::parse($data['ends_at'])->ne($activity->ends_at)
+            || collect($data['category_ids'])->sort()->values()->all() !== $activity->categories->pluck('id')->sort()->values()->all()
+            || (isset($data['equipment_mode']) && ($data['equipment_mode'] !== $activity->equipment_mode
+                || collect($data['equipment_ids'] ?? [])->sort()->values()->all() !== $activity->equipment->pluck('id')->sort()->values()->all()));
+        if ($changed && ! $activity->isPending() && empty($data['force'])
+            && ($c = $this->equipmentConflicts($data, $data['starts_at'], $data['ends_at'], $activity->id))) {
+            return $this->conflictResponse([['date' => $data['starts_at'], 'holders' => $c]], true);
+        }
 
         DB::transaction(function () use ($r, $data, $activity) {
-            $activity->update(collect($data)->except('category_ids', 'trainer_ids', 'notify', 'repeat_until')->all());
+            $activity->update(collect($data)->except(self::NOT_COLUMNS)->all());
             $activity->categories()->sync($data['category_ids']);
+            if (isset($data['equipment_mode'])) {
+                $activity->equipment()->sync($data['equipment_mode'] === 'selected' ? ($data['equipment_ids'] ?? []) : []);
+            }
             $this->syncTrainers($activity, $data['trainer_ids'] ?? [], $r->user());
             Audit::log('activity.updated', $activity);
         });
@@ -386,6 +434,7 @@ class ActivityController extends Controller
         $allowed = $u->managedMembers()->keyBy('id');
 
         abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
+        abort_if($activity->isPending(), 422, 'Aktiviteten afventer og er ikke åben for tilmelding endnu.');
         abort_if($activity->deadlinePassed() && ! $u->may('activities.manage'), 422, 'Svarfristen er overskredet. Kontakt træneren.');
 
         $invoiceIds = [];
@@ -462,6 +511,65 @@ class ActivityController extends Controller
                 'unavailable' => $t->unavailabilities->isNotEmpty(),
                 'reason' => $t->unavailabilities->first()?->reason,
             ]);
+    }
+
+    private const NOT_COLUMNS = ['category_ids', 'trainer_ids', 'notify', 'repeat_until', 'equipment_ids', 'force', 'as_pending'];
+
+    /** Hvem har det udstyr, aktiviteten vil booke, i tidsrummet? (samlet pr. aktivitet/booking) */
+    private function equipmentConflicts(array $data, $start, $end, ?int $except = null): array
+    {
+        $ids = Equipment::itemIdsFor($data['equipment_mode'] ?? 'all', $data['category_ids'], $data['equipment_ids'] ?? []);
+
+        return Equipment::groupByHolder(Equipment::conflicts($ids, $start, $end, $except));
+    }
+
+    private function conflictResponse(array $dates, bool $update = false)
+    {
+        return response()->json([
+            'message' => 'Noget af udstyret er booket i tidsrummet.',
+            'equipment_conflicts' => $dates, 'update' => $update,
+        ], 409);
+    }
+
+    /** Udstyr på aktivitetens side: hvad den booker, konflikter (hvis den afventer) og ønsker om at låne. */
+    private function equipmentInfo(Activity $a, User $u): array
+    {
+        $a->loadMissing('equipment.type.category');
+        $mode = $a->equipment_mode;
+        $ids = $a->isPending() || $a->cancelled_at
+            ? Equipment::itemIdsFor($mode, $a->categories->pluck('id')->all(), $a->equipment->pluck('id')->all())
+            : Equipment::activityItemIds($a);
+        $items = \App\Models\Equipment::with('type')->whereIn('id', $ids)->orderByRaw('LENGTH(name), name')->get();
+        $requests = $a->equipmentApprovals()->with('booking.user', 'booking.items')->latest()->get()
+            ->filter(fn ($x) => $x->booking->ends_at->isFuture() || $x->status === 'pending');
+
+        return [
+            'mode' => $mode,
+            'ids' => $a->equipment->pluck('id'),
+            'summary' => $items->groupBy(fn ($i) => $i->type->name)->map(fn ($g, $t) => ['type' => $t, 'count' => $g->count(), 'names' => $g->pluck('name')])->values(),
+            'released' => Equipment::releasedIds($a) ? \App\Models\Equipment::whereIn('id', Equipment::releasedIds($a))->pluck('name') : [],
+            'conflicts' => $a->isPending() ? Equipment::groupByHolder(Equipment::conflicts($ids, $a->starts_at, $a->ends_at, $a->id)) : [],
+            'requests' => $requests->map(fn ($x) => (new EquipmentController)->approvalRow($x) + ['booking_status' => $x->booking->status])->values(),
+            'can_decide' => EquipmentController::mayDecide($u, $a),
+        ];
+    }
+
+    /** "Afventer" → oprettet: åbner for tilmelding og sender evt. besked til medlemmerne. */
+    public function activate(Request $r, Activity $activity)
+    {
+        abort_unless($r->user()->may('activities.manage'), 403);
+        abort_unless($activity->isPending(), 422, 'Aktiviteten er allerede oprettet.');
+        $d = $r->validate(['force' => 'boolean', 'notify' => 'boolean']);
+        $activity->load('categories', 'equipment');
+        $data = ['equipment_mode' => $activity->equipment_mode, 'category_ids' => $activity->categories->pluck('id')->all(), 'equipment_ids' => $activity->equipment->pluck('id')->all()];
+        if (empty($d['force']) && ($c = $this->equipmentConflicts($data, $activity->starts_at, $activity->ends_at, $activity->id))) {
+            return $this->conflictResponse([['date' => $activity->starts_at->toIso8601String(), 'holders' => $c]]);
+        }
+        $activity->update(['status' => 'active']);
+        Audit::log('activity.activated', $activity);
+        if ($d['notify'] ?? true) $this->notifyNew($activity);
+
+        return ['ok' => true];
     }
 
     private function notifyNew(Activity $a, ?ActivitySeries $series = null): void

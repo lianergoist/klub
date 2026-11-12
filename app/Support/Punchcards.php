@@ -41,7 +41,7 @@ class Punchcards
             ->flatMap(fn ($p) => $p->categories->pluck('id'))->unique();
 
         return Activity::with('categories')->withCount(['registrations as signed_up_count' => fn ($q) => $q->where('status', 'signed_up')])
-            ->where('punchcard', true)->whereNull('cancelled_at')->where('ends_at', '>=', now())
+            ->where('punchcard', true)->where('status', 'active')->whereNull('cancelled_at')->where('ends_at', '>=', now())
             ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $cats))->orderBy('starts_at')->limit(60)->get();
     }
 
@@ -49,6 +49,7 @@ class Punchcards
     {
         abort_unless($a->punchcard, 422, 'Aktiviteten er ikke åben for klippekort.');
         abort_if($a->cancelled_at, 422, 'Aktiviteten er aflyst.');
+        abort_if($a->isPending(), 422, 'Aktiviteten er ikke åben for tilmelding endnu.');
         abort_if($a->ends_at->isPast(), 422, 'Aktiviteten er afholdt.');
         abort_if($a->deadlinePassed(), 422, 'Svarfristen er overskredet.');
 

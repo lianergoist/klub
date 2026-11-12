@@ -27,7 +27,16 @@ class Permissions
         'trainers.portal' => ['Aktiviteter', 'Se trænerportalen',
             'Trænerportalen med "Mangler træner" og tilgængelighed for alle trænere.', ['trainer', 'board', 'admin']],
         'categories.manage' => ['Aktiviteter', 'Oprette og rette aktivitetskategorier',
-            'Kategorier som SUP og windsurf, som medlemmer filtrerer og får notifikationer efter.', ['board', 'admin']],
+            'Kategorier som SUP og windsurf, som medlemmer filtrerer og får notifikationer efter.', ['admin']],
+
+        'equipment.manage' => ['Udstyr', 'Vedligeholde udstyrslisten',
+            'Tilføje og rette udstyr, sætte stand (OK, skal serviceres, defekt) og arkivere kasseret udstyr.', ['trainer', 'board', 'admin']],
+        'equipment.types' => ['Udstyr', 'Oprette og rette underkategorier af udstyr',
+            'Underkategorier som sejl, master og boards under hver aktivitetskategori.', ['admin']],
+        'equipment.book' => ['Udstyr', 'Booke udstyr',
+            'Booke bestemte stykker udstyr i et tidsrum. Medlemmer med betalt udstyrsleje eller dagsleje kan altid booke.', ['trainer', 'board', 'admin']],
+        'equipment.decide' => ['Udstyr', 'Svare på ønsker om udstyr på alle aktiviteter',
+            'Godkende eller afvise ønsker om at låne udstyr, som en aktivitet har booket – også når man ikke selv er træner på aktiviteten.', ['board', 'admin']],
 
         'members.view' => ['Medlemmer', 'Se medlemskartoteket',
             'Se og eksportere alle medlemmers oplysninger, roller og regninger.', ['board', 'treasurer', 'admin']],

@@ -2,7 +2,7 @@
     <div>
         <a href="#" class="small" @click.prevent="$router.back()">‹ Tilbage</a>
         <h1 style="margin:8px 0 14px">{{ id ? 'Rediger aktivitet' : 'Ny aktivitet' }}</h1>
-        <form class="card stack" @submit.prevent="save">
+        <form class="card stack" @submit.prevent="save()">
             <label class="field"><span>Titel</span><input v-model="f.title" required placeholder="Fx Onsdagstræning windsurf"></label>
             <div>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Kategorier</span>
@@ -26,6 +26,16 @@
                 </template>
             </div>
             <p v-else-if="seriesLabel" class="small muted" style="margin:0">Del af en fast aktivitet ({{ seriesLabel }}). Ændringer her gælder kun denne gang.</p>
+            <div class="equip">
+                <span class="small" style="font-weight:600;color:var(--ink-2)">Udstyr</span>
+                <label class="check" style="margin-top:6px"><input type="radio" value="all" v-model="f.equipment_mode"> Book alt udstyr i kategorien <span class="small muted" v-if="avail">({{ catItems.length }} stk.)</span></label>
+                <label class="check"><input type="radio" value="selected" v-model="f.equipment_mode"> Book kun bestemt udstyr – resten kan bookes af andre</label>
+                <div v-if="f.equipment_mode === 'selected'" style="margin-top:8px">
+                    <p v-if="!f.starts_at || !f.ends_at" class="small muted" style="margin:0">Vælg først tidspunkt.</p>
+                    <EquipmentPicker v-else-if="avail" v-model="f.equipment_ids" :items="avail" :category-ids="f.category_ids" mode="activity" />
+                </div>
+                <p v-if="busyNames.length" class="small" style="margin:8px 0 0;color:var(--warn)"><strong>Allerede booket i tidsrummet:</strong> {{ busyNames.join(', ') }}<span v-if="repeat"> (første gang)</span></p>
+            </div>
             <label class="field"><span>Sted</span><input v-model="f.location" placeholder="Fx Strandpladsen"></label>
             <label class="field"><span>Beskrivelse</span><textarea v-model="f.description" placeholder="Hvad skal deltagerne vide? Udstyr, niveau, vejrforbehold …"></textarea></label>
             <div class="grid c2">
@@ -60,18 +70,35 @@
             <p v-if="error" class="banner bad">{{ error }}</p>
             <button class="btn primary block" :disabled="busy || (repeat && occurrences.length < 2)">{{ id ? 'Gem ændringer' : repeat && occurrences.length > 1 ? `Opret ${occurrences.length} gange` : 'Opret aktivitet' }}</button>
         </form>
+
+        <Modal v-if="conflicts" title="Udstyret er booket" @close="conflicts = null">
+            <p class="small" style="margin-top:0">Noget af det udstyr, aktiviteten skal bruge, er allerede booket{{ conflicts.equipment_conflicts.length > 1 ? ` på ${conflicts.equipment_conflicts.length} af gangene` : '' }}:</p>
+            <div v-for="c in conflicts.equipment_conflicts" :key="c.date">
+                <strong v-if="conflicts.equipment_conflicts.length > 1" class="small">{{ dato(c.date) }}</strong>
+                <EquipmentConflicts :holders="c.holders" />
+            </div>
+            <div class="stack" style="margin-top:12px">
+                <button class="btn primary block" :disabled="busy" @click="save({ force: true })">{{ id ? 'Gem alligevel' : 'Opret alligevel' }}</button>
+                <button v-if="!id" class="btn block" :disabled="busy" @click="save({ as_pending: true })">Opret som "Afventer"{{ repeat ? ' (kun de gange, hvor udstyret er booket)' : '' }}</button>
+                <button class="btn ghost block" @click="conflicts = null">Ret tidspunkt eller udstyr</button>
+                <p v-if="!id" class="small muted" style="margin:0">"Afventer" betyder, at aktiviteten ikke er åben for tilmelding, og at medlemmerne ikke får besked endnu. Skriv til den, der har booket, og opret den så på aktivitetens side, når det er afklaret.</p>
+            </div>
+        </Modal>
     </div>
 </template>
 
 <script setup>
 import { reactive, ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { api, toast } from '../api';
+import { api, toast, dato } from '../api';
+import Modal from '../components/Modal.vue';
+import EquipmentPicker from '../components/EquipmentPicker.vue';
+import EquipmentConflicts from '../components/EquipmentConflicts.vue';
 
 const props = defineProps({ id: String });
 const router = useRouter();
 const cats = ref([]); const trainers = ref([]); const error = ref(''); const busy = ref(false);
-const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, punchcard: false, category_ids: [], trainer_ids: [], notify: true, repeat_until: '' });
+const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, punchcard: false, category_ids: [], trainer_ids: [], notify: true, repeat_until: '', equipment_mode: 'all', equipment_ids: [] });
 const priceKr = computed({ get: () => f.price ? f.price / 100 : '', set: (v) => (f.price = Math.round((Number(v) || 0) * 100)) });
 const repeat = ref(false); const seriesLabel = ref('');
 const kortDato = (d) => d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
@@ -113,22 +140,41 @@ onMounted(async () => {
         const a = await api(`activities/${props.id}`);
         Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, guest_offer: a.guest_offer, punchcard: a.punchcard, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
         seriesLabel.value = a.series?.label || '';
+        if (a.equipment) { f.equipment_mode = a.equipment.mode; f.equipment_ids = [...a.equipment.ids]; }
     }
     await loadTrainers();
 });
 
-async function save() {
+/* ---- udstyr ---- */
+const avail = ref(null); const conflicts = ref(null);
+const catItems = computed(() => (avail.value || []).filter(i => f.category_ids.includes(i.category_id) && i.status !== 'defect'));
+const chosen = computed(() => f.equipment_mode === 'all' ? catItems.value : (avail.value || []).filter(i => f.equipment_ids.includes(i.id)));
+const busyNames = computed(() => chosen.value.filter(i => i.holders.length).map(i => i.name));
+let t = null;
+watch(() => [f.starts_at, f.ends_at], () => { clearTimeout(t); t = setTimeout(loadAvail, 300); });
+async function loadAvail() {
+    if (!f.starts_at || !f.ends_at || f.ends_at <= f.starts_at) return;
+    avail.value = await api(`equipment/availability?starts_at=${encodeURIComponent(f.starts_at)}&ends_at=${encodeURIComponent(f.ends_at)}${props.id ? '&except_activity=' + props.id : ''}`);
+}
+
+async function save(extra = {}) {
     busy.value = true; error.value = '';
-    const body = { ...f, max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: repeat.value ? null : f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
+    const body = { ...extra, ...f, equipment_ids: f.equipment_mode === 'selected' ? f.equipment_ids : [], max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: repeat.value ? null : f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
     if (repeat.value) body.trainer_ids = [];
     try {
         const r = await api(props.id ? `activities/${props.id}` : 'activities', { method: props.id ? 'PUT' : 'POST', body });
-        toast(props.id ? 'Ændringerne er gemt' : r.count ? `Den faste aktivitet er oprettet (${r.count} gange)` : 'Aktiviteten er oprettet');
+        conflicts.value = null;
+        toast(props.id ? 'Ændringerne er gemt'
+            : r.count ? `Den faste aktivitet er oprettet (${r.count} gange${r.pending ? `, heraf ${r.pending} afventer` : ''})`
+            : r.status === 'pending' ? 'Aktiviteten afventer – den er ikke åben for tilmelding endnu' : 'Aktiviteten er oprettet');
         router.replace(r.count ? '/traener?vis=mangler' : `/aktiviteter/${r.id}`);
-    } catch (e) { error.value = e.message; } finally { busy.value = false; }
+    } catch (e) {
+        if (e.status === 409) conflicts.value = e.data; else error.value = e.message;
+    } finally { busy.value = false; }
 }
 </script>
 
 <style scoped>
+.equip { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 .repeat { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 </style>

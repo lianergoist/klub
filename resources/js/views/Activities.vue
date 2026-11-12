@@ -38,6 +38,7 @@
                                 <CatTags :cats="a.categories" />
                                 <span v-if="a.price_fmt" class="tag">{{ a.price_fmt }}</span>
                                 <span v-if="a.cancelled" class="tag bad">Aflyst</span>
+                                <span v-else-if="a.pending" class="tag warn">Afventer</span>
                                 <span v-else-if="store.user.can.activities_manage && !a.trainers.length" class="tag warn">Mangler træner</span>
                                 <span v-for="s in mine(a)" :key="s.member_id" :class="['tag', s.cls]">{{ s.text }}</span>
                             </div>

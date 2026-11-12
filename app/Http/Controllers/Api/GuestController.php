@@ -28,7 +28,7 @@ class GuestController extends Controller
 
     public function offers()
     {
-        $acts = Activity::whereNotNull('guest_offer')->whereNull('cancelled_at')->where('starts_at', '>', now())
+        $acts = Activity::whereNotNull('guest_offer')->where('status', 'active')->whereNull('cancelled_at')->where('starts_at', '>', now())
             ->where(fn ($q) => $q->whereNull('signup_deadline')->orWhere('signup_deadline', '>', now()))
             ->orderBy('starts_at')->get();
 
@@ -53,7 +53,7 @@ class GuestController extends Controller
         ], ['consent.accepted' => 'Du skal give samtykke, før vi kan tilmelde dig.']);
 
         $a = Activity::whereNotNull('guest_offer')->findOrFail($d['activity_id']);
-        abort_if($a->cancelled_at || $a->starts_at->isPast(), 422, 'Aktiviteten er ikke længere åben.');
+        abort_if($a->cancelled_at || $a->isPending() || $a->starts_at->isPast(), 422, 'Aktiviteten er ikke længere åben.');
         abort_if($a->isFull(), 422, 'Der er desværre ikke flere pladser. Vælg en anden dato.');
         $minor = \Illuminate\Support\Carbon::parse($d['birthdate'])->age < 18;
         abort_if($minor && (! ($d['guardian_name'] ?? null) || ! ($d['guardian_phone'] ?? null)), 422, 'Under 18 år: angiv navn og telefon på en forælder.');
