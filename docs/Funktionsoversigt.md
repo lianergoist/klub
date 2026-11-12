@@ -94,6 +94,8 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
   - Dvs også oprette aktiviteter uden at sætte træner/tovholder på. /Thomas
 
+- **Kerne:** aflyses en aktivitet, som ingen er tilmeldt, arkiveres den: den vises ikke som aflyst på aktivitetslisterne, men kan stadig åbnes via et direkte link. Aktiviteter med tilmeldte vises fortsat som aflyst, og deltagerne får besked.
+
 - **Afklares:** hvad sker der, hvis en aktivitet stadig mangler træner kort før start? Fx påmindelse til alle trænere 3 dage før, besked til bestyrelsen dagen før, eller automatisk aflysning med besked til de tilmeldte.
 
 - **Afklares:** skal man kunne ændre alle gange i en fast aktivitet på én gang (fx nyt tidspunkt eller sted fra en bestemt dato)? I proof of concept rettes hver gang for sig, mens trænertilmelding og aflysning kan gælde resten af serien.

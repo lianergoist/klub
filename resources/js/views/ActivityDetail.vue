@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.</div>
+        <div v-if="a.cancelled" class="banner bad">Aktiviteten er aflyst.<template v-if="a.archived"> Der var ingen tilmeldte, så den er arkiveret og vises ikke på aktivitetslisten.</template></div>
 
         <!-- Tilmelding -->
         <div v-else-if="!a.is_past && a.is_leader" class="banner info row between"><span><Icon name="whistle" style="width:16px" /> Du er træner på denne aktivitet.</span><button class="btn small noprint" @click="showLeave = true">Meld fra</button></div>
@@ -182,13 +182,14 @@
         </div>
 
         <Modal v-if="showCancel" title="Aflys aktivitet" @close="showCancel = false">
-            <p>Alle tilmeldte får besked.<span v-if="a.price"> Betalinger skal refunderes af kassereren.</span></p>
+            <p v-if="a.signed_up_count">Alle tilmeldte får besked.<span v-if="a.price"> Betalinger skal refunderes af kassereren.</span></p>
+            <p v-else>Der er ingen tilmeldte, så aktiviteten arkiveres og vises ikke på aktivitetslisten.</p>
             <div v-if="a.series && a.series.remaining > 1" class="stack" style="gap:6px;margin-bottom:10px">
                 <label class="check"><input type="radio" v-model="cancelSeries" :value="false"> Kun denne gang</label>
                 <label class="check"><input type="radio" v-model="cancelSeries" :value="true"> Denne og alle senere gange ({{ a.series.remaining }})</label>
             </div>
             <label class="field"><span>Begrundelse</span><textarea v-model="cancelReason" placeholder="Fx for lidt vind eller for få tilmeldte"></textarea></label>
-            <button class="btn danger block" style="margin-top:12px" :disabled="!cancelReason" @click="cancelActivity">{{ cancelSeries ? `Aflys ${a.series.remaining} gange og giv besked` : 'Aflys og giv besked' }}</button>
+            <button class="btn danger block" style="margin-top:12px" :disabled="!cancelReason" @click="cancelActivity">{{ cancelSeries ? `Aflys ${a.series.remaining} gange og giv besked` : a.signed_up_count ? 'Aflys og giv besked' : 'Aflys' }}</button>
         </Modal>
     </div>
 </template>
@@ -265,7 +266,9 @@ async function saveTrainers() {
 }
 async function cancelActivity() {
     const r = await api(`activities/${a.value.id}/cancel`, { method: 'POST', body: { reason: cancelReason.value, series: cancelSeries.value } });
-    showCancel.value = false; toast(r.count > 1 ? `${r.count} gange er aflyst, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked'); load();
+    showCancel.value = false;
+    if (r.count === 1 && r.archived) { toast('Aktiviteten er aflyst. Der var ingen tilmeldte, så den er arkiveret og vises ikke på listen'); return router.push('/aktiviteter'); }
+    toast(r.count > 1 ? `${r.count} gange er aflyst${r.archived ? ` (${r.archived} uden tilmeldte er arkiveret)` : ''}, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked'); load();
 }
 async function take() {
     busy.value = true;

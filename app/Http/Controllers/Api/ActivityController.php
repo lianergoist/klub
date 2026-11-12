@@ -38,6 +38,7 @@ class ActivityController extends Controller
             default => $q->where('ends_at', '>=', now())->orderBy('starts_at'),
         };
 
+        $q->whereNull('archived_at'); // aflyst uden tilmeldte: vises ikke på listerne
         if (! $u->may('activities.manage')) {
             $q->where('status', 'active');
         }
@@ -66,6 +67,7 @@ class ActivityController extends Controller
             'price_fmt' => $a->price ? Money::fmt($a->price) : null,
             'signup_deadline' => $a->signup_deadline?->toIso8601String(),
             'cancelled' => (bool) $a->cancelled_at,
+            'archived' => (bool) $a->archived_at,
             'categories' => $a->categories->map->only('id', 'name', 'color'),
             'trainers' => $a->trainers->map->brief(),
             'series_id' => $a->series_id,
@@ -421,14 +423,18 @@ class ActivityController extends Controller
         abort_unless($r->user()->may('activities.manage'), 403);
         $reason = $r->validate(['reason' => 'required|string|max:300', 'series' => 'boolean'])['reason'];
         $list = $this->scope($activity, $r->boolean('series'))->filter(fn ($a) => ! $a->cancelled_at);
+        $archived = 0;
         foreach ($list as $a) {
-            $a->update(['cancelled_at' => now()]);
-            Audit::log('activity.cancelled', $a, ['reason' => $reason]);
+            // Ingen tilmeldte: aktiviteten arkiveres og vises ikke som aflyst på listerne
+            $empty = ! $a->registrations()->whereIn('status', ['signed_up', 'pending_payment'])->exists();
+            $a->update(['cancelled_at' => now(), 'archived_at' => $empty ? now() : null]);
+            $archived += $empty ? 1 : 0;
+            Audit::log('activity.cancelled', $a, ['reason' => $reason, 'archived' => $empty]);
             $this->notifyParticipants($a, 'Aflyst: '.$a->title.' '.$a->starts_at->locale('da')->isoFormat('D. MMM'),
                 'Aktiviteten er aflyst. Årsag: '.$reason.($a->price ? ' Betalingen refunderes af kassereren.' : ''));
         }
 
-        return ['ok' => true, 'count' => $list->count()];
+        return ['ok' => true, 'count' => $list->count(), 'archived' => $archived];
     }
 
     public function attendance(Request $r, Activity $activity)

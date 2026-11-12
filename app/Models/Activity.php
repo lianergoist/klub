@@ -13,6 +13,7 @@ class Activity extends Model
         'ends_at' => 'datetime',
         'signup_deadline' => 'datetime',
         'cancelled_at' => 'datetime',
+        'archived_at' => 'datetime',
         'members_only' => 'boolean',
         'punchcard' => 'boolean',
     ];
