@@ -8,16 +8,16 @@
                 <span v-if="m.profile.membership_type" class="tag ok">{{ m.profile.membership_type }}</span>
                 <span v-else-if="['active', 'passive'].includes(m.profile.status)" class="tag bad">Intet gyldigt medlemskab</span>
             </div>
-            <button v-if="can.admin" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
+            <button v-if="can.members_edit" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
         </div>
 
-        <div v-if="m.profile.status === 'pending' && (can.board || store.user.roles.includes('treasurer'))" class="card" style="border-color:var(--warn)">
+        <div v-if="m.profile.status === 'pending' && can.members_approve" class="card" style="border-color:var(--warn)">
             <h2>Afventer betaling</h2>
             <p class="small muted">Medlemmet bliver aktivt automatisk, når medlemskabet er betalt. Ved kontant betaling: brug <em>Økonomi → Betalinger → Registrér betaling</em>, så pengene bliver bogført og medlemskabet gælder. "Aktivér" gør kun profilen aktiv – uden et betalt medlemskab kan medlemmet ikke tilmelde sig aktiviteter, der kræver medlemskab.</p>
             <button class="btn" @click="approve">Aktivér profilen</button>
         </div>
 
-        <form v-if="m.punchcard_packages?.length && (can.board || store.user.roles.includes('treasurer'))" class="card stack" @submit.prevent="transfer">
+        <form v-if="m.punchcard_packages?.length && can.members_approve" class="card stack" @submit.prevent="transfer">
             <h3 style="margin:0">Overfør papkort</h3>
             <p class="small muted" style="margin:0">Har gæsten et betalt papkort, kan klippene overføres her. Kortet gælder 12 måneder fra i dag og koster ikke noget.</p>
             <div class="grid c3">
@@ -53,15 +53,31 @@
         </div>
 
         <div class="card">
-            <div class="row between"><h2 style="margin:0">Roller</h2><button v-if="can.admin" class="btn small" @click="showRole = true">Tildel rolle</button></div>
-            <p v-if="!can.admin" class="small muted" style="margin-top:6px">Kun administrator kan tildele og fjerne roller.</p>
+            <div class="row between"><h2 style="margin:0">Roller</h2><button v-if="can.roles_manage" class="btn small" @click="showRole = true">Tildel rolle</button></div>
+            <p v-if="!can.roles_manage" class="small muted" style="margin-top:6px">Kun administrator kan tildele og fjerne roller.</p>
             <table style="margin-top:8px"><tbody>
                 <tr v-for="r in m.roles" :key="r.id" :style="r.ends_on && r.ends_on < today ? 'opacity:.55' : ''">
                     <td><strong>{{ r.label }}</strong></td><td class="small">{{ dato(r.starts_on) }} – {{ r.ends_on ? dato(r.ends_on) : 'nu' }}</td><td class="small muted">tildelt af {{ r.granted_by || '–' }}</td>
-                    <td class="num"><button v-if="can.admin && !r.ends_on" class="btn small ghost danger" @click="endRole(r)">Afslut</button></td>
+                    <td class="num"><button v-if="can.roles_manage && !r.ends_on" class="btn small ghost danger" @click="endRole(r)">Afslut</button></td>
                 </tr>
                 <tr v-if="!m.roles.length"><td class="muted">Ingen roller ud over medlem.</td></tr>
             </tbody></table>
+        </div>
+
+        <div class="card" v-if="can.roles_manage || m.permissions.length">
+            <div class="row between"><h2 style="margin:0">Personlige rettigheder</h2><button v-if="can.roles_manage" class="btn small" @click="openGrant">Giv rettighed</button></div>
+            <p class="small muted" style="margin-top:6px">En enkelt rettighed uden hele rollen, fx at et medlem må godkende nye medlemmer uden at sidde i bestyrelsen.</p>
+            <table style="margin-top:8px"><tbody>
+                <tr v-for="p in m.permissions" :key="p.id" :style="p.ends_on && p.ends_on < today ? 'opacity:.55' : ''">
+                    <td><strong>{{ p.label }}</strong><div v-if="p.note" class="small muted">{{ p.note }}</div></td>
+                    <td class="small">{{ dato(p.starts_on) }} – {{ p.ends_on ? dato(p.ends_on) : 'nu' }}</td><td class="small muted">givet af {{ p.granted_by || '–' }}</td>
+                    <td class="num"><button v-if="can.roles_manage && (!p.ends_on || p.ends_on >= today)" class="btn small ghost danger" @click="endGrant(p)">Afslut</button></td>
+                </tr>
+                <tr v-if="!m.permissions.length"><td class="muted">Ingen.</td></tr>
+            </tbody></table>
+            <details v-if="m.can.length" style="margin-top:10px"><summary class="small">Hvad må {{ m.profile.name.split(' ')[0] }} i dag? ({{ m.can.length }})</summary>
+                <ul class="small" style="margin:6px 0 0 18px;padding:0"><li v-for="c in m.can" :key="c">{{ c }}</li></ul>
+            </details>
         </div>
 
         <div class="card" v-if="m.invoices.length">
@@ -90,6 +106,19 @@
                 <label class="field"><span>Rolle</span><select v-model="nr.role"><option v-for="(l, k) in roles" :key="k" :value="k">{{ l }}</option></select></label>
                 <label class="field"><span>Fra dato</span><input type="date" v-model="nr.starts_on"></label>
                 <button class="btn primary block" @click="addRole">Tildel</button>
+            </div>
+        </Modal>
+
+        <Modal v-if="grant" title="Giv rettighed" @close="grant = null">
+            <div class="stack">
+                <label class="field"><span>Rettighed</span><select v-model="grant.permission">
+                    <optgroup v-for="(list, g) in grantGroups" :key="g" :label="g"><option v-for="p in list" :key="p.key" :value="p.key">{{ p.label }}</option></optgroup>
+                </select></label>
+                <p v-if="grantInfo" class="small muted" style="margin:0">{{ grantInfo.description }} Følger i dag rollerne: {{ grantInfo.roles.map(r => roles[r]).join(', ') || 'ingen' }}.</p>
+                <label class="field"><span>Fra dato</span><input type="date" v-model="grant.starts_on"></label>
+                <label class="field"><span>Til og med (valgfri)</span><input type="date" v-model="grant.ends_on"></label>
+                <label class="field"><span>Bemærkning (valgfri)</span><input v-model="grant.note" placeholder="fx hjælper kassereren med indmeldelser"></label>
+                <button class="btn primary block" :disabled="!grant.permission" @click="saveGrant">Giv rettighed</button>
             </div>
         </Modal>
 
@@ -126,5 +155,17 @@ async function transfer() {
 async function approve() { await api(`members/${props.id}/approve`, { method: 'POST' }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rollen er afsluttet'); load(); }
+const grant = ref(null); const perms = ref([]);
+const grantGroups = computed(() => perms.value.filter(p => !p.locked).reduce((g, p) => ((g[p.group] ||= []).push(p), g), {}));
+const grantInfo = computed(() => perms.value.find(p => p.key === grant.value?.permission));
+async function openGrant() {
+    if (!perms.value.length) perms.value = (await api('settings/permissions')).permissions;
+    grant.value = { permission: '', starts_on: today, ends_on: '', note: '' };
+}
+async function saveGrant() {
+    try { await api(`members/${props.id}/permissions`, { method: 'POST', body: { ...grant.value, ends_on: grant.value.ends_on || null } }); grant.value = null; toast('Rettigheden er givet'); load(); }
+    catch (e) { toast(e.message, 'error'); }
+}
+async function endGrant(p) { await api(`user-permissions/${p.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rettigheden er afsluttet'); load(); }
 async function saveEdit() { try { await api(`members/${props.id}`, { method: 'PUT', body: edit.value }); edit.value = null; toast('Gemt'); load(); } catch (e) { toast(e.message, 'error'); } }
 </script>

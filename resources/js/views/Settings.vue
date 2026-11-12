@@ -1,7 +1,11 @@
 <template>
     <div>
         <h1 style="margin-bottom:14px">Indstillinger</h1>
-        <div class="card">
+        <RouterLink v-if="can.roles_manage" to="/indstillinger/rettigheder" class="card row between" style="text-decoration:none;color:inherit">
+            <div><h2 style="margin:0">Rettigheder</h2><div class="small muted">Vælg hvilke roller der må hvad, og se personlige rettigheder.</div></div>
+            <span class="btn small">Åbn</span>
+        </RouterLink>
+        <div v-if="can.categories_manage" class="card">
             <h2>Kategorier</h2>
             <p class="small muted">Medlemmer bruger kategorierne til at filtrere og vælge notifikationer. Ret kun navnet ved små rettelser: det nye navn gælder også for alle, der følger kategorien, og for tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
             <ul class="list">
@@ -31,10 +35,10 @@
                 <button class="btn primary small">Tilføj</button>
             </form>
         </div>
-        <PackagesAdmin />
-        <div class="card">
+        <PackagesAdmin v-if="priceAccess" />
+        <div v-if="priceAccess" class="card">
             <h2>Priser for ikke-medlemmer</h2>
-            <p class="small muted">Priser for medlemskaber og tilkøb ligger på pakkerne ovenfor. En pris rettes ikke – man lægger en ny ind med den dato, den skal gælde fra. Den gamle bevares, og regninger, der allerede er sendt, ændres ikke.<span v-if="!pr?.can_edit"> Kun bestyrelse og kasserer kan ændre priser.</span></p>
+            <p class="small muted">Priser for medlemskaber og tilkøb ligger på pakkerne ovenfor. En pris rettes ikke – man lægger en ny ind med den dato, den skal gælde fra. Den gamle bevares, og regninger, der allerede er sendt, ændres ikke.<span v-if="pr && !pr.can_edit"> Du kan se priserne, men ikke ændre dem.</span></p>
             <div v-if="!pr" class="spinner"></div>
             <template v-else v-for="g in pr.groups" :key="g.group">
                 <h3 style="margin-top:18px">{{ g.group }}</h3>
@@ -86,7 +90,9 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import Modal from '../components/Modal.vue';
 import PackagesAdmin from '../components/PackagesAdmin.vue';
-import { api, toast, dato } from '../api';
+import { api, toast, dato, store } from '../api';
+const can = computed(() => store.user.can);
+const priceAccess = computed(() => can.value.packages_manage || can.value.prices_edit);
 const cats = ref([]); const pr = ref(null); const edit = ref(null); const error = ref('');
 const nf = reactive({ amount: '', valid_from: '' });
 const nextSeason = (() => { const d = new Date(); const y = d.getMonth() >= 4 ? d.getFullYear() + 1 : d.getFullYear(); return `${y}-05-01`; })();
@@ -94,7 +100,7 @@ const nextYear = `${new Date().getFullYear() + 1}-01-01`; const nc = reactive({ 
 const active = computed(() => cats.value.filter(c => !c.archived));
 const archived = computed(() => cats.value.filter(c => c.archived));
 async function loadCats() { cats.value = (await api('categories')).map(c => ({ ...c, orig: c.name })); }
-onMounted(async () => { await loadCats(); pr.value = await api('finance/prices'); });
+onMounted(async () => { await loadCats(); if (priceAccess.value) pr.value = await api('finance/prices'); });
 async function save(c) {
     if (c.name !== c.orig && !confirm(`Omdøb "${c.orig}" til "${c.name}"?\n\nNavnet ændres for alle ${c.followers}, der følger kategorien, og på ${c.activities} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori i stedet.`)) return;
     try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.name, color: c.color } }); c.orig = c.name; toast('Gemt'); } catch (e) { toast(e.message, 'error'); }

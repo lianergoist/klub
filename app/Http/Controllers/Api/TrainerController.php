@@ -13,7 +13,7 @@ class TrainerController extends Controller
 {
     public function unavailability(Request $r)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('trainers.portal') || $r->user()->may('activities.take'), 403);
 
         return $r->user()->unavailabilities()->where('to_date', '>=', now()->subMonths(1))->orderBy('from_date')->get()
             ->map(fn ($u) => ['id' => $u->id, 'from' => $u->from_date->toDateString(), 'to' => $u->to_date->toDateString(), 'reason' => $u->reason]);
@@ -21,7 +21,7 @@ class TrainerController extends Controller
 
     public function addUnavailability(Request $r)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('trainers.portal') || $r->user()->may('activities.take'), 403);
         $d = $r->validate(['from' => 'required|date', 'to' => 'required|date|after_or_equal:from', 'reason' => 'nullable|string|max:100']);
         $r->user()->unavailabilities()->create(['from_date' => $d['from'], 'to_date' => $d['to'], 'reason' => $d['reason'] ?? null]);
 
@@ -46,7 +46,7 @@ class TrainerController extends Controller
      */
     public function availability(Request $r)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('trainers.portal'), 403);
         $month = $r->query('month');
         $start = (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) ? Carbon::parse($month.'-01') : now())->startOfMonth()->startOfDay();
         $end = $start->copy()->endOfMonth()->startOfDay();

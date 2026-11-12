@@ -70,7 +70,7 @@ class ExpenseClaimController extends Controller
             'file_path' => $f->store('udlaeg'),
             'file_name' => $f->getClientOriginalName() ?: 'kvittering',
             'file_mime' => $f->getMimeType() ?: 'application/octet-stream',
-            'requires_approval' => $r->user()->hasRole('treasurer'),
+            'requires_approval' => $r->user()->may('finance.write'),
         ]);
         Audit::log('expense_claim.submitted', $claim, ['amount' => $claim->amount]);
 
@@ -102,7 +102,7 @@ class ExpenseClaimController extends Controller
 
     public function index(Request $r)
     {
-        abort_unless($r->user()->canReadFinance(), 403);
+        abort_unless($r->user()->may('finance.read'), 403);
         $status = $r->query('status', 'submitted');
 
         return ExpenseClaim::with('user', 'handler', 'approver')
@@ -114,7 +114,7 @@ class ExpenseClaimController extends Controller
     /** Bogfør udlægget som udbetalt: udgiftspostering med kvitteringen som bilag. */
     public function pay(Request $r, ExpenseClaim $claim)
     {
-        abort_unless($r->user()->canWriteFinance(), 403, 'Kun kassereren kan bogføre udlæg.');
+        abort_unless($r->user()->may('finance.write'), 403, 'Du har ikke adgang til at bogføre udlæg.');
         abort_unless($claim->status === 'submitted', 422, 'Udlægget er allerede behandlet.');
         abort_if($claim->awaitingApproval(), 422, 'Kassererens eget udlæg skal godkendes af revisoren, før det kan bogføres.');
         $d = $r->validate([
@@ -151,7 +151,7 @@ class ExpenseClaimController extends Controller
     public function approve(Request $r, ExpenseClaim $claim)
     {
         $u = $r->user();
-        abort_unless($u->hasRole('auditor'), 403, 'Kun revisoren kan godkende kassererens udlæg.');
+        abort_unless($u->may('claims.approve'), 403, 'Du har ikke adgang til at godkende kassererens udlæg.');
         abort_unless($claim->awaitingApproval(), 422, 'Udlægget venter ikke på godkendelse.');
         abort_if($claim->user_id === $u->id, 422, 'Du kan ikke godkende dit eget udlæg.');
         $claim->update(['approved_by' => $u->id, 'approved_at' => now()]);
@@ -171,7 +171,7 @@ class ExpenseClaimController extends Controller
         $u = $r->user();
         abort_unless($claim->status === 'submitted', 422, 'Udlægget er allerede behandlet.');
         abort_if($claim->user_id === $u->id, 422, 'Du kan ikke afvise dit eget udlæg.');
-        abort_unless($claim->requires_approval ? $u->hasRole('auditor') : $u->canWriteFinance(), 403,
+        abort_unless($claim->requires_approval ? $u->may('claims.approve') : $u->may('finance.write'), 403,
             $claim->requires_approval ? 'Kassererens udlæg afvises af revisoren.' : 'Kun kassereren kan afvise udlæg.');
         $reason = $r->validate(['reason' => 'required|string|max:300'])['reason'];
         $claim->update(['status' => 'rejected', 'handled_by' => $r->user()->id, 'handled_at' => now(), 'reject_reason' => $reason]);

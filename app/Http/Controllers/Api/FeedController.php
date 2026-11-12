@@ -26,7 +26,7 @@ class FeedController extends Controller
     private function member(Request $r): User
     {
         $u = $r->user();
-        abort_unless(in_array($u->status, ['active', 'passive']) || $u->isTrainer(), 403, 'Opslagstavlen er for aktive medlemmer. Betal dit kontingent for at få adgang.');
+        abort_unless(in_array($u->status, ['active', 'passive']) || $u->may('feed.moderate'), 403, 'Opslagstavlen er for aktive medlemmer. Betal dit kontingent for at få adgang.');
 
         return $u;
     }
@@ -34,7 +34,7 @@ class FeedController extends Controller
     private function mod(Request $r): User
     {
         $u = $this->member($r);
-        abort_unless($u->isTrainer(), 403, 'Kun trænere og bestyrelse kan moderere.');
+        abort_unless($u->may('feed.moderate'), 403, 'Du har ikke adgang til at moderere.');
 
         return $u;
     }
@@ -43,7 +43,7 @@ class FeedController extends Controller
     public function index(Request $r)
     {
         $u = $this->member($r);
-        $isMod = $u->isTrainer();
+        $isMod = $u->may('feed.moderate');
         $filter = $isMod ? $r->query('filter', 'all') : 'all';
 
         $q = Post::with(['user', 'images', 'comments.user:id,name'])

@@ -51,8 +51,8 @@ class FinanceController extends Controller
         ];
     }
 
-    private function read(Request $r): void { abort_unless($r->user()->canReadFinance(), 403); }
-    private function write(Request $r): void { abort_unless($r->user()->canWriteFinance(), 403, 'Kun kassereren kan ændre i regnskabet.'); }
+    private function read(Request $r): void { abort_unless($r->user()->may('finance.read'), 403); }
+    private function write(Request $r): void { abort_unless($r->user()->may('finance.write'), 403, 'Du har ikke adgang til at ændre i regnskabet.'); }
 
     /* ---------- Betalinger ---------- */
 
@@ -90,7 +90,7 @@ class FinanceController extends Controller
 
     public function invoice(Request $r, Invoice $invoice)
     {
-        abort_unless($invoice->payer_id === $r->user()->id || $r->user()->canReadFinance(), 403);
+        abort_unless($invoice->payer_id === $r->user()->id || $r->user()->may('finance.read'), 403);
 
         return self::invoiceRow($invoice->load('payer', 'member', 'payments'));
     }
@@ -281,7 +281,7 @@ class FinanceController extends Controller
     {
         $this->read($r);
         $r->validate(['file' => 'required|file|max:2048']);
-        $persist = $r->user()->canWriteFinance();
+        $persist = $r->user()->may('finance.write');
         $lines = preg_split('/\r?\n/', trim(preg_replace('/^\xEF\xBB\xBF/', '', $r->file('file')->get())));
 
         // Posteringer der afstemmes via udbetalinger (ikke enkeltvis)
@@ -385,15 +385,15 @@ class FinanceController extends Controller
     /** Pristabel med "gælder fra" og historik (læsning for bestyrelse og økonomi). */
     public function prices(Request $r)
     {
-        abort_unless($r->user()->canReadFinance() || $r->user()->isBoard(), 403);
+        abort_unless($r->user()->may('finance.read') || $r->user()->may('packages.manage') || $r->user()->may('prices.edit'), 403);
 
-        return ['groups' => \App\Support\Prices::table(), 'can_edit' => $r->user()->canEditPrices(), 'today' => now()->toDateString()];
+        return ['groups' => \App\Support\Prices::table(), 'can_edit' => $r->user()->may('prices.edit'), 'today' => now()->toDateString()];
     }
 
     /** Ny pris med virkning fra en dato. Kan ikke tilbagedateres – allerede opkrævede regninger ændres aldrig. */
     public function setPrice(Request $r)
     {
-        abort_unless($r->user()->canEditPrices(), 403, 'Kun bestyrelse og kasserer kan ændre priser.');
+        abort_unless($r->user()->may('prices.edit'), 403, 'Du har ikke adgang til at ændre priser.');
         $d = $r->validate([
             'code' => 'required|in:'.implode(',', array_keys(\App\Support\Prices::LABELS)),
             'amount' => 'required|numeric|min:0|max:100000',
@@ -412,7 +412,7 @@ class FinanceController extends Controller
     /** Slet en kommende pris (der endnu ikke er trådt i kraft). */
     public function deletePrice(Request $r, int $price)
     {
-        abort_unless($r->user()->canEditPrices(), 403, 'Kun bestyrelse og kasserer kan ændre priser.');
+        abort_unless($r->user()->may('prices.edit'), 403, 'Du har ikke adgang til at ændre priser.');
         $row = DB::table('prices')->find($price);
         abort_unless($row, 404);
         abort_if($row->valid_from <= now()->toDateString(), 422, 'Prisen er allerede trådt i kraft og kan ikke slettes. Læg i stedet en ny pris ind.');

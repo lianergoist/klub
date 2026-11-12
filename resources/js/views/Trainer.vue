@@ -2,12 +2,12 @@
     <div>
         <div class="topbar">
             <h1>Trænerportal</h1>
-            <RouterLink to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
+            <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
         </div>
         <div class="tabs">
             <button :class="{ on: tab === 'mine' }" @click="tab = 'mine'">Mine aktiviteter</button>
             <button v-if="isTrainer" :class="{ on: tab === 'off' }" @click="tab = 'off'">Fravær</button>
-            <button :class="{ on: tab === 'cal' }" @click="tab = 'cal'">Tilgængelighed</button>
+            <button v-if="store.user.can.trainers_portal" :class="{ on: tab === 'cal' }" @click="tab = 'cal'">Tilgængelighed</button>
         </div>
 
         <template v-if="tab === 'mine'">
@@ -106,7 +106,7 @@ import CatTags from '../components/CatTags.vue';
 import Icon from '../components/Icon.vue';
 import { api, store, klok, dato, toast, dagNr, maanedKort, ugedagKort } from '../api';
 
-const isTrainer = store.user.roles.includes('trainer');
+const isTrainer = store.user.can.activities_take;
 const route = useRoute();
 const tab = ref('mine'); const when = ref(route.query.vis === 'mangler' ? 'open' : 'future'); const acts = ref(null);
 const offList = ref([]); const off = reactive({ from: '', to: '', reason: '' }); const clashes = ref([]);

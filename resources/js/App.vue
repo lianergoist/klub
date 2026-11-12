@@ -6,16 +6,16 @@
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
-                <RouterLink v-if="can.trainer" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
+                <RouterLink v-if="can.portal" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
                 <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
                 <RouterLink to="/kvittering"><Icon name="receipt" /> Indsend kvittering</RouterLink>
-                <template v-if="can.members || can.finance_read || can.board">
+                <template v-if="can.members_view || can.finance_read || can.settings">
                     <div class="sect">Administration</div>
-                    <RouterLink v-if="can.members" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
+                    <RouterLink v-if="can.members_view" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
                     <a v-if="can.finance_read && IS_APP" href="#" @click.prevent="openFinance"><Icon name="money" /> Økonomi ↗</a>
                     <RouterLink v-else-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
-                    <RouterLink v-if="can.board" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
+                    <RouterLink v-if="can.settings" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
                 </template>
             </nav>
             <div class="who">

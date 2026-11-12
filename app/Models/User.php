@@ -70,12 +70,23 @@ class User extends Authenticatable
         return (bool) array_intersect($roles, $this->roles());
     }
 
-    public function isTrainer(): bool { return $this->hasRole('trainer', 'board', 'admin'); }
-    public function isBoard(): bool { return $this->hasRole('board', 'admin'); }
-    public function canReadFinance(): bool { return $this->hasRole('treasurer', 'auditor', 'board'); }
-    public function canWriteFinance(): bool { return $this->hasRole('treasurer'); }
-    public function canEditPrices(): bool { return $this->hasRole('board', 'treasurer', 'admin'); }
-    public function canSeeMembers(): bool { return $this->hasRole('board', 'treasurer', 'admin'); }
+    public function userPermissions() { return $this->hasMany(UserPermission::class); }
+
+    /** Har brugeren rettigheden (via en rolle eller givet personligt)? Se App\Support\Permissions. */
+    public function may(string $permission): bool
+    {
+        return \App\Support\Permissions::allows($this, $permission);
+    }
+
+    /** Rettigheder givet personligt, aktive i dag. */
+    public function grantedPermissions(): array
+    {
+        $today = now()->toDateString();
+
+        return $this->userPermissions
+            ->filter(fn ($p) => $p->starts_on->toDateString() <= $today && (! $p->ends_on || $p->ends_on->toDateString() >= $today))
+            ->pluck('permission')->unique()->values()->all();
+    }
 
     public function age(): ?int
     {
@@ -139,8 +150,7 @@ class User extends Authenticatable
     /** Id'er på aktive trænere, bestyrelse og administratorer. */
     public static function staffIds()
     {
-        return RoleAssignment::whereIn('role', ['trainer', 'board', 'admin'])->where('starts_on', '<=', now())
-            ->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now()))->select('user_id');
+        return \App\Support\Permissions::userIds('messages.staff');
     }
 
     /**
@@ -165,7 +175,7 @@ class User extends Authenticatable
     /** Trænere, bestyrelse og administrator kan skrive til alle (også dem, der har fravalgt beskeder). */
     public function isStaff(): bool
     {
-        return $this->hasRole('trainer', 'board', 'admin');
+        return $this->may('messages.staff');
     }
 
     /**

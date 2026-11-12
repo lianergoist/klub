@@ -32,7 +32,10 @@ Et medlem kan have flere roller samtidigt (fx træner og bestyrelsesmedlem). Rol
 - **Kerne: rollestyring som ovenfor, og at roller kan tildeles og fjernes af administrator med dato (historik).**
 
 - **Kerne:** administrator tildeler og afslutter roller under Medlemmer → medlemmets side → Roller → "Tildel rolle" (knappen vises kun for administratorer).
-- **Afklares:** skal oprettelse af aktivitetskategorier (SUP, windsurf m.m.) kun kunne foretages af admin? I dag kan bestyrelse og admin.
+- **Kerne:** tabellen ovenfor er kun standarden. Under **Indstillinger → Rettigheder** er alle handlinger, der kræver en rolle, samlet i en liste (aktiviteter, medlemmer, kommunikation, økonomi), og administrator vælger for hver handling, hvilke roller der giver adgang. Ændringer gælder straks og skrives i ændringsloggen. En handling, der er ændret fra standarden, er markeret og kan sættes tilbage.
+- **Kerne:** **personlige rettigheder:** administrator kan give et enkelt medlem én rettighed uden hele rollen (fx må Y godkende nye medlemmer uden at sidde i bestyrelsen), med fra-dato, evt. til-dato og en bemærkning. Det sker på medlemmets side under "Personlige rettigheder", hvor man også kan se, hvad medlemmet må i dag.
+- **Kerne:** "Tildele roller og rettigheder" er låst til administrator, så ingen kan låse sig selv ude. Nye funktioner (fx udstyr) får deres egne rettigheder i listen.
+- **Afklares:** hvilke roller skal have hvilke rettigheder? Proof of concept starter med standarden i tabellen ovenfor; bestyrelsen kan gennemgå listen under Indstillinger → Rettigheder.
 - **Afklares:** hvilke af disse skal være admin-opgaver: spærre/genåbne et login og sende nyt login-link, slette/anonymisere medlemmer (GDPR), se hele ændringsloggen, klubindstillinger (navn, logo, kontaktoplysninger, sæsondatoer), opsætning af betaling og e-mail, import/eksport af medlemsdata? Forslag: admin er en teknisk rolle, mens priser, pakker og kategorier forbliver bestyrelsens.
 
 
@@ -389,7 +392,7 @@ Oversigten viser, hvad klubben har af udstyr, og i hvilken stand det er. Den kan
 - **Afklares:** hvem må booke udstyr uden for aktiviteter – kun trænere og bestyrelse, alle medlemmer, eller kun medlemmer med udstyrsleje?
 - **Afklares:** skal udstyrsbehovet på en aktivitet følge antallet af tilmeldte automatisk (5 tilmeldte = 5 boards), eller angiver træneren det selv (fx lig med max deltagere)?
 - **Afklares:** må en aktivitet, der står som **Afventer**, have tilmeldinger, eller åbnes den først for tilmelding, når konflikten er løst?
-- **Afklares:** hvem må oprette nye udstyrstyper – trænere og bestyrelse, eller kun admin?
+- **Kerne:** oprettelse af udstyrstyper og vedligehold af udstyr bliver egne rettigheder under Indstillinger → Rettigheder, så admin kan vælge, om trænere må.
 - **Senere:** retur-registrering og skadesmelding direkte fra aktiviteten (træneren markerer udstyr, der trænger til reparation).
 
 ## Online betaling

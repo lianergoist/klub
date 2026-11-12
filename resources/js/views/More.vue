@@ -6,13 +6,13 @@
                 <li><RouterLink to="/kvittering" class="row"><Icon name="receipt" style="width:20px" /> Indsend kvittering</RouterLink></li>
             </ul>
         </div>
-        <div v-if="can.trainer || can.members || can.finance_read || can.board" class="card" style="padding:4px 16px">
+        <div v-if="can.portal || can.members_view || can.finance_read || can.settings" class="card" style="padding:4px 16px">
             <ul class="list">
-                <li v-if="can.trainer"><RouterLink to="/traener" class="row"><Icon name="whistle" style="width:20px" /> Trænerportal</RouterLink></li>
-                <li v-if="can.members"><RouterLink to="/medlemmer" class="row"><Icon name="users" style="width:20px" /> Medlemmer</RouterLink></li>
+                <li v-if="can.portal"><RouterLink to="/traener" class="row"><Icon name="whistle" style="width:20px" /> Trænerportal</RouterLink></li>
+                <li v-if="can.members_view"><RouterLink to="/medlemmer" class="row"><Icon name="users" style="width:20px" /> Medlemmer</RouterLink></li>
                 <li v-if="can.finance_read && IS_APP"><a href="#" class="row" @click.prevent="openFinance"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(åbner i browseren)</span></a></li>
                 <li v-else-if="can.finance_read"><RouterLink to="/okonomi" class="row"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(bedst på computer)</span></RouterLink></li>
-                <li v-if="can.board"><RouterLink to="/indstillinger" class="row"><Icon name="gear" style="width:20px" /> Indstillinger</RouterLink></li>
+                <li v-if="can.settings"><RouterLink to="/indstillinger" class="row"><Icon name="gear" style="width:20px" /> Indstillinger</RouterLink></li>
             </ul>
         </div>
         <div class="card"><ThemeSwitch /></div>

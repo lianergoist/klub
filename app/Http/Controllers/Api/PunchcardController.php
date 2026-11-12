@@ -135,7 +135,7 @@ class PunchcardController extends Controller
     /** Kassereren/bestyrelsen overfører et papkort: et klippekort med et antal klip, uden betaling. */
     public function transfer(Request $r, User $member)
     {
-        abort_unless($r->user()->hasRole('board', 'treasurer', 'admin'), 403);
+        abort_unless($r->user()->may('members.approve'), 403);
         abort_unless($member->status === 'guest', 422, 'Klippekort er kun for ikke-medlemmer.');
         $d = $r->validate(['package_id' => 'required|integer', 'uses_left' => 'required|integer|min:1|max:100', 'note' => 'nullable|string|max:200']);
         $package = Package::where('uses', '>', 0)->findOrFail($d['package_id']);

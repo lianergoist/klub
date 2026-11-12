@@ -2,7 +2,7 @@
     <div>
         <div class="topbar">
             <div><h1>Aktiviteter</h1><p class="muted small" style="margin:0">Hej {{ store.user.name.split(' ')[0] }} 👋</p></div>
-            <RouterLink v-if="store.user.can.trainer" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
+            <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
         </div>
 
         <div v-if="store.user.status === 'pending'" class="banner warn row between">
@@ -38,7 +38,7 @@
                                 <CatTags :cats="a.categories" />
                                 <span v-if="a.price_fmt" class="tag">{{ a.price_fmt }}</span>
                                 <span v-if="a.cancelled" class="tag bad">Aflyst</span>
-                                <span v-else-if="store.user.can.trainer && !a.trainers.length" class="tag warn">Mangler træner</span>
+                                <span v-else-if="store.user.can.activities_manage && !a.trainers.length" class="tag warn">Mangler træner</span>
                                 <span v-for="s in mine(a)" :key="s.member_id" :class="['tag', s.cls]">{{ s.text }}</span>
                             </div>
                             <div v-if="a.max_participants && tab === 'upcoming'" class="small muted" style="margin-top:6px">

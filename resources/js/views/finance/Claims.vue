@@ -80,7 +80,7 @@ import Modal from '../../components/Modal.vue';
 import { api, store, toast, dato } from '../../api';
 
 const can = computed(() => store.user.can);
-const isAuditor = computed(() => store.user.roles.includes('auditor'));
+const isAuditor = computed(() => store.user.can.claims_approve);
 const tabs = [{ id: 'submitted', label: 'Afventer' }, { id: 'paid', label: 'Udbetalt' }, { id: 'rejected', label: 'Afvist' }];
 const statusText = { submitted: 'Afventer', paid: 'Udbetalt', rejected: 'Afvist' };
 const statusCls = { submitted: 'warn', paid: 'ok', rejected: 'bad' };

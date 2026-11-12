@@ -72,7 +72,7 @@ class ActivityController extends Controller
     {
         $u = $r->user();
         $activity->load('categories', 'trainers', 'trainerChanges.trainer', 'trainerChanges.changedBy', 'creator', 'series');
-        $isStaff = $u->isTrainer();
+        $isStaff = $u->may('activities.manage');
         $regs = $activity->registrations()->with('user', 'events.by')->get();
         // Trænere på aktiviteten tilmeldes ikke som deltagere. På andre aktiviteter tilmelder trænere sig som almindelige medlemmer.
         $managed = $u->managedMembers()->reject(fn ($m) => $activity->trainers->contains('id', $m->id))->values();
@@ -115,7 +115,7 @@ class ActivityController extends Controller
                 ->sortBy('at')->values() : [],
             'can_edit' => $isStaff,
             'is_leader' => $activity->trainers->contains('id', $u->id),
-            'can_take' => $u->hasRole('trainer'),
+            'can_take' => $u->may('activities.take'),
             'series' => $activity->series ? [
                 'id' => $activity->series->id,
                 'label' => $activity->series->label(),
@@ -172,7 +172,7 @@ class ActivityController extends Controller
 
     public function store(Request $r)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate($this->rules(), [], ['category_ids' => 'kategori']);
         $this->rejectArchived($data['category_ids']);
 
@@ -256,7 +256,7 @@ class ActivityController extends Controller
     public function take(Request $r, Activity $activity)
     {
         $u = $r->user();
-        abort_unless($u->hasRole('trainer'), 403, 'Kun trænere kan melde sig som træner.');
+        abort_unless($u->may('activities.take'), 403, 'Du har ikke adgang til at melde dig som træner.');
         abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
         abort_if($activity->ends_at->isPast(), 422, 'Aktiviteten er afholdt.');
         if (! $activity->trainers()->whereKey($u->id)->exists()) {
@@ -304,7 +304,7 @@ class ActivityController extends Controller
 
     public function update(Request $r, Activity $activity)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate($this->rules());
         $this->rejectArchived($data['category_ids'], $activity);
         $before = $activity->only('starts_at', 'ends_at', 'location');
@@ -328,7 +328,7 @@ class ActivityController extends Controller
     /** Alle trænere kan skifte træner. Hver ændring logges. */
     public function setTrainers(Request $r, Activity $activity)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate(['trainer_ids' => 'array', 'trainer_ids.*' => 'exists:users,id']);
         $this->syncTrainers($activity, $data['trainer_ids'], $r->user());
 
@@ -351,7 +351,7 @@ class ActivityController extends Controller
 
     public function cancel(Request $r, Activity $activity)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $reason = $r->validate(['reason' => 'required|string|max:300', 'series' => 'boolean'])['reason'];
         $list = $this->scope($activity, $r->boolean('series'))->filter(fn ($a) => ! $a->cancelled_at);
         foreach ($list as $a) {
@@ -366,7 +366,7 @@ class ActivityController extends Controller
 
     public function attendance(Request $r, Activity $activity)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $data = $r->validate(['items' => 'array', 'items.*.registration_id' => 'integer', 'items.*.attended' => 'nullable|boolean']);
         foreach ($data['items'] as $i) {
             $reg = $activity->registrations()->find($i['registration_id']);
@@ -386,7 +386,7 @@ class ActivityController extends Controller
         $allowed = $u->managedMembers()->keyBy('id');
 
         abort_if($activity->cancelled_at, 422, 'Aktiviteten er aflyst.');
-        abort_if($activity->deadlinePassed() && ! $u->isTrainer(), 422, 'Svarfristen er overskredet. Kontakt træneren.');
+        abort_if($activity->deadlinePassed() && ! $u->may('activities.manage'), 422, 'Svarfristen er overskredet. Kontakt træneren.');
 
         $invoiceIds = [];
         DB::transaction(function () use ($activity, $data, $allowed, $u, &$invoiceIds) {
@@ -435,7 +435,7 @@ class ActivityController extends Controller
         $u = $r->user();
         $mid = $r->validate(['member_id' => 'required|integer'])['member_id'];
         abort_unless($u->managedMembers()->pluck('id')->contains($mid), 403);
-        abort_if($activity->cancelLocked() && ! $u->isTrainer(), 422, 'Afmelding er lukket '.$activity->cancel_hours.' timer før start.');
+        abort_if($activity->cancelLocked() && ! $u->may('activities.manage'), 422, 'Afmelding er lukket '.$activity->cancel_hours.' timer før start.');
 
         $reg = Registration::where('activity_id', $activity->id)->where('user_id', $mid)->firstOrFail();
         $reg->update(['status' => 'cancelled']);
@@ -452,10 +452,10 @@ class ActivityController extends Controller
     /** Trænere der kan sættes på – utilgængelige markeres (og kan skjules i UI). */
     public function trainerOptions(Request $r)
     {
-        abort_unless($r->user()->isTrainer(), 403);
+        abort_unless($r->user()->may('activities.manage'), 403);
         $date = $r->query('date', now()->toDateString());
 
-        return User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['trainer'])->where('starts_on', '<=', now())->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now())))
+        return User::whereIn('id', \App\Support\Permissions::userIds('activities.take'))
             ->with(['unavailabilities' => fn ($q) => $q->where('from_date', '<=', $date)->where('to_date', '>=', $date)])
             ->orderBy('name')->get()->map(fn ($t) => [
                 'id' => $t->id, 'name' => $t->name,

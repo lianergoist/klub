@@ -18,7 +18,7 @@
             </template>
             <p v-if="!groups.length" class="muted small" style="padding:12px 4px">Ingen medlemmer matcher.</p>
         </div>
-        <p class="small muted" style="margin:8px 0 0">{{ store.user.can.trainer ? 'Som træner/bestyrelse kan du skrive til alle voksne medlemmer – også dem, der har fravalgt beskeder fra andre medlemmer.' : 'Listen viser voksne medlemmer, der modtager beskeder, samt trænere og bestyrelse.' }}</p>
+        <p class="small muted" style="margin:8px 0 0">{{ store.user.can.messages_staff ? 'Som træner/bestyrelse kan du skrive til alle voksne medlemmer – også dem, der har fravalgt beskeder fra andre medlemmer.' : 'Listen viser voksne medlemmer, der modtager beskeder, samt trænere og bestyrelse.' }}</p>
     </div>
 </template>
 <script setup>

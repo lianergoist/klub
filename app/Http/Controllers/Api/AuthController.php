@@ -111,7 +111,7 @@ class AuthController extends Controller
 
     public static function me(User $u): array
     {
-        $u->loadMissing('roleAssignments', 'household', 'membershipType');
+        $u->loadMissing('roleAssignments', 'userPermissions', 'household', 'membershipType');
 
         return [
             'id' => $u->id,
@@ -124,13 +124,11 @@ class AuthController extends Controller
             'can_message' => (bool) $u->canUseMessages(),
             'is_payer' => $u->household?->payer_id === $u->id,
             'season' => \App\Support\Season::label(),
-            'can' => [
-                'trainer' => $u->isTrainer(),
-                'board' => $u->isBoard(),
-                'members' => $u->canSeeMembers(),
-                'finance_read' => $u->canReadFinance(),
-                'finance_write' => $u->canWriteFinance(),
-                'admin' => $u->hasRole('admin'),
+            'can' => ($can = \App\Support\Permissions::flags($u)) + [
+                // Indstillinger vises, hvis man må mindst én af tingene dér
+                'settings' => $can['categories_manage'] || $can['packages_manage'] || $can['prices_edit'] || $can['roles_manage'],
+                // Trænerportalen: egen utilgængelighed (trænere) og/eller oversigten over alle trænere
+                'portal' => $can['trainers_portal'] || $can['activities_take'],
             ],
         ];
     }

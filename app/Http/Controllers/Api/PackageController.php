@@ -150,11 +150,11 @@ class PackageController extends Controller
 
     /* ---------- Bestyrelse og admin ---------- */
 
-    private function board(Request $r): void { abort_unless($r->user()->isBoard(), 403, 'Kun bestyrelse og admin kan ændre medlemskaber og tilkøb.'); }
+    private function board(Request $r): void { abort_unless($r->user()->may('packages.manage'), 403, 'Du har ikke adgang til at ændre medlemskaber og tilkøb.'); }
 
     public function admin(Request $r)
     {
-        abort_unless($r->user()->isBoard() || $r->user()->canEditPrices(), 403);
+        abort_unless($r->user()->may('packages.manage') || $r->user()->may('prices.edit'), 403);
         $today = now()->toDateString();
         $prices = DB::table('prices')->leftJoin('users', 'users.id', '=', 'prices.created_by')->where('code', 'like', 'package.%')
             ->select('prices.*', 'users.name as by')->orderByDesc('valid_from')->get()->groupBy('code');
@@ -163,8 +163,8 @@ class PackageController extends Controller
         $row = fn ($p) => ['id' => $p->id, 'amount' => (int) $p->amount, 'amount_fmt' => Money::fmt($p->amount), 'valid_from' => $p->valid_from, 'by' => $p->by];
 
         return [
-            'can_edit' => $r->user()->isBoard(),
-            'can_price' => $r->user()->canEditPrices(),
+            'can_edit' => $r->user()->may('packages.manage'),
+            'can_price' => $r->user()->may('prices.edit'),
             'today' => $today,
             'categories' => PersonCategory::orderBy('min_age')->get()->map(fn ($c) => $c->only('id', 'name', 'plural', 'min_age', 'max_age') + ['archived' => (bool) $c->archived_at]),
             'accounts' => Account::where('type', 'income')->orderBy('number')->get(['id', 'number', 'name']),
@@ -308,7 +308,7 @@ class PackageController extends Controller
     /** Ny pris med virkning fra en dato (i dag eller senere). Allerede oprettede regninger ændres aldrig. */
     public function setPrice(Request $r, Package $package)
     {
-        abort_unless($r->user()->canEditPrices(), 403, 'Kun bestyrelse, kasserer og admin kan ændre priser.');
+        abort_unless($r->user()->may('prices.edit'), 403, 'Du har ikke adgang til at ændre priser.');
         $d = $r->validate(['amount' => 'required|numeric|min:0|max:100000', 'valid_from' => 'required|date|after_or_equal:today'],
             ['valid_from.after_or_equal' => 'En ny pris kan tidligst gælde fra i dag.']);
         $ore = (int) round($d['amount'] * 100);
@@ -322,7 +322,7 @@ class PackageController extends Controller
 
     public function deletePrice(Request $r, Package $package, int $price)
     {
-        abort_unless($r->user()->canEditPrices(), 403);
+        abort_unless($r->user()->may('prices.edit'), 403);
         $row = DB::table('prices')->where('id', $price)->where('code', $package->priceCode())->first();
         abort_unless($row, 404);
         abort_if($row->valid_from <= now()->toDateString(), 422, 'Prisen er allerede trådt i kraft og kan ikke slettes. Læg i stedet en ny pris ind.');

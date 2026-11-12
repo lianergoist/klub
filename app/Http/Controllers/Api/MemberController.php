@@ -44,7 +44,7 @@ class MemberController extends Controller
 
     public function index(Request $r)
     {
-        abort_unless($r->user()->canSeeMembers(), 403);
+        abort_unless($r->user()->may('members.view'), 403);
 
         return $this->query($r)->get()->map(fn ($u) => [
             'id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone,
@@ -57,7 +57,7 @@ class MemberController extends Controller
 
     public function export(Request $r)
     {
-        abort_unless($r->user()->canSeeMembers(), 403);
+        abort_unless($r->user()->may('members.view'), 403);
         Audit::log('members.exported');
         $rows = $this->query($r)->get()->map(fn ($u) => [
             $u->name, $u->email, $u->phone, $u->address, $u->postal_code, $u->city, $u->birthdate?->toDateString(),
@@ -70,7 +70,7 @@ class MemberController extends Controller
 
     public function show(Request $r, User $member)
     {
-        abort_unless($r->user()->canSeeMembers(), 403);
+        abort_unless($r->user()->may('members.view'), 403);
         $member->load('roleAssignments.grantedBy', 'household.members');
         Audit::log('member.viewed', $member);
 
@@ -85,11 +85,18 @@ class MemberController extends Controller
                 'id' => $ra->id, 'role' => $ra->role, 'label' => User::ROLE_LABELS[$ra->role],
                 'starts_on' => $ra->starts_on->toDateString(), 'ends_on' => $ra->ends_on?->toDateString(), 'granted_by' => $ra->grantedBy?->name,
             ])->values(),
+            'permissions' => $member->userPermissions()->with('grantedBy')->orderByDesc('starts_on')->get()->map(fn ($p) => [
+                'id' => $p->id, 'permission' => $p->permission, 'label' => \App\Support\Permissions::label($p->permission), 'note' => $p->note,
+                'starts_on' => $p->starts_on->toDateString(), 'ends_on' => $p->ends_on?->toDateString(), 'granted_by' => $p->grantedBy?->name,
+            ]),
+            // Hvad medlemmet må i dag (via roller og personlige rettigheder)
+            'can' => collect(\App\Support\Permissions::CATALOG)->keys()->filter(fn ($p) => $member->may($p))
+                ->map(fn ($p) => \App\Support\Permissions::label($p))->values(),
             'registrations' => $member->registrations()->with('activity')->latest()->limit(20)->get()->map(fn ($reg) => [
                 'activity_id' => $reg->activity_id, 'title' => $reg->activity->title, 'starts_at' => $reg->activity->starts_at->toIso8601String(),
                 'status' => $reg->status, 'attended' => $reg->attended,
             ]),
-            'invoices' => $r->user()->hasRole('treasurer', 'board', 'admin') ? Invoice::where('payer_id', $member->id)->orWhere('member_id', $member->id)->latest()->get()->map(fn ($i) => FinanceController::invoiceRow($i)) : [],
+            'invoices' => $r->user()->may('members.view') ? Invoice::where('payer_id', $member->id)->orWhere('member_id', $member->id)->latest()->get()->map(fn ($i) => FinanceController::invoiceRow($i)) : [],
             'membership_valid' => $member->hasValidMembership(),
             'purchases' => $member->purchases()->with('package', 'invoice')->latest('valid_from')->limit(20)->get()->map(fn ($p) => [
                 'id' => $p->id, 'name' => $p->package->name, 'kind' => $p->package->kind, 'valid_from' => $p->valid_from->toDateString(),
@@ -106,7 +113,7 @@ class MemberController extends Controller
 
     public function approve(Request $r, User $member)
     {
-        abort_unless($r->user()->hasRole('board', 'treasurer', 'admin'), 403);
+        abort_unless($r->user()->may('members.approve'), 403);
         abort_unless($member->status === 'pending', 422, 'Medlemmet er allerede godkendt.');
         $member->update(['status' => 'active', 'joined_on' => now()]);
         Audit::log('member.approved', $member);
@@ -117,7 +124,7 @@ class MemberController extends Controller
 
     public function update(Request $r, User $member)
     {
-        abort_unless($r->user()->hasRole('admin'), 403);
+        abort_unless($r->user()->may('members.edit'), 403);
         $d = $r->validate([
             'name' => 'required|string|max:120', 'email' => 'nullable|email|unique:users,email,'.$member->id,
             'phone' => 'nullable|string', 'address' => 'nullable|string', 'postal_code' => 'nullable|string', 'city' => 'nullable|string',
@@ -136,7 +143,7 @@ class MemberController extends Controller
 
     public function addRole(Request $r, User $member)
     {
-        abort_unless($r->user()->hasRole('admin'), 403, 'Kun administrator kan tildele roller.');
+        abort_unless($r->user()->may('roles.manage'), 403, 'Kun administrator kan tildele roller.');
         $d = $r->validate(['role' => 'required|in:trainer,board,treasurer,auditor,admin', 'starts_on' => 'required|date']);
         $ra = $member->roleAssignments()->create($d + ['granted_by' => $r->user()->id]);
         Audit::log('role.granted', $member, $d);
@@ -146,7 +153,7 @@ class MemberController extends Controller
 
     public function endRole(Request $r, RoleAssignment $role)
     {
-        abort_unless($r->user()->hasRole('admin'), 403, 'Kun administrator kan fjerne roller.');
+        abort_unless($r->user()->may('roles.manage'), 403, 'Kun administrator kan fjerne roller.');
         $d = $r->validate(['ends_on' => 'required|date']);
         $role->update($d);
         Audit::log('role.ended', $role->user, ['role' => $role->role] + $d);

@@ -61,7 +61,7 @@
                                 <RouterLink :to="`/betal/${m.invoice_id}`" class="btn small primary">Betal</RouterLink>
                             </template>
                             <span v-else-if="a.members_only && !m.membership_valid" class="tag bad">Kontingent ikke betalt</span>
-                            <button v-if="m.status === 'signed_up' || m.status === 'pending_payment'" class="btn small" :disabled="a.cancel_locked && !store.user.can.trainer" @click="unsign(m)">{{ solo && m.id === store.user.id ? 'Afmeld mig' : 'Afmeld' }}</button>
+                            <button v-if="m.status === 'signed_up' || m.status === 'pending_payment'" class="btn small" :disabled="a.cancel_locked && !store.user.can.activities_manage" @click="unsign(m)">{{ solo && m.id === store.user.id ? 'Afmeld mig' : 'Afmeld' }}</button>
                         </div>
                     </div>
                     <details v-if="m.history.length" class="small" style="margin-top:6px">
@@ -175,7 +175,7 @@ const showCancel = ref(false); const cancelReason = ref(''); const cancelSeries 
 const showLeave = ref(false); const leaveSeries = ref(false);
 
 const started = computed(() => a.value && new Date(a.value.starts_at) < new Date());
-const canPick = (m) => !['signed_up', 'pending_payment'].includes(m.status) && !(a.value.members_only && !m.membership_valid) && (!a.value.deadline_passed || store.user.can.trainer) && !a.value.is_full;
+const canPick = (m) => !['signed_up', 'pending_payment'].includes(m.status) && !(a.value.members_only && !m.membership_valid) && (!a.value.deadline_passed || store.user.can.activities_manage) && !a.value.is_full;
 const pickable = computed(() => a.value ? a.value.household.filter(canPick) : []);
 // Kun én person at vælge (typisk én selv): ingen tjekboks, bare "Tilmeld mig"
 const solo = computed(() => a.value && a.value.household.length === 1);
@@ -184,7 +184,7 @@ const btnLabel = computed(() => {
     const n = picked.value.length;
     if (!n) return 'Vælg hvem der skal med';
     const self = solo.value && picked.value[0] === store.user.id;
-    const who = self ? (store.user.roles.includes('trainer') ? 'Tilmeld mig som deltager' : 'Tilmeld mig') : n > 1 ? `Tilmeld ${n} personer` : 'Tilmeld';
+    const who = self ? (store.user.can.activities_take ? 'Tilmeld mig som deltager' : 'Tilmeld mig') : n > 1 ? `Tilmeld ${n} personer` : 'Tilmeld';
     return a.value.price ? `${who} og betal ${kr(a.value.price * n)}` : who;
 });
 const warnUnavailable = computed(() => trainerOpts.value.filter(t => t.unavailable && selTrainers.value.includes(t.id)).map(t => t.name).join(', '));

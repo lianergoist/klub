@@ -18,7 +18,7 @@ class CategoryController extends Controller
     public function index(Request $r)
     {
         $all = Category::orderBy('name')->get();
-        if (! $r->user()->isBoard()) {
+        if (! $r->user()->may('categories.manage')) {
             return $all->whereNull('archived_at')->values()->map->only('id', 'name', 'color');
         }
 
@@ -35,7 +35,7 @@ class CategoryController extends Controller
 
     public function store(Request $r)
     {
-        abort_unless($r->user()->isBoard(), 403);
+        abort_unless($r->user()->may('categories.manage'), 403);
         $c = Category::create($r->validate(['name' => 'required|string|max:50|unique:categories,name', 'color' => 'nullable|string|size:7']));
         Audit::log('category.created', $c);
 
@@ -44,7 +44,7 @@ class CategoryController extends Controller
 
     public function update(Request $r, Category $category)
     {
-        abort_unless($r->user()->isBoard(), 403);
+        abort_unless($r->user()->may('categories.manage'), 403);
         $data = $r->validate([
             'name' => 'required|string|max:50|unique:categories,name,'.$category->id,
             'color' => 'nullable|string|size:7',

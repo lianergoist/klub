@@ -119,6 +119,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('members/{member}/punchcard', [\App\Http\Controllers\Api\PunchcardController::class, 'transfer']);
     Route::post('members/{member}/roles', [MemberController::class, 'addRole']);
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
+    Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
+    Route::put('user-permissions/{grant}/end', [\App\Http\Controllers\Api\PermissionController::class, 'end']);
+    Route::get('settings/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'index']);
+    Route::put('settings/permissions/{permission}', [\App\Http\Controllers\Api\PermissionController::class, 'update']);
 
     Route::prefix('finance')->group(function () {
         Route::get('invoices', [FinanceController::class, 'invoices']);
