@@ -43,7 +43,7 @@ class Equipment
     public static function activityItemIds(Activity $a): array
     {
         if ($a->cancelled_at || $a->isPending()) return [];
-        $ids = self::itemIdsFor($a->equipment_mode, $a->categories->pluck('id')->all(), $a->equipment->pluck('id')->all());
+        $ids = self::itemIdsFor($a->equipment_mode ?? 'all', $a->categories->pluck('id')->all(), $a->equipment->pluck('id')->all());
 
         return array_values(array_diff($ids, self::releasedIds($a)));
     }
@@ -113,6 +113,101 @@ class Equipment
 
         return array_values($g);
     }
+
+    /* ---------- Anmodning om at flytte en booking ---------- */
+
+    /** Udstyr, aktiviteten skal bruge (også når den afventer). */
+    public static function neededIds(Activity $a): array
+    {
+        return $a->isPending()
+            ? self::itemIdsFor($a->equipment_mode ?? 'all', $a->categories->pluck('id')->all(), $a->equipment->pluck('id')->all())
+            : self::activityItemIds($a);
+    }
+
+    /** Bekræftede bookinger, der optager udstyr, aktiviteten skal bruge. */
+    public static function conflictingBookingIds(Activity $a): array
+    {
+        return collect(self::conflicts(self::neededIds($a), $a->starts_at, $a->ends_at, $a->id))
+            ->flatMap(fn ($c) => $c['holders'])->where('kind', 'booking')->pluck('booking_id')->unique()->values()->all();
+    }
+
+    /**
+     * Svarfrist: 24 timer – men højst halvdelen af tiden, til aktiviteten starter, så der er tid til at handle bagefter.
+     */
+    public static function moveDeadline(Activity $a): Carbon
+    {
+        $minutes = max(0, (int) now()->diffInMinutes($a->starts_at, false));
+
+        return now()->addMinutes(min(24 * 60, intdiv($minutes, 2)));
+    }
+
+    /**
+     * Bed dem, der har booket aktivitetens udstyr, om at flytte bookingen. Springer bookinger over, der allerede
+     * har en åben anmodning fra aktiviteten. Returnerer antal sendte anmodninger.
+     */
+    public static function requestMoves(Activity $a, User $by, ?string $message = null, ?array $onlyBookings = null): int
+    {
+        $a->loadMissing('categories', 'equipment');
+        $ids = self::conflictingBookingIds($a);
+        if ($onlyBookings !== null) $ids = array_values(array_intersect($ids, $onlyBookings));
+        $needed = self::neededIds($a);
+        $sent = 0;
+        foreach (EquipmentBooking::with('user', 'items')->whereIn('id', $ids)->get() as $b) {
+            if ($b->moveRequests()->where('activity_id', $a->id)->where('status', 'pending')->exists()) continue;
+            if ($b->user_id === $by->id) continue; // egen booking: flyt den selv
+            $req = $b->moveRequests()->create(['activity_id' => $a->id, 'requested_by' => $by->id, 'message' => $message,
+                'deadline_at' => self::moveDeadline($a)]);
+            $items = $b->items->whereIn('id', $needed)->pluck('name')->implode(', ');
+            $b->user->notify(new \App\Notifications\ClubMessage('Kan du flytte din booking af udstyr?',
+                $by->name.' beder dig flytte din booking '.self::when($b).', fordi '.$items.' skal bruges til aktiviteten "'.$a->title.'" '
+                .self::when($a).'.'.($message ? ' "'.$message.'"' : '')
+                .' Flyt eller annullér bookingen – eller svar nej – senest '.self::fmt($req->deadline_at).'. Ellers kan bookingen blive annulleret.',
+                '/udstyr?vis=bookinger'));
+            \App\Support\Audit::log('equipment.move_requested', $b, ['activity_id' => $a->id]);
+            $sent++;
+        }
+
+        return $sent;
+    }
+
+    /** Må brugeren annullere bookingen? Egen booking, rettigheden, eller en anmodning om at flytte, der ikke er svaret på inden fristen. */
+    public static function mayCancel(User $u, EquipmentBooking $b): bool
+    {
+        if (! in_array($b->status, ['confirmed', 'requested'])) return false;
+        if ($b->user_id === $u->id || $u->may('equipment.cancel')) return true;
+
+        return (bool) self::overdueRequestFor($u, $b);
+    }
+
+    /** En anmodning om at flytte bookingen, der er overskredet, og som brugeren står bag (eller er træner/tovholder på). */
+    public static function overdueRequestFor(User $u, EquipmentBooking $b): ?\App\Models\EquipmentMoveRequest
+    {
+        return $b->moveRequests()->with('activity.trainers')->where('status', 'pending')->where('deadline_at', '<=', now())->get()
+            ->first(fn ($m) => $m->requested_by === $u->id || \App\Http\Controllers\Api\EquipmentController::mayDecide($u, $m->activity));
+    }
+
+    /**
+     * Bookingen er annulleret eller flyttet: luk åbne anmodninger og fortæl dem, der bad om det, at udstyret er frit.
+     * $status: done (den, der havde booket, flyttede/annullerede) eller forced (annulleret af en anden).
+     */
+    public static function closeMoves(EquipmentBooking $b, string $status, User $by): void
+    {
+        foreach ($b->moveRequests()->with('activity', 'requester')->whereIn('status', ['pending', 'declined'])->get() as $m) {
+            $m->update(['status' => $status, 'answered_at' => now(), 'answered_by' => $by->id]);
+            if ($status === 'done' && $m->requester && $m->requester->id !== $by->id) {
+                $m->requester->notify(new \App\Notifications\ClubMessage('Udstyret er frigivet: '.$m->activity->title,
+                    $b->user->name.' har flyttet eller annulleret sin booking, så udstyret er frit til "'.$m->activity->title.'".'
+                    .($m->activity->isPending() ? ' Du kan nu oprette aktiviteten.' : ''), '/aktiviteter/'.$m->activity_id));
+            }
+        }
+    }
+
+    public static function when($x): string
+    {
+        return self::fmt($x->starts_at).'–'.($x->starts_at->isSameDay($x->ends_at) ? $x->ends_at->format('H:i') : self::fmt($x->ends_at));
+    }
+
+    public static function fmt($d): string { return $d->locale('da')->isoFormat('D. MMM [kl.] HH:mm'); }
 
     public static function brief(Item $i): array
     {

@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Equipment as Item;
 use App\Models\EquipmentBooking;
 use App\Models\EquipmentBookingApproval;
+use App\Models\EquipmentMoveRequest;
 use App\Models\EquipmentType;
 use App\Models\User;
 use App\Notifications\ClubMessage;
@@ -27,7 +28,8 @@ class EquipmentController extends Controller
 {
     private function canSee(User $u): bool
     {
-        return $u->may('equipment.manage') || $u->may('equipment.types') || $u->may('activities.manage') || Equipment::canBook($u);
+        return $u->may('equipment.manage') || $u->may('equipment.types') || $u->may('activities.manage') || Equipment::canBook($u)
+            || EquipmentBooking::where('user_id', $u->id)->whereIn('status', ['confirmed', 'requested'])->where('ends_at', '>', now())->exists();
     }
 
     /* ---------- Udstyrslisten ---------- */
@@ -192,10 +194,10 @@ class EquipmentController extends Controller
 
     public function bookings(Request $r)
     {
-        $u = $r->user();
-        abort_unless($this->canSee($u), 403);
+        $u = $r->user(); // egne bookinger kan altid ses – også når udstyrslejen er udløbet
         $all = $r->query('scope') === 'all' && ($u->may('equipment.manage') || $u->may('activities.manage'));
-        $q = EquipmentBooking::with('user', 'items.type.category', 'approvals.activity.trainers', 'approvals.activity.creator', 'approvals.decider')
+        $q = EquipmentBooking::with('user', 'items.type.category', 'approvals.activity.trainers', 'approvals.activity.creator', 'approvals.decider',
+                'moveRequests.activity', 'moveRequests.requester')
             ->when(! $all, fn ($q) => $q->where('user_id', $u->id))
             ->when($all, fn ($q) => $q->whereIn('status', ['confirmed', 'requested']))
             ->where('ends_at', '>', $r->query('past') ? now()->subMonths(3) : now())->orderBy('starts_at')->limit(200);
@@ -224,7 +226,14 @@ class EquipmentController extends Controller
                 'contacts' => $a->activity->contacts()->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values(),
                 'decided_by' => $a->decider?->name,
             ])->values(),
-            'can_cancel' => in_array($b->status, ['confirmed', 'requested']) && ($b->user_id === $u->id || $u->may('equipment.manage')),
+            // Anmodninger om at flytte bookingen (åbne og dem, der er sagt nej til)
+            'moves' => $b->status === 'confirmed' ? $b->moveRequests->whereIn('status', ['pending', 'declined'])->map(fn ($m) => [
+                'id' => $m->id, 'activity_id' => $m->activity_id, 'activity' => $m->activity->title,
+                'activity_starts_at' => $m->activity->starts_at->toIso8601String(), 'activity_ends_at' => $m->activity->ends_at->toIso8601String(),
+                'by' => $m->requester?->name, 'by_id' => $m->requested_by, 'message' => $m->message, 'status' => $m->status, 'reply' => $m->reply,
+                'deadline_at' => $m->deadline_at->toIso8601String(), 'overdue' => $m->overdue(),
+            ])->values() : [],
+            'can_cancel' => Equipment::mayCancel($u, $b),
         ];
     }
 
@@ -247,18 +256,24 @@ class EquipmentController extends Controller
             'starts_at' => 'required|date|after:'.now()->subHour(), 'ends_at' => 'required|date|after:starts_at',
             'equipment_ids' => 'required|array|min:1|max:50', 'equipment_ids.*' => 'integer',
             'note' => 'nullable|string|max:500', 'request' => 'boolean',
+            'replaces' => 'nullable|integer', // flyt en booking: den gamle annulleres, når den nye er gemt
         ], [], ['starts_at' => 'start', 'ends_at' => 'slut', 'equipment_ids' => 'udstyr']);
+        $old = null;
+        if (! empty($d['replaces'])) {
+            $old = EquipmentBooking::where('user_id', $u->id)->where('status', 'confirmed')->find($d['replaces']);
+            abort_unless($old, 422, 'Bookingen, du vil flytte, findes ikke længere.');
+        }
         abort_unless(Equipment::canBook($u, Carbon::parse($d['starts_at'])), 403,
             'Du kan ikke booke udstyr. Det kræver udstyrsleje eller dagsleje, der gælder på dagen.');
         abort_if(Carbon::parse($d['starts_at'])->diffInDays(Carbon::parse($d['ends_at'])) > 14, 422, 'En booking kan højst vare 14 dage.');
 
-        return DB::transaction(function () use ($d, $u, $r) {
+        return DB::transaction(function () use ($d, $u, $r, $old) {
             DB::table('equipment_bookings')->lockForUpdate()->count(); // én booking ad gangen
             $items = Item::inUse()->whereIn('id', $d['equipment_ids'])->get();
             abort_if($items->count() !== count(array_unique($d['equipment_ids'])), 422, 'Noget af udstyret findes ikke længere.');
             if ($bad = $items->firstWhere('status', 'defect')) abort(422, $bad->name.' er defekt og kan ikke bookes.');
 
-            $conflicts = Equipment::conflicts($items->pluck('id')->all(), $d['starts_at'], $d['ends_at']);
+            $conflicts = Equipment::conflicts($items->pluck('id')->all(), $d['starts_at'], $d['ends_at'], null, $old?->id);
             foreach ($conflicts as $c) {
                 if ($h = collect($c['holders'])->firstWhere('kind', 'booking')) {
                     abort(422, $c['item']['name'].' er allerede booket af '.$h['name'].' i tidsrummet.');
@@ -282,7 +297,12 @@ class EquipmentController extends Controller
                     .$a->starts_at->locale('da')->isoFormat('D. MMM [kl.] HH:mm').'.'.($b->note ? ' "'.$b->note.'"' : '').' Svar ja eller nej på aktivitetens side.',
                     '/aktiviteter/'.$a->id));
             }
-            Audit::log('equipment.booked', $b, ['status' => $b->status, 'items' => $items->pluck('name')->all()]);
+            Audit::log('equipment.booked', $b, ['status' => $b->status, 'items' => $items->pluck('name')->all(), 'replaces' => $old?->id]);
+            if ($old) {
+                $old->update(['status' => 'cancelled']);
+                Audit::log('equipment.booking_moved', $old, ['to' => $b->id]);
+                Equipment::closeMoves($old, 'done', $u);
+            }
 
             return ['id' => $b->id, 'status' => $b->status];
         });
@@ -299,14 +319,40 @@ class EquipmentController extends Controller
     public function cancel(Request $r, EquipmentBooking $booking)
     {
         $u = $r->user();
-        abort_unless($booking->user_id === $u->id || $u->may('equipment.manage'), 403);
         abort_unless(in_array($booking->status, ['confirmed', 'requested']), 422, 'Bookingen er allerede afsluttet.');
-        $booking->update(['status' => 'cancelled']);
-        Audit::log('equipment.booking_cancelled', $booking);
-        if ($booking->user_id !== $u->id) {
+        abort_unless(Equipment::mayCancel($u, $booking), 403,
+            'Du kan kun annullere andres bookinger, når de ikke har svaret på din anmodning om at flytte inden fristen.');
+        $d = $r->validate(['reason' => 'nullable|string|max:500']);
+        $own = $booking->user_id === $u->id;
+        $overdue = $own ? null : Equipment::overdueRequestFor($u, $booking);
+
+        DB::transaction(function () use ($booking, $u, $own) {
+            $booking->update(['status' => 'cancelled']);
+            Equipment::closeMoves($booking, $own ? 'done' : 'forced', $u);
+        });
+        Audit::log('equipment.booking_cancelled', $booking, ['by_other' => ! $own, 'reason' => $d['reason'] ?? null]);
+        if (! $own) {
+            $why = $overdue ? ' Udstyret skal bruges til "'.$overdue->activity->title.'", og du svarede ikke på anmodningen om at flytte bookingen inden fristen.' : '';
             $booking->user->notify(new ClubMessage('Din booking af udstyr er annulleret',
-                $u->name.' har annulleret din booking '.$booking->starts_at->locale('da')->isoFormat('D. MMM [kl.] HH:mm').'.', '/udstyr?vis=bookinger'));
+                $u->name.' har annulleret din booking '.Equipment::when($booking).'.'.$why.(! empty($d['reason']) ? ' "'.$d['reason'].'"' : ''), '/udstyr?vis=bookinger'));
         }
+
+        return ['ok' => true];
+    }
+
+    /** Den, der har booket, siger nej til at flytte sin booking (bestyrelsen kan stadig annullere den). */
+    public function replyMove(Request $r, EquipmentMoveRequest $move)
+    {
+        $u = $r->user();
+        $move->load('booking.user', 'activity', 'requester');
+        abort_unless($move->booking->user_id === $u->id, 403);
+        abort_unless($move->status === 'pending', 422, 'Der er allerede svaret på anmodningen.');
+        $d = $r->validate(['reply' => 'required|string|max:500'], [], ['reply' => 'begrundelse']);
+        $move->update(['status' => 'declined', 'reply' => $d['reply'], 'answered_at' => now(), 'answered_by' => $u->id]);
+        Audit::log('equipment.move_declined', $move->booking, ['activity_id' => $move->activity_id]);
+        $move->requester?->notify(new ClubMessage('Nej til at flytte booking: '.$move->activity->title,
+            $u->name.' kan ikke flytte sin booking '.Equipment::when($move->booking).': "'.$d['reply'].'" Skriv til '.$u->name
+            .' eller bed bestyrelsen om hjælp.', '/aktiviteter/'.$move->activity_id));
 
         return ['ok' => true];
     }

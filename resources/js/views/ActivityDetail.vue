@@ -16,7 +16,7 @@
             <p class="small" style="margin:4px 0 0">Aktiviteten er ikke åben for tilmelding, og medlemmerne har ikke fået besked. Afklar udstyret med dem, der har booket det, og opret så aktiviteten.</p>
             <template v-if="a.equipment?.conflicts.length">
                 <p class="small" style="margin:10px 0 0"><strong>Booket i tidsrummet:</strong></p>
-                <EquipmentConflicts :holders="a.equipment.conflicts" />
+                <EquipmentConflicts :holders="a.equipment.conflicts" :activity-id="a.id" :can-request="a.equipment.can_request_moves" @changed="load" />
             </template>
             <p v-else class="small" style="margin:10px 0 0;color:var(--ok)">Udstyret er ikke længere booket af andre.</p>
             <label class="check small" style="margin-top:8px"><input type="checkbox" v-model="notifyOnActivate"> Send besked til medlemmer, der følger kategorien</label>
@@ -167,6 +167,10 @@
                 <li v-if="!a.equipment.summary.length" class="small muted">Intet udstyr.</li>
             </ul>
             <p v-if="a.equipment.released.length" class="small" style="margin:8px 0 0">Lånt ud: {{ a.equipment.released.join(', ') }}</p>
+            <template v-if="a.status !== 'pending' && a.equipment.conflicts.length">
+                <div class="banner warn small" style="margin:10px 0 0">Noget af udstyret er også booket af andre i tidsrummet:</div>
+                <EquipmentConflicts :holders="a.equipment.conflicts" :activity-id="a.id" :can-request="a.equipment.can_request_moves" @changed="load" />
+            </template>
             <template v-if="a.equipment.requests.length">
                 <h3 style="margin:14px 0 4px;font-size:1rem">Ønsker om at låne udstyr</h3>
                 <p v-if="!a.equipment.can_decide" class="small muted" style="margin:0">Kun træneren eller tovholderen kan svare.</p>

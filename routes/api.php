@@ -120,6 +120,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('equipment-bookings', [\App\Http\Controllers\Api\EquipmentController::class, 'book'])->middleware('throttle:30,1');
     Route::post('equipment-bookings/{booking}/cancel', [\App\Http\Controllers\Api\EquipmentController::class, 'cancel']);
     Route::post('equipment-approvals/{approval}/decide', [\App\Http\Controllers\Api\EquipmentController::class, 'decide']);
+    Route::post('equipment-moves/{move}/decline', [\App\Http\Controllers\Api\EquipmentController::class, 'replyMove']);
+    Route::post('activities/{activity}/move-requests', [\App\Http\Controllers\Api\ActivityController::class, 'requestMoves'])->middleware('throttle:20,1');
 
     Route::get('unavailability', [TrainerController::class, 'unavailability']);
     Route::post('unavailability', [TrainerController::class, 'addUnavailability']);

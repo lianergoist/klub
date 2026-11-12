@@ -130,7 +130,8 @@ class AuthController extends Controller
                 // Trænerportalen: egen utilgængelighed (trænere) og/eller oversigten over alle trænere
                 'portal' => $can['trainers_portal'] || $can['activities_take'],
                 // Udstyrssiden: vedligehold, underkategorier eller booking (også medlemmer med udstyrsleje)
-                'equipment' => $can['equipment_manage'] || $can['equipment_types'] || $can['equipment_book'] || \App\Support\Equipment::hasRental($u),
+                'equipment' => $can['equipment_manage'] || $can['equipment_types'] || $can['equipment_book'] || \App\Support\Equipment::hasRental($u)
+                    || \App\Models\EquipmentBooking::where('user_id', $u->id)->whereIn('status', ['confirmed', 'requested'])->where('ends_at', '>', now())->exists(), // egne bookinger
                 'equipment_book_any' => $can['equipment_book'] || \App\Support\Equipment::hasRental($u),
             ],
         ];

@@ -77,11 +77,18 @@
                 <strong v-if="conflicts.equipment_conflicts.length > 1" class="small">{{ dato(c.date) }}</strong>
                 <EquipmentConflicts :holders="c.holders" />
             </div>
+            <div v-if="hasBookings" class="moves stack" style="gap:6px;margin-top:10px">
+                <label class="check"><input type="checkbox" v-model="mv.on"> Bed dem, der har booket, om at flytte deres booking</label>
+                <template v-if="mv.on">
+                    <input v-model="mv.message" placeholder="Besked (valgfri), fx hvorfor udstyret skal bruges">
+                    <p class="small muted" style="margin:0">De får besked og kan flytte, annullere eller sige nej. Svarer de ikke inden fristen (højst 24 timer), kan du annullere bookingen på aktivitetens side.</p>
+                </template>
+            </div>
             <div class="stack" style="margin-top:12px">
                 <button class="btn primary block" :disabled="busy" @click="save({ force: true })">{{ id ? 'Gem alligevel' : 'Opret alligevel' }}</button>
                 <button v-if="!id" class="btn block" :disabled="busy" @click="save({ as_pending: true })">Opret som "Afventer"{{ repeat ? ' (kun de gange, hvor udstyret er booket)' : '' }}</button>
                 <button class="btn ghost block" @click="conflicts = null">Ret tidspunkt eller udstyr</button>
-                <p v-if="!id" class="small muted" style="margin:0">"Afventer" betyder, at aktiviteten ikke er åben for tilmelding, og at medlemmerne ikke får besked endnu. Skriv til den, der har booket, og opret den så på aktivitetens side, når det er afklaret.</p>
+                <p v-if="!id" class="small muted" style="margin:0">"Afventer" betyder, at aktiviteten ikke er åben for tilmelding, og at medlemmerne ikke får besked endnu. Når udstyret er frigivet, opretter du den på aktivitetens side.</p>
             </div>
         </Modal>
     </div>
@@ -147,6 +154,8 @@ onMounted(async () => {
 
 /* ---- udstyr ---- */
 const avail = ref(null); const conflicts = ref(null);
+const mv = reactive({ on: true, message: '' });
+const hasBookings = computed(() => (conflicts.value?.equipment_conflicts || []).some(c => c.holders.some(h => h.kind === 'booking')));
 const catItems = computed(() => (avail.value || []).filter(i => f.category_ids.includes(i.category_id) && i.status !== 'defect'));
 const chosen = computed(() => f.equipment_mode === 'all' ? catItems.value : (avail.value || []).filter(i => f.equipment_ids.includes(i.id)));
 const busyNames = computed(() => chosen.value.filter(i => i.holders.length).map(i => i.name));
@@ -159,6 +168,7 @@ async function loadAvail() {
 
 async function save(extra = {}) {
     busy.value = true; error.value = '';
+    if (extra.force || extra.as_pending) Object.assign(extra, { request_moves: hasBookings.value && mv.on, move_message: mv.message || null });
     const body = { ...extra, ...f, equipment_ids: f.equipment_mode === 'selected' ? f.equipment_ids : [], max_participants: f.max_participants || null, min_participants: f.min_participants || null, signup_deadline: repeat.value ? null : f.signup_deadline || null, repeat_until: repeat.value && !props.id ? f.repeat_until : null };
     if (repeat.value) body.trainer_ids = [];
     try {
@@ -175,6 +185,7 @@ async function save(extra = {}) {
 </script>
 
 <style scoped>
+.moves { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .equip { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 .repeat { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 </style>

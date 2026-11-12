@@ -37,6 +37,8 @@ class Permissions
             'Booke bestemte stykker udstyr i et tidsrum. Medlemmer med betalt udstyrsleje eller dagsleje kan altid booke.', ['trainer', 'board', 'admin']],
         'equipment.decide' => ['Udstyr', 'Svare på ønsker om udstyr på alle aktiviteter',
             'Godkende eller afvise ønsker om at låne udstyr, som en aktivitet har booket – også når man ikke selv er træner på aktiviteten.', ['board', 'admin']],
+        'equipment.cancel' => ['Udstyr', 'Annullere andres bookinger af udstyr',
+            'Annullere andre medlemmers bookinger når som helst – også når de har sagt nej til at flytte. Trænere og tovholdere kan selv annullere en booking, når den, der har booket, ikke har svaret på deres anmodning om at flytte den inden fristen.', ['board', 'admin']],
 
         'members.view' => ['Medlemmer', 'Se medlemskartoteket',
             'Se og eksportere alle medlemmers oplysninger, roller og regninger.', ['board', 'treasurer', 'admin']],

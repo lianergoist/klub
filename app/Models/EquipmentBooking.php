@@ -14,4 +14,5 @@ class EquipmentBooking extends Model
     public function user() { return $this->belongsTo(User::class); }
     public function items() { return $this->belongsToMany(Equipment::class, 'equipment_booking_items'); }
     public function approvals() { return $this->hasMany(EquipmentBookingApproval::class); }
+    public function moveRequests() { return $this->hasMany(EquipmentMoveRequest::class); }
 }

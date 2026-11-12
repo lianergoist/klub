@@ -169,6 +169,8 @@ class ActivityController extends Controller
             'equipment_ids.*' => 'integer|exists:equipment,id',
             'force' => 'boolean',       // opret/gem selv om udstyret er booket
             'as_pending' => 'boolean',  // opret som "Afventer" (ikke åben for tilmelding)
+            'request_moves' => 'boolean', // bed dem, der har booket udstyret, om at flytte deres booking
+            'move_message' => 'nullable|string|max:500',
             'repeat_until' => 'nullable|date|after:starts_at|before_or_equal:'.now()->addYear()->toDateString(),
         ];
     }
@@ -211,6 +213,9 @@ class ActivityController extends Controller
 
         if (($data['notify'] ?? true) && $activity->status === 'active') {
             $this->notifyNew($activity);
+        }
+        if (! empty($data['request_moves'])) {
+            Equipment::requestMoves($activity, $r->user(), $data['move_message'] ?? null);
         }
 
         return ['id' => $activity->id, 'status' => $activity->status];
@@ -269,6 +274,9 @@ class ActivityController extends Controller
             return $series;
         });
 
+        if (! empty($data['request_moves'])) {
+            foreach ($series->activities()->get() as $a) Equipment::requestMoves($a, $r->user(), $data['move_message'] ?? null);
+        }
         $first = $series->activities()->where('status', 'active')->first();
         if (($data['notify'] ?? true) && $first) {
             $this->notifyNew($first, $series);
@@ -363,6 +371,9 @@ class ActivityController extends Controller
             $this->syncTrainers($activity, $data['trainer_ids'] ?? [], $r->user());
             Audit::log('activity.updated', $activity);
         });
+        if (! empty($data['request_moves'])) {
+            Equipment::requestMoves($activity->fresh(), $r->user(), $data['move_message'] ?? null);
+        }
 
         $activity->refresh();
         if ($before['starts_at'] != $activity->starts_at || $before['location'] !== $activity->location) {
@@ -513,7 +524,7 @@ class ActivityController extends Controller
             ]);
     }
 
-    private const NOT_COLUMNS = ['category_ids', 'trainer_ids', 'notify', 'repeat_until', 'equipment_ids', 'force', 'as_pending'];
+    private const NOT_COLUMNS = ['category_ids', 'trainer_ids', 'notify', 'repeat_until', 'equipment_ids', 'force', 'as_pending', 'request_moves', 'move_message'];
 
     /** Hvem har det udstyr, aktiviteten vil booke, i tidsrummet? (samlet pr. aktivitet/booking) */
     private function equipmentConflicts(array $data, $start, $end, ?int $except = null): array
@@ -548,10 +559,42 @@ class ActivityController extends Controller
             'ids' => $a->equipment->pluck('id'),
             'summary' => $items->groupBy(fn ($i) => $i->type->name)->map(fn ($g, $t) => ['type' => $t, 'count' => $g->count(), 'names' => $g->pluck('name')])->values(),
             'released' => Equipment::releasedIds($a) ? \App\Models\Equipment::whereIn('id', Equipment::releasedIds($a))->pluck('name') : [],
-            'conflicts' => $a->isPending() ? Equipment::groupByHolder(Equipment::conflicts($ids, $a->starts_at, $a->ends_at, $a->id)) : [],
+            'conflicts' => $a->ends_at->isFuture() ? $this->withMoves(Equipment::groupByHolder(Equipment::conflicts($ids, $a->starts_at, $a->ends_at, $a->id)), $a, $u) : [],
+            'can_request_moves' => $u->may('activities.manage') || EquipmentController::mayDecide($u, $a),
             'requests' => $requests->map(fn ($x) => (new EquipmentController)->approvalRow($x) + ['booking_status' => $x->booking->status])->values(),
             'can_decide' => EquipmentController::mayDecide($u, $a),
         ];
+    }
+
+    /** Bookinger i konflikten får status på anmodningen om at flytte og hvad brugeren må gøre. */
+    private function withMoves(array $holders, Activity $a, User $u): array
+    {
+        $ids = collect($holders)->where('kind', 'booking')->pluck('booking_id');
+        $bookings = \App\Models\EquipmentBooking::with('moveRequests')->whereIn('id', $ids)->get()->keyBy('id');
+
+        return array_map(function ($h) use ($bookings, $a, $u) {
+            if ($h['kind'] !== 'booking' || ! ($b = $bookings[$h['booking_id']] ?? null)) return $h;
+            $m = $b->moveRequests->where('activity_id', $a->id)->sortByDesc('id')->first();
+
+            return $h + [
+                'move' => $m ? ['id' => $m->id, 'status' => $m->status, 'reply' => $m->reply, 'deadline_at' => $m->deadline_at->toIso8601String(),
+                    'overdue' => $m->overdue(), 'at' => $m->created_at->toIso8601String()] : null,
+                'can_cancel' => Equipment::mayCancel($u, $b),
+            ];
+        }, $holders);
+    }
+
+    /** Bed dem, der har booket aktivitetens udstyr, om at flytte deres booking (alle eller udvalgte). */
+    public function requestMoves(Request $r, Activity $activity)
+    {
+        $u = $r->user();
+        abort_unless($u->may('activities.manage') || EquipmentController::mayDecide($u, $activity), 403);
+        abort_if($activity->cancelled_at || $activity->ends_at->isPast(), 422, 'Aktiviteten er aflyst eller overstået.');
+        $d = $r->validate(['booking_ids' => 'nullable|array', 'booking_ids.*' => 'integer', 'message' => 'nullable|string|max:500']);
+        $n = Equipment::requestMoves($activity, $u, $d['message'] ?? null, $d['booking_ids'] ?? null);
+        abort_unless($n, 422, 'Der er ingen bookinger at sende en anmodning til – måske har de allerede fået en.');
+
+        return ['sent' => $n];
     }
 
     /** "Afventer" → oprettet: åbner for tilmelding og sender evt. besked til medlemmerne. */

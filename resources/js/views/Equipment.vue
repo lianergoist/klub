@@ -4,7 +4,7 @@
         <div class="tabs">
             <button :class="{ on: tab === 'list' }" @click="tab = 'list'">Udstyr</button>
             <button v-if="store.user.can.equipment_book_any" :class="{ on: tab === 'book' }" @click="tab = 'book'">Book udstyr</button>
-            <button :class="{ on: tab === 'bookings' }" @click="tab = 'bookings'">Bookinger<span v-if="bk?.to_decide.length" class="count">{{ bk.to_decide.length }}</span></button>
+            <button :class="{ on: tab === 'bookings' }" @click="tab = 'bookings'">Bookinger<span v-if="todo" class="count">{{ todo }}</span></button>
         </div>
 
         <!-- ============ Udstyrslisten ============ -->
@@ -56,6 +56,10 @@
         <!-- ============ Book udstyr ============ -->
         <template v-if="tab === 'book'">
             <div class="card stack">
+                <div v-if="bf.replaces" class="banner info small row between" style="margin:0">
+                    <span>Du flytter din booking af {{ bf.replacesLabel }}. Vælg nyt tidspunkt eller andet udstyr – den gamle booking annulleres, når du gemmer.</span>
+                    <button class="btn small ghost" @click="bf.replaces = null">Fortryd</button>
+                </div>
                 <div class="grid c2">
                     <label class="field"><span>Fra</span><input type="datetime-local" v-model="bf.starts_at" @change="autoEnd"></label>
                     <label class="field"><span>Til</span><input type="datetime-local" v-model="bf.ends_at"></label>
@@ -69,7 +73,7 @@
                 <p v-if="pickedHeld.length" class="banner warn small" style="margin:0">{{ pickedHeld.join(', ') }} er booket til en aktivitet i tidsrummet. Du kan sende et ønske til træneren, som så kan sige ja eller nej.</p>
                 <label class="field"><span>Bemærkning (valgfri)</span><input v-model="bf.note" placeholder="Fx hvad du skal bruge det til"></label>
                 <button class="btn primary block" :disabled="busy || !bf.equipment_ids.length || !validTime" @click="book(pickedHeld.length > 0)">
-                    {{ pickedHeld.length ? 'Send ønske til træneren' : `Book ${bf.equipment_ids.length || ''} stk.` }}</button>
+                    {{ pickedHeld.length ? 'Send ønske til træneren' : bf.replaces ? 'Flyt booking' : `Book ${bf.equipment_ids.length || ''} stk.` }}</button>
             </div>
         </template>
 
@@ -97,6 +101,24 @@
                                     <span :class="['tag', { confirmed: 'ok', requested: 'warn', rejected: 'bad', cancelled: '' }[b.status]]">{{ b.status_label }}</span>
                                     <div class="small"><span v-if="!b.mine">{{ b.user }}: </span>{{ b.items.map(i => i.name).join(', ') }}</div>
                                     <div v-if="b.note" class="small muted">"{{ b.note }}"</div>
+                                    <!-- Anmodning om at flytte bookingen -->
+                                    <div v-for="m in b.moves" :key="m.id" :class="['move', m.status]">
+                                        <template v-if="b.mine">
+                                            <div v-if="m.status === 'pending'"><strong>{{ m.by }}</strong> beder dig flytte bookingen, fordi udstyret skal bruges til
+                                                <RouterLink :to="`/aktiviteter/${m.activity_id}`">{{ m.activity }}</RouterLink> {{ tidspunkt(m.activity_starts_at) }}–{{ klok(m.activity_ends_at) }}.</div>
+                                            <div v-else>Du har sagt nej til at flytte bookingen for <RouterLink :to="`/aktiviteter/${m.activity_id}`">{{ m.activity }}</RouterLink>: "{{ m.reply }}"</div>
+                                            <div v-if="m.message" class="muted">"{{ m.message }}"</div>
+                                            <div v-if="m.status === 'pending'" class="muted">Svar senest {{ tidspunkt(m.deadline_at) }} – ellers kan bookingen blive annulleret.</div>
+                                            <div v-if="m.status === 'pending'" class="row" style="gap:6px;margin-top:6px">
+                                                <button class="btn small primary" @click="moveBooking(b)">Flyt booking</button>
+                                                <button class="btn small" @click="cancelBooking(b)">Annullér</button>
+                                                <button class="btn small ghost" @click="decline = { m, reply: '' }">Nej, jeg har brug for det</button>
+                                                <button class="btn small ghost" @click="write(m.by_id)">Skriv til {{ m.by.split(' ')[0] }}</button>
+                                            </div>
+                                        </template>
+                                        <div v-else>{{ m.by }} har bedt om at få bookingen flyttet for <RouterLink :to="`/aktiviteter/${m.activity_id}`">{{ m.activity }}</RouterLink>
+                                            – {{ m.status === 'declined' ? `sagt nej: "${m.reply}"` : m.overdue ? 'intet svar inden fristen' : `svarfrist ${tidspunkt(m.deadline_at)}` }}.</div>
+                                    </div>
                                     <div v-for="a in b.approvals" :key="a.activity_id" class="small" style="margin-top:4px">
                                         <RouterLink :to="`/aktiviteter/${a.activity_id}`">{{ a.title }}</RouterLink>:
                                         <span v-if="a.status === 'pending'" class="muted">venter på svar fra {{ a.contacts.map(c => c.name).join(' eller ') || 'træneren' }}</span>
@@ -160,6 +182,14 @@
             </div>
         </Modal>
 
+        <Modal v-if="decline" title="Kan ikke flytte bookingen" @close="decline = null">
+            <div class="stack">
+                <p class="small" style="margin:0">{{ decline.m.by }} får dit svar. Bestyrelsen kan stadig annullere bookingen, hvis udstyret er nødvendigt for aktiviteten.</p>
+                <label class="field"><span>Hvorfor har du brug for udstyret?</span><input v-model="decline.reply" placeholder="Fx jeg har fået fri og skal til stævne"></label>
+                <button class="btn primary block" :disabled="!decline.reply || busy" @click="sendDecline">Send svar</button>
+            </div>
+        </Modal>
+
         <Modal v-if="conflict" title="Udstyret er booket til en aktivitet" @close="conflict = null">
             <p class="small" style="margin-top:0">Det følgende er booket i tidsrummet. Send et ønske – træneren kan så sige ja eller nej med det samme – eller skriv først og hør, om det kan lade sig gøre.</p>
             <EquipmentConflicts :holders="conflict" />
@@ -170,14 +200,14 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Modal from '../components/Modal.vue';
 import EquipmentPicker from '../components/EquipmentPicker.vue';
 import EquipmentConflicts from '../components/EquipmentConflicts.vue';
 import Request from '../components/EquipmentRequest.vue';
 import { api, store, toast, tidspunkt, klok } from '../api';
 
-const route = useRoute();
+const route = useRoute(); const router = useRouter();
 const tab = ref(route.query.vis === 'bookinger' ? 'bookings' : route.query.vis === 'book' ? 'book' : 'list');
 const d = ref(null); const cat = ref(null); const showArchived = ref(false);
 const typeEd = ref(null); const itemEd = ref(null); const statusEd = ref(null); const item = ref(null);
@@ -213,7 +243,7 @@ async function archiveItem(i) {
 /* ---- booking ---- */
 const local = (dt) => { const x = new Date(dt); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
 const next = new Date(); next.setDate(next.getDate() + 1); next.setHours(10, 0, 0, 0);
-const bf = reactive({ starts_at: local(next), ends_at: local(new Date(next.getTime() + 3 * 3600e3)), equipment_ids: [], note: '' });
+const bf = reactive({ starts_at: local(next), ends_at: local(new Date(next.getTime() + 3 * 3600e3)), equipment_ids: [], note: '', replaces: null, replacesLabel: '' });
 const avail = ref(null); const bookCats = ref([]); const conflict = ref(null);
 const validTime = computed(() => bf.starts_at && bf.ends_at && bf.ends_at > bf.starts_at);
 const availCats = computed(() => { const m = {}; for (const i of avail.value || []) m[i.category_id] = { id: i.category_id, name: i.category }; return Object.values(m); });
@@ -222,19 +252,22 @@ function autoEnd() { if (bf.starts_at && (!bf.ends_at || bf.ends_at <= bf.starts
 async function loadAvail() {
     if (!validTime.value) return;
     avail.value = null;
-    avail.value = await api(`equipment/availability?starts_at=${encodeURIComponent(bf.starts_at)}&ends_at=${encodeURIComponent(bf.ends_at)}`);
+    avail.value = await api(`equipment/availability?starts_at=${encodeURIComponent(bf.starts_at)}&ends_at=${encodeURIComponent(bf.ends_at)}${bf.replaces ? '&except_booking=' + bf.replaces : ''}`);
     // fravælg det, der ikke længere kan vælges
     const ok = new Set(avail.value.filter(i => i.status !== 'defect' && !i.holders.some(h => h.kind === 'booking')).map(i => i.id));
     bf.equipment_ids = bf.equipment_ids.filter(id => ok.has(id));
+    // Flyt booking: vis kun kategorierne med det bookede udstyr
+    if (bf.replaces && !bookCats.value.length) bookCats.value = [...new Set(avail.value.filter(i => bf.equipment_ids.includes(i.id)).map(i => i.category_id))];
 }
-watch(() => [bf.starts_at, bf.ends_at, tab.value], () => { if (tab.value === 'book') loadAvail(); });
+watch(() => [bf.starts_at, bf.ends_at, bf.replaces, tab.value], () => { if (tab.value === 'book') loadAvail(); });
 async function book(request = false) {
     busy.value = true;
     try {
         const r = await api('equipment-bookings', { method: 'POST', body: { ...bf, request } });
         conflict.value = null;
-        toast(r.status === 'confirmed' ? 'Udstyret er booket' : 'Ønsket er sendt til træneren. Du får besked, når der er svaret.');
-        bf.equipment_ids = []; bf.note = ''; tab.value = 'bookings';
+        toast(bf.replaces ? (r.status === 'confirmed' ? 'Bookingen er flyttet' : 'Ønsket er sendt til træneren – den gamle booking er annulleret')
+            : r.status === 'confirmed' ? 'Udstyret er booket' : 'Ønsket er sendt til træneren. Du får besked, når der er svaret.');
+        Object.assign(bf, { equipment_ids: [], note: '', replaces: null }); tab.value = 'bookings'; loadBookings();
     } catch (e) {
         if (e.status === 409) conflict.value = e.data.conflicts; else toast(e.message, 'error');
     } finally { busy.value = false; }
@@ -246,6 +279,23 @@ async function loadBookings() { bk.value = await api('equipment-bookings?scope='
 watch(scope, loadBookings);
 watch(tab, (t) => { if (t === 'bookings') loadBookings(); });
 const sameDay = (b) => b.starts_at.slice(0, 10) === b.ends_at.slice(0, 10);
+const todo = computed(() => bk.value ? bk.value.to_decide.length + bk.value.bookings.filter(b => b.mine && b.moves.some(m => m.status === 'pending')).length : 0);
+// Flyt: åbn "Book udstyr" med samme udstyr og tidsrum; den gamle booking annulleres, når den nye er gemt
+function moveBooking(b) {
+    Object.assign(bf, { starts_at: local(b.starts_at), ends_at: local(b.ends_at), equipment_ids: b.items.map(i => i.id), note: b.note || '',
+        replaces: b.id, replacesLabel: b.items.map(i => i.name).join(', ') });
+    tab.value = 'book';
+}
+const decline = ref(null);
+async function sendDecline() {
+    busy.value = true;
+    try { await api(`equipment-moves/${decline.value.m.id}/decline`, { method: 'POST', body: { reply: decline.value.reply } }); toast('Dit svar er sendt'); decline.value = null; loadBookings(); }
+    catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+}
+async function write(id) {
+    try { const r = await api('messages/start', { method: 'POST', body: { user_ids: [id] } }); router.push(`/beskeder/${r.id}`); }
+    catch (e) { toast(e.message, 'error'); }
+}
 async function cancelBooking(b) {
     if (!confirm('Annullér bookingen?')) return;
     try { await api(`equipment-bookings/${b.id}/cancel`, { method: 'POST' }); toast('Bookingen er annulleret'); loadBookings(); } catch (e) { toast(e.message, 'error'); }
@@ -266,4 +316,6 @@ h2 .sw, .sw { display: inline-block; width: 10px; height: 10px; border-radius: 5
 .it.defect { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 6%, var(--surface)); }
 .it.arch { opacity: .55; }
 .it .tag { margin: 0; }
+.move { margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: .85rem; }
+.move.pending { border-left: 3px solid var(--warn); }
 </style>
