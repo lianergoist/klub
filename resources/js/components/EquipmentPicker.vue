@@ -1,6 +1,7 @@
 <template>
     <!-- Vælg bestemte stykker udstyr, grupperet efter kategori og underkategori, med hvad der er optaget i tidsrummet -->
     <div>
+        <p v-if="anyAct" class="small legend"><span class="sw"></span>Booket til en aktivitet – {{ mode === 'book' ? 'du kan sende et ønske til træneren om at låne det' : 'aktiviteten skal afklares med træneren' }}</p>
         <p v-if="!groups.length" class="small muted" style="margin:0">Der er ikke registreret udstyr{{ categoryIds?.length ? ' i de valgte kategorier' : '' }}.</p>
         <div v-for="g in groups" :key="g.key" class="grp">
             <div class="row between" style="flex-wrap:nowrap">
@@ -9,7 +10,7 @@
                 <button type="button" class="btn small ghost" @click="all(g)">{{ g.items.every(i => !pickable(i) || model.includes(i.id)) ? 'Fravælg alle' : 'Vælg alle' }}</button>
             </div>
             <div class="items">
-                <label v-for="i in g.items" :key="i.id" :class="['it', { off: !pickable(i), warn: busyBy(i) }]">
+                <label v-for="i in g.items" :key="i.id" :class="['it', { off: !pickable(i), warn: busyBy(i), act: byActivity(i) && pickable(i) }]">
                     <input type="checkbox" :disabled="!pickable(i)" :checked="model.includes(i.id)" @change="toggle(i.id)">
                     <span>{{ i.name }}
                         <span v-if="i.status === 'defect'" class="tag bad">Defekt</span>
@@ -44,6 +45,8 @@ const groups = computed(() => {
     return Object.values(g).sort((a, b) => (a.category + a.type).localeCompare(b.category + b.type, 'da'));
 });
 const busyBy = (i) => i.holders.length > 0;
+const byActivity = (i) => i.status !== 'defect' && i.holders.some(h => h.kind === 'activity');
+const anyAct = computed(() => visible.value.some(i => byActivity(i) && pickable(i)));
 const label = (h) => h.kind === 'activity' ? 'Booket til aktiviteten ' + h.title : 'Booket af ' + h.name;
 const own = (i, g) => i.holders.filter(h => !g.commonKeys.includes(g.key2(h)));
 const pickable = (i) => i.status !== 'defect' && (props.mode === 'activity' || !i.holders.some(h => h.kind === 'booking'));
@@ -57,8 +60,12 @@ function all(g) {
 <style scoped>
 .grp { border-top: 1px solid var(--line); padding: 10px 0; }
 .grp:first-child { border-top: 0; padding-top: 0; }
-.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 14px; margin-top: 6px; }
-.it { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: .92rem; }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 8px; margin-top: 6px; }
+.it { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: .92rem; padding: 5px 7px; border-radius: 8px; border: 1px solid transparent; }
+/* Booket til en aktivitet: kan stadig vælges (ønske til træneren), men skal skille sig ud */
+.it.act { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.legend { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; color: var(--ink-2); }
+.legend .sw { width: 14px; height: 14px; border-radius: 4px; background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); flex: none; }
 .it input { margin-top: 2px; flex: none; }
 .it.off { opacity: .55; cursor: not-allowed; }
 .it.warn > span > .d { color: var(--warn); }
