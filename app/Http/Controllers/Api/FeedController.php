@@ -102,35 +102,37 @@ class FeedController extends Controller
     {
         $u = $this->member($r);
         $r->validate([
-            'body' => 'nullable|string|max:3000|required_without_all:images,video',
-            'images' => 'array|max:10', // højst 10 billeder og 1 video pr. opslag
+            'body' => 'nullable|string|max:3000|required_without_all:images,videos',
+            'images' => 'array|max:10', // højst 10 billeder og 3 videoer pr. opslag
             'images.*' => 'file|mimes:jpg,jpeg,png,webp|max:15360',
             // Video: højst 100 MB og 5 minutter; komprimeres i baggrunden (App\Jobs\ProcessVideo)
-            'video' => 'nullable|file|max:102400|mimetypes:video/mp4,video/quicktime,video/webm,video/x-m4v,video/3gpp,video/x-matroska',
+            'videos' => 'array|max:3',
+            'videos.*' => 'file|max:102400|mimetypes:video/mp4,video/quicktime,video/webm,video/x-m4v,video/3gpp,video/x-matroska',
         ], [
             'body.required_without_all' => 'Skriv noget eller vælg et billede eller en video.',
             'images.max' => 'Du kan højst vedhæfte 10 billeder.',
-            'video.max' => 'Videoen må højst fylde 100 MB.',
-            'video.mimetypes' => 'Videoen skal være MP4, MOV eller WebM.',
-            'video.uploaded' => 'Videoen kunne ikke uploades. Den må højst fylde 100 MB.',
+            'videos.max' => 'Du kan højst vedhæfte 3 videoer.',
+            'videos.*.max' => 'En video må højst fylde 100 MB.',
+            'videos.*.mimetypes' => 'Videoer skal være MP4, MOV eller WebM.',
+            'videos.*.uploaded' => 'En video kunne ikke uploades. Den må højst fylde 100 MB.',
         ]);
-        abort_if(($r->hasFile('images') || $r->hasFile('video')) && ! $r->boolean('consent'), 422, 'Bekræft, at personerne på billederne/videoen er okay med at blive vist.');
+        abort_if(($r->hasFile('images') || $r->hasFile('videos')) && ! $r->boolean('consent'), 422, 'Bekræft, at personerne på billederne/videoen er okay med at blive vist.');
 
         $post = DB::transaction(function () use ($r, $u) {
             $post = Post::create(['user_id' => $u->id, 'body' => trim((string) $r->input('body')) ?: null]);
             foreach (array_values($r->file('images', [])) as $i => $file) {
                 $post->images()->create(Images::store($file) + ['position' => $i]);
             }
-            if ($video = $r->file('video')) {
+            foreach (array_values($r->file('videos', [])) as $i => $video) {
                 // Originalen gemmes midlertidigt; ProcessVideo komprimerer den og sletter originalen
                 $tmp = $video->storeAs('feed-tmp', \Illuminate\Support\Str::uuid().'.'.($video->guessExtension() ?: 'mp4'));
-                $post->images()->create(['kind' => 'video', 'status' => 'processing', 'path' => $tmp, 'position' => 99, 'original_bytes' => $video->getSize()]);
+                $post->images()->create(['kind' => 'video', 'status' => 'processing', 'path' => $tmp, 'position' => 90 + $i, 'original_bytes' => $video->getSize()]);
             }
 
             return $post;
         });
         foreach ($post->images()->where('status', 'processing')->pluck('id') as $id) \App\Jobs\ProcessVideo::dispatch($id);
-        Audit::log('post.created', $post, ['images' => $post->images()->where('kind', 'image')->count(), 'video' => $r->hasFile('video')]);
+        Audit::log('post.created', $post, ['images' => $post->images()->where('kind', 'image')->count(), 'videos' => count($r->file('videos', []))]);
 
         return ['id' => $post->id];
     }

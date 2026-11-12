@@ -10,15 +10,15 @@
             <div v-if="previews.length" class="thumbs">
                 <div v-for="(pv, i) in previews" :key="pv" class="thumb"><img :src="pv" alt=""><button type="button" aria-label="Fjern billede" @click="removeImage(i)"><Icon name="x" /></button></div>
             </div>
-            <div v-if="video" class="thumbs"><div class="thumb vid"><video :src="videoPreview + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(video.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo"><Icon name="x" /></button></div></div>
-            <label v-if="files.length || video" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ video && files.length ? 'billederne og videoen' : video ? 'videoen' : 'billederne' }} er okay med, at de bliver vist for klubbens medlemmer.</label>
+            <div v-if="videos.length" class="thumbs"><div v-for="(v, i) in videos" :key="v.url" class="thumb vid"><video :src="v.url + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(v.file.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo(i)"><Icon name="x" /></button></div></div>
+            <label v-if="files.length || videos.length" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ mediaWord }} er okay med, at de bliver vist for klubbens medlemmer.</label>
             <div v-if="busy && progress !== null" class="prog" :aria-label="`Uploader ${progress} %`"><i :style="{ width: progress + '%' }"></i></div>
-            <div v-if="open || files.length || video" class="row between" style="margin-top:10px">
+            <div v-if="open || files.length || videos.length" class="row between" style="margin-top:10px">
                 <div class="row" style="gap:4px">
                     <label class="btn ghost small" :class="{ disabled: files.length >= MAX_IMAGES }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="files.length >= MAX_IMAGES" @change="addImages"></label>
-                    <label class="btn ghost small" :class="{ disabled: video }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" hidden :disabled="!!video" @change="addVideo"></label>
+                    <label class="btn ghost small" :class="{ disabled: videos.length >= MAX_VIDEOS }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" multiple hidden :disabled="videos.length >= MAX_VIDEOS" @change="addVideo"></label>
                 </div>
-                <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length && !video)">{{ busy ? (progress !== null && progress < 100 ? `Uploader ${progress} %` : 'Deler …') : 'Del' }}</button>
+                <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length && !videos.length)">{{ busy ? (progress !== null && progress < 100 ? `Uploader ${progress} %` : 'Deler …') : 'Del' }}</button>
             </div>
         </form>
 
@@ -54,12 +54,15 @@
             </header>
 
             <p v-if="p.body" class="body">{{ p.body }}</p>
-            <div v-for="(v, i) in p.images.filter(x => x.kind === 'video')" :key="'v' + i" class="gallery">
-                <video v-if="v.status === 'ready'" class="vplay" :src="v.url" :poster="v.poster" :width="v.w" :height="v.h" controls playsinline preload="none"></video>
-                <div v-else class="vwait small">{{ v.status === 'failed' ? 'Videoen kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
+            <div v-for="(v, i) in p.images.filter(x => x.kind === 'video' && x.status !== 'ready')" :key="'v' + i" class="gallery">
+                <div class="vwait small">{{ v.status === 'failed' ? 'En video kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
             </div>
-            <div v-if="pics(p).length" :class="['gallery', 'n' + Math.min(pics(p).length, 5)]">
-                <button v-for="(img, i) in pics(p)" :key="i" type="button" @click="openShow(pics(p), i)"><img :src="img.url" :width="img.w" :height="img.h" loading="lazy" alt="Billede fra opslag"></button>
+            <!-- Videoer (først) og billeder i ét galleri; et tryk åbner lysbilledvisningen -->
+            <div v-if="media(p).length" :class="['gallery', 'n' + Math.min(media(p).length, 5)]">
+                <button v-for="(m, i) in media(p)" :key="i" type="button" :class="{ isvid: m.kind === 'video' }" :aria-label="m.kind === 'video' ? 'Afspil video' : 'Vis billede'" @click="openShow(media(p), i)">
+                    <img :src="m.kind === 'video' ? m.poster : m.url" :width="m.w" :height="m.h" loading="lazy" :alt="m.kind === 'video' ? 'Video fra opslag' : 'Billede fra opslag'">
+                    <span v-if="m.kind === 'video'" class="vbadge"><span class="tri"></span><span v-if="m.duration">{{ dur(m.duration) }}</span></span>
+                </button>
             </div>
 
             <footer class="row" style="gap:4px;margin-top:10px">
@@ -100,11 +103,12 @@
         <!-- Lysbilledvisning: bladr med pilene, tastaturet (← →) eller ved at swipe; Esc eller klik udenfor lukker -->
         <Teleport to="body">
         <div v-if="lightbox" class="lightbox" role="dialog" aria-label="Billeder" @click.self="closeShow" @touchstart.passive="touchStart" @touchend="touchEnd">
-            <img :src="lightbox.list[lightbox.i].url" alt="" @click.stop>
+            <video v-if="lightbox.list[lightbox.i].kind === 'video'" :key="lightbox.i" :src="lightbox.list[lightbox.i].url" :poster="lightbox.list[lightbox.i].poster" controls autoplay playsinline @click.stop></video>
+            <img v-else :src="lightbox.list[lightbox.i].url" alt="" @click.stop>
             <button type="button" class="lb-close" aria-label="Luk" @click="closeShow"><Icon name="x" /></button>
             <template v-if="lightbox.list.length > 1">
-                <button type="button" class="lb-nav prev" aria-label="Forrige billede" @click.stop="step(-1)">‹</button>
-                <button type="button" class="lb-nav next" aria-label="Næste billede" @click.stop="step(1)">›</button>
+                <button type="button" class="lb-nav prev" aria-label="Forrige" @click.stop="step(-1)">‹</button>
+                <button type="button" class="lb-nav next" aria-label="Næste" @click.stop="step(1)">›</button>
                 <div class="lb-count">{{ lightbox.i + 1 }} / {{ lightbox.list.length }}</div>
             </template>
         </div>
@@ -113,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
@@ -124,17 +128,23 @@ async function messageTo(id) { try { const r = await api('messages/start', { met
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);
-const video = ref(null); const videoPreview = ref(null); const progress = ref(null);
-const MAX_VIDEO = 100 * 1024 * 1024; const MAX_IMAGES = 10;
-const pics = (p) => p.images.filter(x => x.kind !== 'video');
+const videos = ref([]); const progress = ref(null); // videos: [{ file, url }]
+const MAX_VIDEO = 100 * 1024 * 1024; const MAX_IMAGES = 10; const MAX_VIDEOS = 3;
+// Galleri: færdige videoer først, så billederne
+const media = (p) => [...p.images.filter(x => x.kind === 'video' && x.status === 'ready'), ...p.images.filter(x => x.kind !== 'video')];
+const dur = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const mediaWord = computed(() => files.value.length && videos.value.length ? 'billederne og videoerne' : videos.value.length ? (videos.value.length > 1 ? 'videoerne' : 'videoen') : 'billederne');
 const mb = (b) => (b / 1024 / 1024).toLocaleString('da-DK', { maximumFractionDigits: 1 }) + ' MB';
 function addVideo(e) {
-    const f = e.target.files[0]; e.target.value = '';
-    if (!f) return;
-    if (f.size > MAX_VIDEO) return toast(`Videoen fylder ${mb(f.size)}. Den må højst fylde 100 MB – vælg en kortere video.`, 'error');
-    video.value = f; videoPreview.value = URL.createObjectURL(f);
+    const picked = [...e.target.files]; e.target.value = '';
+    if (picked.length > MAX_VIDEOS - videos.value.length) toast(`Du kan højst vedhæfte ${MAX_VIDEOS} videoer pr. opslag.`, 'error');
+    for (const f of picked.slice(0, MAX_VIDEOS - videos.value.length)) {
+        if (f.size > MAX_VIDEO) { toast(`${f.name} fylder ${mb(f.size)}. En video må højst fylde 100 MB – vælg en kortere video.`, 'error'); continue; }
+        videos.value.push({ file: f, url: URL.createObjectURL(f) });
+    }
 }
-function removeVideo() { if (videoPreview.value) URL.revokeObjectURL(videoPreview.value); video.value = null; videoPreview.value = null; }
+function removeVideo(i) { URL.revokeObjectURL(videos.value[i].url); videos.value.splice(i, 1); }
+function clearVideos() { videos.value.forEach(v => URL.revokeObjectURL(v.url)); videos.value = []; }
 // Opslag med en video, der stadig behandles: hent listen igen med jævne mellemrum
 let poll = null;
 function schedulePoll() {
@@ -193,21 +203,21 @@ async function addImages(e) {
 function removeImage(i) { URL.revokeObjectURL(previews.value[i]); files.value.splice(i, 1); previews.value.splice(i, 1); }
 
 async function post() {
-    if ((files.value.length || video.value) && !consent.value) return toast(`Bekræft, at personerne på ${video.value && files.value.length ? 'billederne og videoen' : video.value ? 'videoen' : 'billederne'} er okay med at blive vist.`, 'error');
-    busy.value = true; progress.value = video.value ? 0 : null;
+    if ((files.value.length || videos.value.length) && !consent.value) return toast(`Bekræft, at personerne på ${mediaWord.value} er okay med at blive vist.`, 'error');
+    busy.value = true; progress.value = videos.value.length ? 0 : null;
     const fd = new FormData();
     fd.append('body', body.value);
     files.value.forEach(f => fd.append('images[]', f));
-    if (video.value) fd.append('video', video.value);
+    videos.value.forEach(v => fd.append('videos[]', v.file));
     if (consent.value) fd.append('consent', '1');
-    const hadVideo = !!video.value;
+    const nVid = videos.value.length; const hadVideo = nVid > 0;
     try {
         if (hadVideo) await upload('feed', fd, (p) => (progress.value = p));
         else await api('feed', { method: 'POST', form: fd });
-        body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; removeVideo(); consent.value = false; open.value = false;
+        body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; clearVideos(); consent.value = false; open.value = false;
         if (filter.value !== 'all') filter.value = 'all';
         await load(); schedulePoll();
-        toast(hadVideo ? 'Dit opslag er delt. Videoen vises, når den er behandlet (typisk et minut eller to).' : 'Dit opslag er delt');
+        toast(hadVideo ? `Dit opslag er delt. ${nVid > 1 ? 'Videoerne' : 'Videoen'} vises, når ${nVid > 1 ? 'de' : 'den'} er behandlet (typisk et minut eller to).` : 'Dit opslag er delt');
     } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; progress.value = null; }
 }
 async function like(p) { const r = await api(`feed/${p.id}/like`, { method: 'POST' }); p.likes = r.likes; p.liked = r.liked; }
@@ -262,7 +272,11 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .prog { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
 .prog > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.94); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
-.lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; cursor: default; user-select: none; }
+.lightbox img, .lightbox video { max-width: 100%; max-height: 100%; border-radius: 6px; cursor: default; user-select: none; }
+.lightbox video { max-height: calc(100% - 60px); background: #000; }
+.gallery button { position: relative; }
+.vbadge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); color: #fff; border-radius: 999px; padding: 8px 12px 8px 14px; font-size: .8rem; font-weight: 600; pointer-events: none; }
+.vbadge .tri { width: 0; height: 0; border-style: solid; border-width: 7px 0 7px 12px; border-color: transparent transparent transparent #fff; }
 .lb-close, .lb-nav { position: absolute; border: 0; color: #fff; background: rgba(255,255,255,.14); border-radius: 999px; cursor: pointer; display: grid; place-items: center; }
 .lb-close { top: 12px; right: 12px; width: 40px; height: 40px; }
 .lb-close svg { width: 22px; height: 22px; }

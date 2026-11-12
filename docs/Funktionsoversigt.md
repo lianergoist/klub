@@ -202,7 +202,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – i stedet for (eller som supplement til) en lukket Facebook-gruppe.
 
-- **Kerne:** alle aktive medlemmer kan lægge opslag op med tekst, op til 10 billeder og 1 video, synes godt om (hjerte) og kommentere. Man kan slette sine egne opslag og kommentarer.
+- **Kerne:** alle aktive medlemmer kan lægge opslag op med tekst, op til 10 billeder og 3 videoer, synes godt om (hjerte) og kommentere. Man kan slette sine egne opslag og kommentarer.
 
 - **Kerne:** ved upload af billeder skal man bekræfte, at de afbildede er okay med at blive vist. Billeder skaleres ned, og metadata (fx GPS-position) fjernes automatisk. Billeder kan kun ses af indloggede medlemmer.
 
@@ -210,7 +210,7 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Senere:** opslag knyttet til en aktivitet (fx billeder fra kurset), fastgjorte opslag fra bestyrelsen, push-besked ved nye kommentarer.
 
-- **Kerne (afprøves):** et opslag kan have højst **10 billeder** og **1 video** (video: MP4, MOV eller WebM, højst 100 MB og 5 minutter). Videoen uploades med en statuslinje og komprimeres i baggrunden til højst 1280 px, 30 billeder/sek. og H.264 (typisk få MB pr. minut); metadata som GPS-position fjernes, og der laves et stillbillede. Indtil den er klar, står der "Videoen behandles …". Kan den ikke behandles, får forfatteren besked.
+- **Kerne (afprøves):** et opslag kan have højst **10 billeder** og **3 videoer** (hver video: MP4, MOV eller WebM, højst 100 MB og 5 minutter). Videoer og billeder vises i samme galleri og i lysbilledvisningen, hvor man kan bladre og afspille videoerne. Videoen uploades med en statuslinje og komprimeres i baggrunden til højst 1280 px, 30 billeder/sek. og H.264 (typisk få MB pr. minut); metadata som GPS-position fjernes, og der laves et stillbillede. Indtil den er klar, står der "Videoen behandles …". Kan den ikke behandles, får forfatteren besked.
 
 - **Afklares:** skal video være tilladt fast, og er 100 MB / 5 minutter de rigtige grænser? Videoer fylder mere på serveren end billeder.
 
