@@ -13,8 +13,10 @@
                     <div class="row between" style="flex-wrap:nowrap;align-items:flex-start;gap:10px">
                         <div style="min-width:0">
                             <strong>{{ p.name }}</strong> <span v-if="!p.on_sale" class="tag">Ikke til salg nu</span>
-                            <div class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="p.next_label"> · {{ p.next_label }}<template v-if="p.kind === 'membership'">{{ p.early_access ? ' (adgang fra køb)' : ' (adgang fra periodens start)' }}</template></template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.uses"> · {{ p.uses }} klip til {{ catNames(p.category_ids) }}</template><template v-if="p.guest_only"> · kun for ikke-medlemmer</template><template v-if="p.equipment_booking"> · giver ret til at booke udstyr</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
-                            <div class="small muted">{{ p.active_purchases }} gældende køb<template v-if="p.current"> · pris fra {{ dato(p.current.valid_from) }}</template>
+                            <div v-if="p.kind === 'offer'" class="small muted">Tilmelding til én aktivitet · {{ p.upcoming_activities }} kommende {{ p.upcoming_activities === 1 ? 'aktivitet' : 'aktiviteter' }} åben for tilbuddet{{ p.creditable ? ' · modregnes i kontingentet ved indmeldelse inden for 12 måneder' : '' }}</div>
+                            <div v-if="p.kind === 'offer' && p.description" class="small">{{ p.description }}</div>
+                            <div v-if="p.kind !== 'offer'" class="small muted">{{ p.composition_label }} · {{ p.period_label }}<template v-if="p.sale_label"> · {{ p.sale_label }}</template><template v-if="p.next_label"> · {{ p.next_label }}<template v-if="p.kind === 'membership'">{{ p.early_access ? ' (adgang fra køb)' : ' (adgang fra periodens start)' }}</template></template><template v-if="!p.gives_access"> · uden adgang til aktiviteter</template><template v-if="p.uses"> · {{ p.uses }} klip til {{ catNames(p.category_ids) }}</template><template v-if="p.guest_only"> · kun for ikke-medlemmer</template><template v-if="p.equipment_booking"> · giver ret til at booke udstyr</template><template v-if="p.requires_membership"> · kræver medlemskab</template><template v-if="!p.self_service"> · tildeles af bestyrelsen</template><template v-if="p.renews_to_id"> · fornyes som {{ nameOf(p.renews_to_id) }}</template></div>
+                            <div class="small muted"><template v-if="p.kind !== 'offer'">{{ p.active_purchases }} gældende køb · </template><template v-if="p.current">pris fra {{ dato(p.current.valid_from) }}</template>
                                 <a v-if="p.previous.length" href="#" @click.prevent="p.showHist = !p.showHist"> · {{ p.showHist ? 'skjul' : 'vis' }} tidligere priser ({{ p.previous.length }})</a></div>
                             <div v-for="u in p.upcoming" :key="u.id" class="upcoming small">
                                 <span class="tag info">Ny pris</span> <strong>{{ u.amount_fmt }}</strong> fra {{ dato(u.valid_from) }}<span v-if="u.by" class="muted"> · sat af {{ u.by }}</span>
@@ -30,7 +32,7 @@
                         <button v-if="d.can_edit" class="btn small ghost" @click="archive(p, true)">Arkivér</button>
                     </div>
                 </li>
-                <li v-if="!list(false).length" class="muted">Ingen {{ tab === 'membership' ? 'medlemskaber' : 'tilkøb' }}.</li>
+                <li v-if="!list(false).length" class="muted">{{ { membership: 'Ingen medlemskaber.', product: 'Ingen tilkøb.', guests: 'Ingen tilbud eller klippekort til ikke-medlemmer.' }[tab] }}</li>
             </ul>
             <details v-if="list(true).length" style="margin-top:10px">
                 <summary class="small muted" style="cursor:pointer">Arkiverede ({{ list(true).length }})</summary>
@@ -42,7 +44,14 @@
                     </li>
                 </ul>
             </details>
-            <button v-if="d.can_edit" class="btn primary small" style="margin-top:12px" @click="openNew">+ {{ tab === 'membership' ? 'Nyt medlemskab' : 'Nyt tilkøb' }}</button>
+            <p v-if="tab === 'guests'" class="small muted" style="margin:12px 0 0"><strong>Tilbud</strong> (fx prøvetræning eller kursus) er en tilmelding til én aktivitet. Træneren vælger tilbuddet under "Åben for ikke-medlemmer" på aktiviteten, og gæsten køber det på siden "Prøv SurfHorsens". <strong>Klippekort</strong> købes på siden /klippekort og bruges til aktiviteter, der er åbne for klippekort.</p>
+            <div v-if="d.can_edit" class="row" style="gap:8px;margin-top:12px">
+                <template v-if="tab === 'guests'">
+                    <button class="btn primary small" @click="openNew('offer')">+ Nyt tilbud</button>
+                    <button class="btn small" @click="openNew('punch')">+ Nyt klippekort</button>
+                </template>
+                <button v-else class="btn primary small" @click="openNew()">+ {{ tab === 'membership' ? 'Nyt medlemskab' : 'Nyt tilkøb' }}</button>
+            </div>
         </template>
 
         <template v-else>
@@ -72,12 +81,24 @@
         </template>
 
         <!-- Opret/rediger pakke -->
-        <Modal v-if="ed" :title="ed.id ? `Rediger: ${ed.name}` : (ed.kind === 'membership' ? 'Nyt medlemskab' : 'Nyt tilkøb')" @close="ed = null">
+        <Modal v-if="ed" :title="ed.id ? `Rediger: ${ed.name}` : ({ membership: 'Nyt medlemskab', offer: 'Nyt tilbud til ikke-medlemmer' }[ed.kind] || (ed.isPunch && ed.guest_only ? 'Nyt klippekort' : 'Nyt tilkøb'))" @close="ed = null">
             <form class="stack" @submit.prevent="savePkg">
                 <p v-if="ed.id && ed.purchases" class="banner info small" style="margin:0">{{ ed.purchases }} køb bruger pakken. Ændringer gælder kun nye køb – de eksisterende beholder deres personer og periode.</p>
-                <label class="field"><span>Navn</span><input v-model="ed.name" required maxlength="120" :placeholder="ed.kind === 'membership' ? 'Fx Familie, 2 voksne og 1–3 børn' : 'Fx Adgang til motionsrum'"></label>
-                <label class="field"><span>Beskrivelse (vises for medlemmerne)</span><textarea v-model="ed.description" maxlength="1000" rows="2"></textarea></label>
+                <label class="field"><span>Navn</span><input v-model="ed.name" required maxlength="120" :placeholder="{ membership: 'Fx Familie, 2 voksne og 1–3 børn', offer: 'Fx Prøvetræning eller Wingfoil-kursus' }[ed.kind] || 'Fx Adgang til motionsrum'"></label>
+                <label class="field"><span>Beskrivelse ({{ ed.kind === 'offer' ? 'vises på siden "Prøv SurfHorsens"' : 'vises for medlemmerne' }})</span><textarea v-model="ed.description" maxlength="1000" rows="2"></textarea></label>
 
+                <fieldset v-if="ed.kind === 'offer'">
+                    <legend>Tilbud til ikke-medlemmer</legend>
+                    <p class="small muted" style="margin:0">Gæsten køber en tilmelding til én aktivitet, som træneren har åbnet for tilbuddet. Gæsten får et gæstelogin og ser kun sine egne tilmeldinger.</p>
+                    <label class="check"><input type="checkbox" v-model="ed.creditable"> Beløbet trækkes fra kontingentet, hvis gæsten melder sig ind inden for 12 måneder</label>
+                    <label class="field"><span>Indtægten bogføres på</span>
+                        <select v-model="ed.account_id" required><option v-for="a in d.accounts" :key="a.id" :value="a.id">{{ a.number }} {{ a.name }}</option></select>
+                    </label>
+                    <label v-if="!ed.id" class="field"><span>Pris (kr.)</span><input v-model="ed.price" type="number" min="0" step="0.01" required></label>
+                    <p v-else class="small muted" style="margin:0">Prisen ændres med "Ny pris", så den gamle pris bevares.</p>
+                </fieldset>
+
+                <template v-else>
                 <fieldset>
                     <legend>Hvor længe gælder den?</legend>
                     <div class="chips">
@@ -149,6 +170,7 @@
                     <label v-if="!ed.id" class="field"><span>Pris (kr.)</span><input v-model="ed.price" type="number" min="0" step="0.01" required></label>
                     <p v-else class="small muted" style="margin:0">Prisen ændres med "Ny pris", så den gamle pris bevares.</p>
                 </fieldset>
+                </template>
                 <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">{{ ed.id ? 'Gem ændringer' : 'Opret' }}</button>
             </form>
@@ -179,7 +201,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import Modal from './Modal.vue';
 import { api, toast, dato } from '../api';
 
-const tabs = [{ id: 'membership', label: 'Medlemskaber' }, { id: 'product', label: 'Tilkøb' }, { id: 'categories', label: 'Personkategorier' }];
+const tabs = [{ id: 'membership', label: 'Medlemskaber' }, { id: 'product', label: 'Tilkøb' }, { id: 'guests', label: 'Ikke-medlemmer' }, { id: 'categories', label: 'Personkategorier' }];
 const periodTypes = [{ id: 'dates', label: 'Faste datoer' }, { id: 'days', label: 'Antal dage' }, { id: 'once', label: 'Engangsbetaling' }];
 const months = ['jan.', 'feb.', 'mar.', 'apr.', 'maj', 'jun.', 'jul.', 'aug.', 'sep.', 'okt.', 'nov.', 'dec.'];
 const tab = ref('membership'); const d = ref(null); const ed = ref(null); const pr = ref(null); const error = ref(''); const busy = ref(false);
@@ -189,14 +211,21 @@ const nextSeason = (() => { const t = new Date(); return `${t.getMonth() >= 4 ? 
 
 async function load() { d.value = await api('settings/packages'); }
 onMounted(load);
-const list = (archived) => d.value.packages.filter(p => p.kind === tab.value && p.archived === archived);
+// Ikke-medlemmer: tilbud (kind = offer) og klippekort kun for ikke-medlemmer
+const inTab = (p) => tab.value === 'guests' ? p.kind === 'offer' || (p.kind === 'product' && p.guest_only)
+    : tab.value === 'product' ? p.kind === 'product' && !p.guest_only : p.kind === tab.value;
+const list = (archived) => d.value.packages.filter(p => inTab(p) && p.archived === archived);
 const nameOf = (id) => d.value.packages.find(p => p.id === id)?.name || '';
 const pad = (n) => String(n).padStart(2, '0');
 const md = (s) => s ? { d: Number(s.slice(3)), m: Number(s.slice(0, 2)) } : null;
 
-function openNew() {
+function openNew(what) {
+    error.value = '';
     const income = d.value.accounts;
-    ed.value = blank({ kind: tab.value, account_id: (income.find(a => a.number === (tab.value === 'membership' ? '1000' : '1200')) || income[0])?.id });
+    const acc = (n) => (income.find(a => a.number === n) || income[0])?.id;
+    if (what === 'offer') return (ed.value = blank({ kind: 'offer', creditable: true, period_type: 'once', account_id: acc('1100') }));
+    if (what === 'punch') return (ed.value = blank({ kind: 'product', uses: 10, guest_only: true, period_type: 'days', period_days: 365, account_id: acc('1100') }));
+    ed.value = blank({ kind: tab.value, account_id: acc(tab.value === 'membership' ? '1000' : '1200') });
 }
 function blank(over = {}) {
     const p = { id: null, name: '', description: '', period_type: 'dates', period_days: 30, date_from: '05-01', date_to: '04-30', total_min: 1, total_max: 1,
@@ -231,7 +260,7 @@ const preview = computed(() => {
 
 async function savePkg() {
     const e = ed.value; error.value = ''; busy.value = true;
-    const body = {
+    const body = e.kind === 'offer' ? { name: e.name, description: e.description || null, account_id: e.account_id, creditable: !!e.creditable, ...(e.id ? {} : { kind: 'offer', price: e.price }) } : {
         name: e.name, description: e.description || null, period_type: e.period_type,
         period_days: e.period_type === 'days' ? e.period_days : null,
         date_from: e.period_type === 'dates' ? `${pad(e.fromM)}-${pad(e.fromD)}` : null,

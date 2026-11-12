@@ -50,11 +50,11 @@
                 <label class="field"><span>Pris pr. deltager (kr.)</span><input v-model.number="priceKr" type="number" min="0" step="1" placeholder="Gratis"></label>
                 <label class="check" style="margin-top:22px"><input type="checkbox" v-model="f.members_only"> Kræver betalt kontingent</label>
             </div>
-            <label class="field"><span>Åben for ikke-medlemmer</span>
-                <select v-model="f.guest_offer"><option :value="null">Nej</option><option value="trial">Ja, som prøvetræning</option><option value="sup_course">Ja, som SUP-kursus</option></select>
+            <label v-if="guestOffers.length || f.guest_package_id" class="field"><span>Åben for ikke-medlemmer</span>
+                <select v-model="f.guest_package_id"><option :value="null">Nej</option><option v-for="o in guestOffers" :key="o.id" :value="o.id">Ja, som {{ lcFirst(o.label) }} ({{ o.price_fmt }})</option></select>
             </label>
             <label v-if="punchOk" class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
-            <p v-if="f.guest_offer" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler prisen fra pristabellen, og beløbet trækkes fra kontingentet, hvis de melder sig ind.</p>
+            <p v-if="f.guest_package_id" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler tilbuddets pris<template v-if="guestOffers.find(o => o.id === f.guest_package_id)?.creditable">, og beløbet trækkes fra kontingentet, hvis de melder sig ind</template>. Tilbuddene oprettes under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer.</p>
             <p v-if="repeat" class="small muted" style="margin:0"><strong>Trænere:</strong> en fast aktivitet oprettes uden træner. Trænerne melder sig selv på de enkelte gange bagefter (Trænerportalen → Mangler træner).</p>
             <div v-else>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
@@ -104,8 +104,10 @@ import EquipmentConflicts from '../components/EquipmentConflicts.vue';
 
 const props = defineProps({ id: String });
 const router = useRouter();
-const cats = ref([]); const trainers = ref([]); const error = ref(''); const busy = ref(false);
-const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_offer: null, punchcard: false, category_ids: [], trainer_ids: [], notify: true, repeat_until: '', equipment_mode: 'all', equipment_ids: [] });
+// Lille begyndelsesbogstav, men forkortelser bevares (SUP-kursus)
+const lcFirst = (s) => /^\p{Lu}\p{Lu}/u.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
+const cats = ref([]); const guestOffers = ref([]); const trainers = ref([]); const error = ref(''); const busy = ref(false);
+const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_package_id: null, punchcard: false, category_ids: [], trainer_ids: [], notify: true, repeat_until: '', equipment_mode: 'all', equipment_ids: [] });
 const priceKr = computed({ get: () => f.price ? f.price / 100 : '', set: (v) => (f.price = Math.round((Number(v) || 0) * 100)) });
 const repeat = ref(false); const seriesLabel = ref('');
 const kortDato = (d) => d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
@@ -143,9 +145,10 @@ watch(() => f.starts_at?.slice(0, 10), loadTrainers);
 
 onMounted(async () => {
     cats.value = await api('categories');
+    api('guest/offers').then(o => { guestOffers.value = o.map(x => ({ id: x.code, label: x.label, price_fmt: x.price_fmt, creditable: x.creditable })); }).catch(() => {});
     if (props.id) {
         const a = await api(`activities/${props.id}`);
-        Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, guest_offer: a.guest_offer, punchcard: a.punchcard, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
+        Object.assign(f, { title: a.title, description: a.description || '', starts_at: local(a.starts_at), ends_at: local(a.ends_at), location: a.location || '', max_participants: a.max_participants, min_participants: a.min_participants, signup_deadline: local(a.signup_deadline), cancel_hours: a.cancel_hours, price: a.price, members_only: a.members_only, guest_package_id: a.guest_package_id, punchcard: a.punchcard, category_ids: a.categories.map(c => c.id), trainer_ids: a.trainers.map(t => t.id) });
         seriesLabel.value = a.series?.label || '';
         if (a.equipment) { f.equipment_mode = a.equipment.mode; f.equipment_ids = [...a.equipment.ids]; }
     }

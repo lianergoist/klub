@@ -22,15 +22,11 @@ class Prices
         'rental.day' => 'Dagsleje af board og sejl',
         'storage.rack' => 'Opbevaring: plads i boardrack, pr. sæson',
         'storage.locker' => 'Opbevaring: skab i container, pr. sæson',
-        'trial' => 'Prøvetræning (ikke-medlemmer)',
-        'sup_course' => 'SUP-kursus',
         'key_deposit' => 'Depositum for nøglebrik',
     ];
 
     /** Grupper til visning */
-    public const GROUPS = [
-        'Tilbud til ikke-medlemmer' => ['trial', 'sup_course'],
-    ];
+    public const GROUPS = []; // tilbud til ikke-medlemmer er nu pakker (kind = offer) med egen pris
 
     private static array $cache = [];
 

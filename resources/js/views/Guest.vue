@@ -4,7 +4,7 @@
             <img class="brand-default" src="/icon.svg" alt="" width="52" height="52">
             <img class="brand-logo" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:170px;height:auto;margin:0 auto">
             <h1>Prøv SurfHorsens</h1>
-            <p class="muted">Ikke medlem endnu? Book en prøvetræning eller et SUP-kursus. Melder du dig ind bagefter, trækkes beløbet fra kontingentet.</p>
+            <p class="muted">Ikke medlem endnu? {{ intro }}</p>
         </header>
 
         <div v-if="!offers" class="spinner"></div>
@@ -41,7 +41,7 @@
                 <label class="field"><span>Forælders navn</span><input v-model="f.guardian_name" name="guardian-name" autocomplete="off" required></label>
                 <label class="field"><span>Forælders telefon</span><input v-model="f.guardian_phone" name="guardian-tel" type="tel" autocomplete="off" required></label>
             </div>
-            <p class="small muted" style="margin:0">Vi bruger dine oplysninger til tilmeldingen og til at kontakte dig om {{ picked.offer.label.toLowerCase() }}. Melder du dig ikke ind, slettes de efter den frist, klubben har fastsat.</p>
+            <p class="small muted" style="margin:0">Vi bruger dine oplysninger til tilmeldingen og til at kontakte dig om {{ /^\p{Lu}\p{Lu}/u.test(picked.offer.label) ? picked.offer.label : picked.offer.label.charAt(0).toLowerCase() + picked.offer.label.slice(1) }}. Melder du dig ikke ind, slettes de efter den frist, klubben har fastsat.</p>
             <label class="check small"><input type="checkbox" v-model="f.consent"> Jeg giver samtykke til ovenstående<span v-if="minor"> (som forælder)</span>.</label>
             <p v-if="error" class="banner bad">{{ error }}</p>
             <button class="btn primary block" :disabled="busy">Fortsæt til betaling ({{ picked.offer.price_fmt }})</button>
@@ -57,6 +57,15 @@ const offers = ref(null); const picked = ref(null); const error = ref(''); const
 const f = reactive({ name: '', email: '', phone: '', birthdate: '', guardian_name: '', guardian_phone: '', consent: false });
 const minor = computed(() => { if (!f.birthdate) return false; const b = new Date(f.birthdate), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a < 18; });
 onMounted(async () => { offers.value = await api('guest/offers'); });
+// Fx "Book en prøvetræning eller et SUP-kursus." – ud fra klubbens tilbud
+const lc = (x) => /^\p{Lu}\p{Lu}/u.test(x) ? x : x.charAt(0).toLowerCase() + x.slice(1);
+const intro = computed(() => {
+    const o = offers.value || [];
+    if (!o.length) return 'Her kan du booke klubbens tilbud til ikke-medlemmer.';
+    const names = o.map(x => lc(x.label)); const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' eller ' + names.at(-1) : names[0];
+    const credit = o.every(x => x.creditable) ? ' Melder du dig ind bagefter, trækkes beløbet fra kontingentet.' : o.some(x => x.creditable) ? ' Melder du dig ind bagefter, trækkes beløbet for nogle af tilbuddene fra kontingentet.' : '';
+    return `Book ${list}.${credit}`;
+});
 function pick(offer, activity) { picked.value = { offer, activity }; error.value = ''; window.scrollTo(0, 0); }
 async function book() {
     busy.value = true; error.value = '';

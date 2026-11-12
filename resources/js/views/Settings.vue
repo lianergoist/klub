@@ -36,8 +36,8 @@
             </form>
         </div>
         <PackagesAdmin v-if="priceAccess" />
-        <div v-if="priceAccess" class="card">
-            <h2>Priser for ikke-medlemmer</h2>
+        <div v-if="priceAccess && pr?.groups?.length" class="card">
+            <h2>Øvrige priser</h2>
             <p class="small muted">Priser for medlemskaber og tilkøb ligger på pakkerne ovenfor. En pris rettes ikke – man lægger en ny ind med den dato, den skal gælde fra. Den gamle bevares, og regninger, der allerede er sendt, ændres ikke.<span v-if="pr && !pr.can_edit"> Du kan se priserne, men ikke ændre dem.</span></p>
             <div v-if="!pr" class="spinner"></div>
             <template v-else v-for="g in pr.groups" :key="g.group">

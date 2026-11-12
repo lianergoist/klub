@@ -68,7 +68,8 @@ class AuthController extends Controller
         ], ['consent.accepted' => 'Du skal give samtykke for at kunne melde dig ind.', 'package_id.required' => 'Vælg et medlemskab.'],
            ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato']);
 
-        $package = \App\Models\Package::with('slots.category')->find($data['package_id']);
+        $package = \App\Models\Package::with('slots.category')->where('kind', 'membership')->whereNull('archived_at')->find($data['package_id']);
+        abort_unless($package, 422, 'Vælg et medlemskab.');
         $new = collect($data['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'], 'birthdate' => \Illuminate\Support\Carbon::parse($p['birthdate'])->toDateString(), 'consent_at' => now()->toIso8601String()])->all();
         // Tjek sammensætningen, før der oprettes noget
         if ($err = $package->compositionError(array_merge([['name' => $data['name'], 'birthdate' => $data['birthdate']]], $new))) abort(422, $err);

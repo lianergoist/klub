@@ -132,6 +132,7 @@ class PackageController extends Controller
         $new = collect($d['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'], 'birthdate' => Carbon::parse($p['birthdate'])->toDateString(),
             'email' => $p['email'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
         abort_if($new && $u->household_id && $u->household?->payer_id !== $u->id, 403, 'Kun husstandens betaler kan tilføje personer.');
+        abort_if($package->isOffer() || $package->archived_at, 422, 'Pakken kan ikke købes her.');
         abort_if($u->status === 'pending' && $package->kind === 'product', 422, 'Betal først dit kontingent.');
 
         $purchase = Packages::buy($u, $package, $d['member_ids'] ?? [], $new, $d['resource_id'] ?? null);
@@ -174,7 +175,8 @@ class PackageController extends Controller
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
                 return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
-                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only', 'equipment_booking') + [
+                    'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only', 'creditable', 'equipment_booking') + [
+                    'upcoming_activities' => $p->isOffer() ? \App\Models\Activity::where('guest_package_id', $p->id)->whereNull('cancelled_at')->where('starts_at', '>', now())->count() : 0,
                     'category_ids' => $p->categories->pluck('id')->values(),
                     'archived' => (bool) $p->archived_at,
                     'needs_resource' => (bool) $p->product?->needs_resource,
@@ -190,10 +192,12 @@ class PackageController extends Controller
         ];
     }
 
-    private function rules(?Package $p = null): array
+    private function rules(?Package $p = null, ?string $kind = null): array
     {
+        $offer = ($p?->kind ?? $kind) === 'offer';
+
         return [
-            'kind' => [$p ? 'prohibited' : 'required', 'in:membership,product'],
+            'kind' => [$p ? 'prohibited' : 'required', 'in:membership,product,offer'],
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
             'period_type' => 'required|in:days,dates,once',
@@ -211,12 +215,13 @@ class PackageController extends Controller
             'self_service' => 'boolean',
             'uses' => 'nullable|integer|min:1|max:100',
             'guest_only' => 'boolean',
+            'creditable' => 'boolean',
             'equipment_booking' => 'boolean',
             'category_ids' => 'array',
             'category_ids.*' => 'exists:categories,id',
             'renews_to_id' => ['nullable', Rule::exists('packages', 'id')->where('kind', 'membership')],
             'account_id' => ['required', Rule::exists('accounts', 'id')->where('type', 'income')],
-            'slots' => 'required|array|min:1',
+            'slots' => $offer ? 'array' : 'required|array|min:1',
             'slots.*.person_category_id' => 'required|distinct|exists:person_categories,id',
             'slots.*.min' => 'required|integer|min:0|max:50',
             'slots.*.max' => 'required|integer|min:0|max:50|gte:slots.*.min',
@@ -235,7 +240,16 @@ class PackageController extends Controller
 
     private function validated(Request $r, ?Package $p = null): array
     {
-        $d = $r->validate($this->rules($p), self::messages(), ['total_min' => 'antal personer (mindst)', 'total_max' => 'antal personer (højst)']);
+        if (($p?->kind ?? $r->input('kind')) === 'offer') {
+            // Tilbud til ikke-medlemmer: tilmelding til én aktivitet for én person – periode og sammensætning er faste
+            $r->merge(['period_type' => 'once', 'period_days' => null, 'date_from' => null, 'date_to' => null, 'sale_from' => null, 'sale_to' => null, 'next_from' => null,
+                'total_min' => 1, 'total_max' => 1, 'slots' => [], 'uses' => null, 'category_ids' => [], 'guest_only' => true, 'requires_membership' => false,
+                'equipment_booking' => false, 'gives_access' => false, 'renews_to_id' => null, 'self_service' => true]);
+        }
+        $d = $r->validate($this->rules($p, $r->input('kind')), self::messages(), ['total_min' => 'antal personer (mindst)', 'total_max' => 'antal personer (højst)']);
+        $kind = $p?->kind ?? $d['kind'];
+        if ($kind === 'offer') { $d['creditable'] = (bool) ($d['creditable'] ?? false); return $d; }
+        unset($d['creditable']);
         $mins = array_sum(array_column($d['slots'], 'min'));
         $maxs = array_sum(array_column($d['slots'], 'max'));
         abort_if($d['total_max'] !== null && $mins > $d['total_max'], 422, 'Kategorierne kræver flere personer, end pakken højst dækker.');
@@ -251,7 +265,6 @@ class PackageController extends Controller
         abort_if(($d['renews_to_id'] ?? null) && ($d['period_type'] !== 'dates' || ($p && $d['renews_to_id'] == $p->id)), 422, 'Kun pakker med faste datoer kan fornyes som en anden pakke.');
         $d['period_days'] = $d['period_type'] === 'days' ? $d['period_days'] : null;
         [$d['date_from'], $d['date_to']] = $d['period_type'] === 'dates' ? [$d['date_from'], $d['date_to']] : [null, null];
-        $kind = $p?->kind ?? $d['kind'];
         if ($kind === 'membership') { $d['requires_membership'] = false; $d['uses'] = null; $d['guest_only'] = false; $d['category_ids'] = []; $d['equipment_booking'] = false; }
         else { $d['gives_access'] = true; $d['renews_to_id'] = null; }
         abort_if(! empty($d['uses']) && empty($d['category_ids']), 422, 'Vælg hvilke aktiviteter (kategorier) klippekortet gælder til.');

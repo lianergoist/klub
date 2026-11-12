@@ -11,11 +11,14 @@ class Package extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean', 'guest_only' => 'boolean', 'equipment_booking' => 'boolean',
+        'gives_access' => 'boolean', 'requires_membership' => 'boolean', 'self_service' => 'boolean', 'early_access' => 'boolean', 'guest_only' => 'boolean', 'creditable' => 'boolean', 'equipment_booking' => 'boolean',
         'archived_at' => 'datetime',
     ];
 
-    public const KINDS = ['membership' => 'Medlemskab', 'product' => 'Tilkøb'];
+    /** offer = tilbud til ikke-medlemmer: tilmelding til én aktivitet (prøvetræning, kursus), købes på siden "Prøv SurfHorsens". */
+    public const KINDS = ['membership' => 'Medlemskab', 'product' => 'Tilkøb', 'offer' => 'Tilbud til ikke-medlemmer'];
+
+    public function isOffer(): bool { return $this->kind === 'offer'; }
 
     /** Klippekort: de kategorier, kortet kan bruges til (fx SUP). */
     public function categories() { return $this->belongsToMany(Category::class); }

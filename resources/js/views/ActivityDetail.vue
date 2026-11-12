@@ -34,7 +34,7 @@
             </div>
             <p v-if="a.description" style="white-space:pre-line;margin:14px 0 0">{{ a.description }}</p>
             <p v-if="a.punchcard && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for klippekort</span> Ikke-medlemmer med klippekort kan tilmelde sig.</p>
-            <p v-if="a.guest_offer && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for ikke-medlemmer</span> som {{ a.guest_offer === 'trial' ? 'prøvetræning' : 'SUP-kursus' }} via siden "Prøv SurfHorsens".</p>
+            <p v-if="a.guest_package_id && a.can_edit" class="small" style="margin:10px 0 0"><span class="tag info">Åben for ikke-medlemmer</span> som {{ /^\p{Lu}\p{Lu}/u.test(a.guest_offer_label || '') ? a.guest_offer_label : (a.guest_offer_label || 'tilbud').charAt(0).toLowerCase() + (a.guest_offer_label || 'tilbud').slice(1) }} via siden "Prøv SurfHorsens".</p>
         </div>
 
         <!-- Mangler træner: alle trænere kan tage den -->

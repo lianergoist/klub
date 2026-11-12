@@ -265,7 +265,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** de hidtidige medlemstyper og priser er lagt ind som pakker: enkelt medlem (hel/halv sæson), husstand med 2 personer (hel/halv sæson), familie med 3, familie med 4 eller flere, og støttemedlem. Udstyrsleje, opbevaring, dagsleje og depositum er tilkøb. Demodata har desuden eksemplerne "Familie: 2 voksne og 1–3 børn" og "Adgang til motionsrum, 30 dage".
 
-- **Kerne:** bestyrelse, kasserer og admin kan lægge en ny pris ind på en pakke med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Priser for prøvetræning og SUP-kursus (ikke-medlemmer) ligger for sig. Alle ændringer skrives i ændringsloggen.
+- **Kerne:** bestyrelse, kasserer og admin kan lægge en ny pris ind på en pakke med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Alle ændringer skrives i ændringsloggen.
 
 - **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der er til salg nu. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
 
@@ -341,9 +341,11 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Afklares:** priserne for opbevaring (rackplads 600 kr., skab 400 kr.) og dagsleje (100 kr.) er foreløbige. Bestyrelsen kan selv rette dem under Indstillinger.
 
-- **Kerne (i proof of concept):** ikke-medlemmer kan på siden "Prøv SurfHorsens" købe en **prøvetræning (400 kr.)** eller et **SUP-kursus (500 kr.)**. De vælger en dato blandt de aktiviteter, trænerne har åbnet for gæster, udfylder navn, kontaktoplysninger og fødselsdato (under 18: forælders navn og telefon) og betaler med MobilePay. De står derefter på deltagerlisten mærket "Gæst", men har ikke adgang til medlemsdelen.
+- **Kerne:** tilbud til ikke-medlemmer er pakker af typen **tilbud** (tilmelding til én aktivitet). Bestyrelsen opretter og retter dem under Indstillinger → Medlemskaber og tilkøb → **Ikke-medlemmer** (navn, beskrivelse, pris med "gælder fra", konto, og om beløbet modregnes i kontingentet). Fanebladet viser også klippekort kun for ikke-medlemmer. På aktiviteten vælger træneren under "Åben for ikke-medlemmer", hvilket tilbud den er åben for.
 
-- **Kerne (i proof of concept):** melder gæsten sig ind inden for 12 måneder (med samme e-mail), trækkes det betalte fra kontingentet. Dækker beløbet hele kontingentet, er man medlem med det samme uden yderligere betaling.
+- **Kerne (i proof of concept):** ikke-medlemmer kan på siden "Prøv SurfHorsens" købe klubbens tilbud, i dag en **prøvetræning (400 kr.)** eller et **SUP-kursus (500 kr.)**. De vælger en dato blandt de aktiviteter, trænerne har åbnet for gæster, udfylder navn, kontaktoplysninger og fødselsdato (under 18: forælders navn og telefon) og betaler med MobilePay. De står derefter på deltagerlisten mærket "Gæst", men har ikke adgang til medlemsdelen.
+
+- **Kerne (i proof of concept):** melder gæsten sig ind inden for 12 måneder (med samme e-mail), trækkes det betalte fra kontingentet – for de tilbud, der er sat til at blive modregnet. Dækker beløbet hele kontingentet, er man medlem med det samme uden yderligere betaling.
 
 - **Afklares:** hvis gæstekøbet er større end kontingentet (fx SUP-kursus 500 kr. og halv sæson 400 kr.), bortfalder resten i proof of concept. Skal det overskydende kunne bruges til fx udstyrsleje?
 

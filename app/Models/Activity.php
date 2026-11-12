@@ -22,6 +22,8 @@ class Activity extends Model
     public function trainerChanges() { return $this->hasMany(TrainerChange::class)->orderBy('created_at')->orderBy('id'); }
     public function registrations() { return $this->hasMany(Registration::class); }
     public function series() { return $this->belongsTo(ActivitySeries::class, 'series_id'); }
+    /** Tilbud til ikke-medlemmer, aktiviteten er åben for (fx prøvetræning). */
+    public function guestPackage() { return $this->belongsTo(Package::class, 'guest_package_id'); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function equipment() { return $this->belongsToMany(Equipment::class, 'activity_equipment'); }
     public function equipmentApprovals() { return $this->hasMany(EquipmentBookingApproval::class); }

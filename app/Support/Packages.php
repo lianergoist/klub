@@ -145,7 +145,7 @@ class Packages
         if (! $used) return $invoice;
         $invoice->update([
             'amount' => $invoice->amount - $used,
-            'description' => $invoice->description.' (fratrukket '.Money::fmt($used).' for '.$credit['invoices']->map(fn ($i) => ['trial' => 'prøvetræning', 'sup_course' => 'SUP-kursus'][$i->payload['offer'] ?? ''] ?? 'gæstekøb')->unique()->join(' og ').')',
+            'description' => $invoice->description.' (fratrukket '.Money::fmt($used).' for '.Memberships::creditLabel($credit['invoices']).')',
             'payload' => $invoice->payload + ['guest_credit' => $used, 'price' => $invoice->amount, 'credited_invoices' => $credit['invoices']->pluck('id')->all()],
         ]);
         foreach ($credit['invoices'] as $g) $g->update(['payload' => ($g->payload ?? []) + ['credited_to' => $invoice->id]]);

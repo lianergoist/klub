@@ -56,9 +56,21 @@ class Memberships
     public static function guestCredit(User $u): array
     {
         $inv = Invoice::where('payer_id', $u->id)->where('kind', 'guest')->where('status', 'paid')
-            ->where('paid_at', '>=', now()->subYear())->get()->filter(fn ($i) => ! isset($i->payload['credited_to']));
+            ->where('paid_at', '>=', now()->subYear())->get()
+            ->filter(fn ($i) => ! isset($i->payload['credited_to']) && ($i->payload['creditable'] ?? true)); // kun tilbud, der modregnes
 
         return ['amount' => (int) $inv->sum('amount'), 'invoices' => $inv];
+    }
+
+    /** Fx "prøvetræning og SUP-kursus" – navnene på de tilbud, der modregnes. */
+    public static function creditLabel($invoices): string
+    {
+        $old = ['trial' => 'Prøvetræning', 'sup_course' => 'SUP-kursus'];
+
+        // Lille begyndelsesbogstav, men forkortelser bevares (SUP-kursus forbliver SUP-kursus)
+        $lc = fn ($s) => preg_match('/^\p{Lu}\p{Lu}/u', $s) ? $s : mb_strtolower(mb_substr($s, 0, 1)).mb_substr($s, 1);
+
+        return $invoices->map(fn ($i) => $lc($i->payload['offer_label'] ?? $old[$i->payload['offer'] ?? ''] ?? 'gæstekøb'))->unique()->join(', ', ' og ');
     }
 
     public static function signupInvoice(User $u): Invoice
@@ -73,7 +85,7 @@ class Memberships
         $invoice = Invoice::create([
             'payer_id' => $u->id, 'member_id' => $u->id, 'kind' => 'membership', 'period' => $season,
             'description' => "Kontingent $season – {$type->name}".($half ? ' (halv sæson)' : '')." – {$u->name}"
-                .($used ? ' (fratrukket '.Money::fmt($used).' for '.$credit['invoices']->map(fn ($i) => ['trial' => 'prøvetræning', 'sup_course' => 'SUP-kursus'][$i->payload['offer'] ?? ''] ?? 'gæstekøb')->unique()->join(' og ').')' : ''),
+                .($used ? ' (fratrukket '.Money::fmt($used).' for '.Memberships::creditLabel($credit['invoices']).')' : ''),
             'amount' => $price - $used, 'due_on' => now(), 'account_id' => FinanceController::accountId('1000'),
             'payload' => $used ? ['guest_credit' => $used, 'price' => $price, 'credited_invoices' => $credit['invoices']->pluck('id')->all()] : null,
         ]);
