@@ -47,7 +47,7 @@ Kartoteket er systemets rygrad: alt (aktiviteter, kontingent, betalinger) hænge
 
 - **Kerne:** medlemmer kan selv oprette sig, rette egne oplysninger og se egen historik. Indmeldelse kræver ikke godkendelse: man sendes direkte videre til betaling af kontingent, og når betalingen er gennemført, er man aktivt medlem. Indtil da har medlemmet status "afventer betaling". Bestyrelse/kasserer kan aktivere manuelt (fx ved kontant betaling eller æresmedlemskab).
 
-- **Kerne:** **Min profil** samler medlemmets egne sider: oplysninger, familie og medlemskab, regninger, kvitteringer (udlæg), tilkøb, beskeder og notifikationer samt mine data. På computer vises de som faner. På mobil og i appen er profilen en liste med en kort status i hver linje, fx medlemskabets udløb, antal åbne regninger og udlæg, der afventer. Et tryk åbner siden med et tilbage-link.
+- **Kerne:** **Min profil** samler medlemmets egne sider: oplysninger, familie og medlemskab, regninger, kvitteringer (udlæg), tilkøb, beskeder og notifikationer samt mine data. På computer vises de som faner. På mobil og i appen er profilen en liste med en kort status i hver linje, fx medlemskabets udløb, antal åbne regninger og udlæg, der afventer. Et tryk åbner siden med et tilbage-link. Farvetema og Log ud står nederst i profilen. Bundmenuens femte fane, **Mere**, vises kun for dem, der har adgang til et af værktøjerne (Trænerportal, Udstyr, Medlemmer, Økonomi eller Indstillinger). Almindelige medlemmer har fire faner.
 
 - **Kerne:** familier/husstande: ét betalende medlem (forælder) og flere tilknyttede medlemmer (børn, partner). Forælder kan tilmelde børn til aktiviteter.
 

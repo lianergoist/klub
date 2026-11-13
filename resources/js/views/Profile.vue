@@ -30,7 +30,10 @@
                     </RouterLink></li>
                 </ul>
             </div>
+            <div class="card"><ThemeSwitch /></div>
             <button class="btn danger block" @click="logout">Log ud</button>
+            <p class="small muted" style="margin:12px 4px 0">Logget ind som {{ store.user.name }} ({{ store.user.roles.map(r => roleLabel[r]).join(', ') }})</p>
+            <AppVersion style="margin-left:4px" />
         </template>
 
         <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="saveProfile">
@@ -182,7 +185,7 @@
                 <ul class="list"><li v-for="(r, i) in p.roles" :key="i" class="row between"><span>{{ r.label }}</span><span class="small muted">{{ dato(r.starts_on) }} – {{ r.ends_on ? dato(r.ends_on) : 'nu' }}</span></li>
                     <li v-if="!p.roles.length" class="muted">Medlem</li></ul>
             </div>
-            <div class="card"><h2>Udseende</h2><ThemeSwitch /></div>
+            <div v-if="!isMobile" class="card"><h2>Udseende</h2><ThemeSwitch /></div>
         </div>
 
         <Modal v-if="buy" :title="buy.name" @close="buy = null">
@@ -210,7 +213,8 @@ import PackageList from '../components/PackageList.vue';
 import Receipt from './Receipt.vue';
 import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
-import { api, store, dato, kr, toast, download, logout as doLogout } from '../api';
+import AppVersion from '../components/AppVersion.vue';
+import { api, store, dato, kr, toast, download, roleLabel, logout as doLogout } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();
@@ -221,7 +225,7 @@ const tabs = [
     { id: 'regninger', label: 'Regninger', title: 'Regninger', icon: 'money', hint: 'Betalte og ubetalte regninger' },
     { id: 'kvitteringer', label: 'Kvitteringer', title: 'Kvitteringer', icon: 'receipt', hint: 'Få penge tilbage for udlæg' },
     { id: 'tilkob', label: 'Tilkøb', title: 'Tilkøb', icon: 'bag', hint: 'Pladser, leje og andre tilkøb' },
-    { id: 'data', label: 'Mine data', title: 'Mine data', icon: 'file', hint: 'Roller, udseende og hent dine data', group: 2 },
+    { id: 'data', label: 'Mine data', title: 'Mine data', icon: 'file', hint: 'Roller og hent dine data', group: 2 },
 ];
 // På mobil er /profil selve menuen; på computer åbner den første fane
 const cur = computed(() => props.tab || (isMobile.value ? null : 'oplysninger'));

@@ -33,7 +33,7 @@
             <RouterLink to="/opslag"><Icon name="chat" />Opslag</RouterLink>
             <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" />Indbakke<span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
             <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
-            <RouterLink to="/mere"><Icon name="more" />Mere</RouterLink>
+            <RouterLink v-if="hasMore" to="/mere"><Icon name="more" />Mere</RouterLink>
         </nav>
     </div>
     <RouterView v-else />
@@ -51,6 +51,8 @@ import { store, api, roleLabel, logout as doLogout } from './api';
 const route = useRoute();
 const router = useRouter();
 const can = computed(() => store.user?.can || {});
+// "Mere" i bundmenuen kun for dem, der har et værktøj dér (almindelige medlemmer har farvetema og Log ud under Profil)
+const hasMore = computed(() => !!(can.value.portal || can.value.equipment || can.value.members_view || can.value.finance_read || can.value.settings));
 const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
 // Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
 let poll;
