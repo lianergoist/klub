@@ -126,9 +126,9 @@
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
             <p class="small muted" style="margin-top:4px">Slår du det fra, kan andre medlemmer ikke skrive til dig, og du kan selv kun skrive med trænere og bestyrelse. Trænere og bestyrelse kan altid skrive til dig om klubbens aktiviteter.</p>
             <h2 style="margin-top:20px">Hvilke aktiviteter vil du høre om?</h2>
-            <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Du får stadig besked om aktiviteter, du er tilmeldt.</p>
+            <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Du får stadig besked om aktiviteter, du er tilmeldt. Nedtonede kategorier får alle medlemmer besked om.</p>
             <ul class="list">
-                <li v-for="c in cats" :key="c.id"><label class="check"><input type="checkbox" v-model="c.notify" @change="saveCats"><span class="tag"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</span></label></li>
+                <li v-for="c in cats" :key="c.id"><label :class="['check', { locked: c.mandatory }]" :title="c.mandatory ? 'Klubben sender altid besked om denne kategori' : null"><input type="checkbox" v-model="c.notify" :disabled="c.mandatory" @change="saveCats"><span class="tag"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</span><span v-if="c.mandatory" class="small muted">Kan ikke fravælges</span></label></li>
             </ul>
         </div>
 
@@ -298,6 +298,8 @@ onMounted(async () => { await load(); onTab(cur.value); });
 </script>
 
 <style scoped>
+.check.locked { opacity: .5; cursor: default; }
+.check.locked input { cursor: default; }
 .lbl { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 .back { display: inline-block; margin-bottom: 6px; }
 /* Postnr. og By på samme linje (fødselsdato under) på mobil */

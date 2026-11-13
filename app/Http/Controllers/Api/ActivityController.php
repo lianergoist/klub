@@ -636,8 +636,10 @@ class ActivityController extends Controller
     private function notifyNew(Activity $a, ?ActivitySeries $series = null): void
     {
         $catIds = $a->categories->pluck('id');
+        // Har aktiviteten en kategori, der ikke kan fravælges, får alle aktive medlemmer besked
         $users = User::whereIn('status', ['active'])->whereNotNull('email')
-            ->whereDoesntHave('categorySettings', fn ($q) => $q->whereIn('categories.id', $catIds)->where('category_user.notify', false))->get();
+            ->when(! $a->categories->contains('mandatory', true), fn ($q) => $q
+                ->whereDoesntHave('categorySettings', fn ($q) => $q->whereIn('categories.id', $catIds)->where('category_user.notify', false)))->get();
         $deadline = $a->signup_deadline ? ' Svarfrist: '.$a->signup_deadline->locale('da')->isoFormat('D. MMM [kl.] HH:mm').'.' : '';
         Notification::send($users, new ClubMessage(
             ($series ? 'Ny fast aktivitet: ' : 'Ny aktivitet: ').$a->title,

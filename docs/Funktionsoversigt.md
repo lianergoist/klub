@@ -81,6 +81,8 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 - **Kerne:** titel, beskrivelse, dato og tid, sted, kategori, max antal deltagere og evt. min. antal. 
 
 - **Kerne:** kategorier (windsurf, kite, SUP, wingfoil m.fl.). Bestyrelsen kan selv tilføje og omdøbe kategorier. En aktivitet kan have flere kategorier.
+- **Kerne:** en kategori kan markeres **Kan ikke fravælges** (i popup'en, hvor kategorien oprettes eller rettes). Alle aktive medlemmer får så besked om nye aktiviteter i kategorien, også selv om aktiviteten har andre kategorier, de har fravalgt. Medlemmet ser kategorien nedtonet med et låst flueben.
+- **Afklares:** hvilke kategorier skal ikke kunne fravælges (fx generalforsamling, arbejdsdage, klubfester)? Og skal en sådan kategori også sende besked til passive medlemmer?
 
 - **Kerne:** svarfrist, som sættes ved oprettelsen. Efter fristen kan man ikke tilmelde sig uden trænerens accept.
 
@@ -184,7 +186,7 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Kerne:** når en aktivitet oprettes, får alle medlemmer besked med titel, tid, svarfrist og link til tilmelding.
 
-- **Kerne:** medlemmer vælger selv kanal (e-mail, evt. push-besked i telefonen) og kan fravælge kategorier, de ikke er interesseret i. Så får en wingfoil-gruppe ikke beskeder om SUP.
+- **Kerne:** medlemmer vælger selv kanal (e-mail, evt. push-besked i telefonen) og kan fravælge kategorier, de ikke er interesseret i. Så får en wingfoil-gruppe ikke beskeder om SUP. Kategorier, som bestyrelsen har markeret *Kan ikke fravælges*, kan dog ikke fravælges.
 
 - **Kerne:** påmindelse før svarfristen udløber til dem, der endnu ikke har svaret.
 

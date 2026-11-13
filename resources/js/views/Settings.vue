@@ -13,11 +13,11 @@
         </div>
         <div v-if="can.categories_manage" class="card">
             <h2>Kategorier</h2>
-            <p class="small muted">Medlemmer filtrerer og vælger notifikationer efter kategorierne. Tryk på en kategori for at rette navn og farve eller arkivere den.</p>
+            <p class="small muted">Medlemmer filtrerer og vælger notifikationer efter kategorierne. Tryk på en kategori for at rette navn og farve eller arkivere den. Om kategorier mærket <em>Kan ikke fravælges</em> får alle medlemmer besked.</p>
             <ul class="list cats">
                 <li v-for="c in active" :key="c.id"><button type="button" class="catrow" @click="openCat(c)">
                     <span class="sw" :style="{ background: c.color }"></span>
-                    <span class="mtext"><strong>{{ c.name }}</strong><span class="small muted">{{ c.followers }} følger · brugt på {{ c.activities }} aktiviteter</span></span>
+                    <span class="mtext"><strong>{{ c.name }}<span v-if="c.mandatory" class="tag" style="margin-left:6px">Kan ikke fravælges</span></strong><span class="small muted">{{ c.followers }} følger · brugt på {{ c.activities }} aktiviteter</span></span>
                     <span class="chev">›</span>
                 </button></li>
             </ul>
@@ -31,22 +31,22 @@
                     </li>
                 </ul>
             </details>
-            <form class="row" style="margin-top:12px;flex-wrap:nowrap" @submit.prevent="add">
-                <input type="color" v-model="nc.color" style="width:44px;padding:2px">
-                <input v-model="nc.name" placeholder="Ny kategori, fx Surfski" required>
-                <button class="btn primary small">Tilføj</button>
-            </form>
+            <button class="btn small" style="margin-top:12px" @click="newCat"><Icon name="plus" style="width:16px" /> Ny kategori</button>
         </div>
-        <Modal v-if="cat" :title="cat.orig" @close="cat = null">
-            <div class="stack">
+        <Modal v-if="cat" :title="cat.id ? cat.orig : 'Ny kategori'" @close="cat = null">
+            <form class="stack" @submit.prevent="save(cat)">
                 <div class="row" style="flex-wrap:nowrap">
                     <label class="field" style="flex:0 0 auto"><span>Farve</span><input type="color" v-model="cat.color" style="width:56px;padding:2px"></label>
-                    <label class="field" style="flex:1"><span>Navn</span><input v-model="cat.name"></label>
+                    <label class="field" style="flex:1"><span>Navn</span><input v-model="cat.name" placeholder="Fx Surfski" required maxlength="50"></label>
                 </div>
-                <p class="small muted" style="margin:0">Ret kun navnet ved små rettelser: det nye navn gælder også for de {{ cat.followers }}, der følger kategorien, og for {{ cat.activities }} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
-                <button class="btn primary block" @click="save(cat)">Gem</button>
-                <button class="btn ghost block" @click="archive(cat, true)">Arkivér kategorien</button>
-            </div>
+                <div>
+                    <label class="check"><input type="checkbox" v-model="cat.mandatory"> Kan ikke fravælges</label>
+                    <p class="small muted" style="margin:4px 0 0 30px">Alle aktive medlemmer får besked om nye aktiviteter i kategorien. Medlemmerne ser den nedtonet og kan ikke slå den fra. Brug det til fx generalforsamling og arbejdsdage.</p>
+                </div>
+                <p v-if="cat.id" class="small muted" style="margin:0">Ret kun navnet ved små rettelser: det nye navn gælder også for de {{ cat.followers }}, der følger kategorien, og for {{ cat.activities }} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
+                <button class="btn primary block">{{ cat.id ? 'Gem' : 'Opret kategori' }}</button>
+                <button v-if="cat.id" type="button" class="btn ghost block" @click="archive(cat, true)">Arkivér kategorien</button>
+            </form>
         </Modal>
         <PackagesAdmin v-if="priceAccess" />
         <div v-if="priceAccess && pr?.groups?.length" class="card">
@@ -110,16 +110,18 @@ const priceAccess = computed(() => can.value.packages_manage || can.value.prices
 const cats = ref([]); const pr = ref(null); const edit = ref(null); const error = ref('');
 const nf = reactive({ amount: '', valid_from: '' });
 const nextSeason = (() => { const d = new Date(); const y = d.getMonth() >= 4 ? d.getFullYear() + 1 : d.getFullYear(); return `${y}-05-01`; })();
-const nextYear = `${new Date().getFullYear() + 1}-01-01`; const nc = reactive({ name: '', color: '#0f7c8c' });
+const nextYear = `${new Date().getFullYear() + 1}-01-01`;
 const active = computed(() => cats.value.filter(c => !c.archived));
 // Rettes på en kopi, så listen først ændres, når der gemmes
 const cat = ref(null); const openCat = (c) => { cat.value = { ...c }; };
+const newCat = () => { cat.value = { name: '', color: '#0f7c8c', mandatory: false }; };
 const archived = computed(() => cats.value.filter(c => c.archived));
 async function loadCats() { cats.value = (await api('categories')).map(c => ({ ...c, orig: c.name })); }
 onMounted(async () => { await loadCats(); if (priceAccess.value) pr.value = await api('finance/prices'); });
 async function save(c) {
+    if (!c.id) return add(c);
     if (c.name !== c.orig && !confirm(`Omdøb "${c.orig}" til "${c.name}"?\n\nNavnet ændres for alle ${c.followers}, der følger kategorien, og på ${c.activities} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori i stedet.`)) return;
-    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.name, color: c.color } }); cat.value = null; await loadCats(); toast('Gemt'); } catch (e) { toast(e.message, 'error'); }
+    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.name, color: c.color, mandatory: c.mandatory } }); cat.value = null; await loadCats(); toast('Gemt'); } catch (e) { toast(e.message, 'error'); }
 }
 async function archive(c, on) {
     if (on && !confirm(`Arkivér "${c.name}"?\n\nDen kan ikke længere vælges til nye aktiviteter eller af medlemmer. Tidligere aktiviteter beholder den, og den kan gendannes.`)) return;
@@ -135,7 +137,7 @@ async function remove(u) {
     try { pr.value = await api(`finance/prices/${u.id}`, { method: 'DELETE' }); toast('Den kommende pris er fjernet'); }
     catch (e) { toast(e.message, 'error'); }
 }
-async function add() { try { cats.value.push({ ...(await api('categories', { method: 'POST', body: nc })), orig: nc.name }); nc.name = ''; toast('Tilføjet'); } catch (e) { toast(e.message, 'error'); } }
+async function add(c) { try { await api('categories', { method: 'POST', body: { name: c.name, color: c.color, mandatory: c.mandatory } }); cat.value = null; await loadCats(); toast('Oprettet'); } catch (e) { toast(e.message, 'error'); } }
 </script>
 <style scoped>
 .prices > li { padding: 12px 0; }

@@ -81,14 +81,16 @@ class ProfileController extends Controller
         return Category::whereNull('archived_at')->orderBy('name')->get()->map(fn ($c) => [
             'id' => $c->id, 'name' => $c->name, 'color' => $c->color,
             'show' => (bool) ($settings[$c->id]->pivot->show ?? true),
-            'notify' => (bool) ($settings[$c->id]->pivot->notify ?? true),
+            'mandatory' => (bool) $c->mandatory,
+            'notify' => $c->mandatory || (bool) ($settings[$c->id]->pivot->notify ?? true),
         ]);
     }
 
     public function saveCategories(Request $r)
     {
         $data = $r->validate(['items' => 'array', 'items.*.id' => 'exists:categories,id', 'items.*.show' => 'boolean', 'items.*.notify' => 'boolean']);
-        $sync = collect($data['items'])->mapWithKeys(fn ($i) => [$i['id'] => ['show' => $i['show'], 'notify' => $i['notify']]]);
+        $mandatory = Category::where('mandatory', true)->pluck('id')->all();
+        $sync = collect($data['items'])->mapWithKeys(fn ($i) => [$i['id'] => ['show' => $i['show'], 'notify' => $i['notify'] || in_array($i['id'], $mandatory)]]);
         $r->user()->categorySettings()->sync($sync);
 
         return $this->categories($r->merge([]));

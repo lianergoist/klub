@@ -8,5 +8,5 @@ class Category extends Model
 {
     protected $guarded = ["id"];
 
-    
+    protected $casts = ['mandatory' => 'boolean'];
 }
