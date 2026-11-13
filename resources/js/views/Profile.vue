@@ -1,6 +1,12 @@
 <template>
     <div v-if="!p" class="spinner"></div>
     <div v-else>
+        <!-- Mobil/app: undersider med tilbage-link i stedet for en fanebjælke -->
+        <template v-if="isMobile && cur">
+            <RouterLink to="/profil" class="small back">‹ Min profil</RouterLink>
+            <h1 style="margin-bottom:14px">{{ curTab.title }}</h1>
+        </template>
+        <template v-else>
         <h1>{{ p.profile.name }}</h1>
         <p class="muted" style="margin-bottom:14px">
             <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
@@ -8,9 +14,24 @@
             <span v-else-if="p.upcoming" class="tag info">{{ p.upcoming.name }} · fra {{ dato(p.upcoming.valid_from) }}</span>
             <span v-else-if="p.profile.status !== 'pending'" class="tag bad">Intet gyldigt medlemskab</span>
         </p>
-        <div class="tabs">
+        </template>
+        <div v-if="!isMobile" class="tabs">
             <RouterLink v-for="t in tabs" :key="t.id" :to="`/profil/${t.id}`" :class="{ on: cur === t.id }">{{ t.label }}</RouterLink>
         </div>
+
+        <template v-if="isMobile && !cur">
+            <div v-for="(g, gi) in menuGroups" :key="gi" class="card menu">
+                <ul class="list">
+                    <li v-for="t in g" :key="t.id"><RouterLink :to="`/profil/${t.id}`" class="mrow">
+                        <Icon :name="t.icon" class="mi" />
+                        <span class="mtext"><strong>{{ t.title }}</strong><span class="small muted">{{ t.hint }}</span></span>
+                        <span v-if="t.badge" :class="['tag', t.badgeCls]">{{ t.badge }}</span>
+                        <span class="chev" aria-hidden="true">›</span>
+                    </RouterLink></li>
+                </ul>
+            </div>
+            <button class="btn danger block" @click="logout">Log ud</button>
+        </template>
 
         <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="saveProfile">
             <label class="field"><span>Navn</span><input v-model="f.name" required></label>
@@ -162,7 +183,6 @@
                     <li v-if="!p.roles.length" class="muted">Medlem</li></ul>
             </div>
             <div class="card"><h2>Udseende</h2><ThemeSwitch /></div>
-            <button class="btn danger mobile-only" @click="logout">Log ud</button>
         </div>
 
         <Modal v-if="buy" :title="buy.name" @close="buy = null">
@@ -181,7 +201,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
@@ -193,8 +213,35 @@ import { api, store, dato, kr, toast, download, logout as doLogout } from '../ap
 
 const props = defineProps({ tab: String });
 const router = useRouter();
-const tabs = [{ id: 'oplysninger', label: 'Oplysninger' }, { id: 'familie', label: 'Familie' }, { id: 'beskeder', label: 'Beskeder' }, { id: 'regninger', label: 'Regninger' }, { id: 'kvitteringer', label: 'Kvitteringer' }, { id: 'tilkob', label: 'Tilkøb' }, { id: 'data', label: 'Mine data' }];
-const cur = computed(() => props.tab || 'oplysninger');
+const tabs = [
+    { id: 'oplysninger', label: 'Oplysninger', title: 'Oplysninger', icon: 'user', hint: 'Navn, kontakt og nødkontakt' },
+    { id: 'familie', label: 'Familie', title: 'Familie og medlemskab', icon: 'users', hint: 'Husstand og køb af medlemskab' },
+    { id: 'beskeder', label: 'Beskeder', title: 'Beskeder og notifikationer', icon: 'bell', hint: 'E-mail, push og hvilke aktiviteter', group: 2 },
+    { id: 'regninger', label: 'Regninger', title: 'Regninger', icon: 'money', hint: 'Betalte og ubetalte regninger' },
+    { id: 'kvitteringer', label: 'Kvitteringer', title: 'Kvitteringer', icon: 'receipt', hint: 'Få penge tilbage for udlæg' },
+    { id: 'tilkob', label: 'Tilkøb', title: 'Tilkøb', icon: 'bag', hint: 'Pladser, leje og andre tilkøb' },
+    { id: 'data', label: 'Mine data', title: 'Mine data', icon: 'file', hint: 'Roller, udseende og hent dine data', group: 2 },
+];
+// Samme grænse som sidemenu/bundmenu i app.css (900 px)
+const mq = window.matchMedia('(max-width: 899.98px)');
+const isMobile = ref(mq.matches);
+const onMq = (e) => { isMobile.value = e.matches; };
+mq.addEventListener('change', onMq);
+onUnmounted(() => mq.removeEventListener('change', onMq));
+// På mobil er /profil selve menuen; på computer åbner den første fane
+const cur = computed(() => props.tab || (isMobile.value ? null : 'oplysninger'));
+const curTab = computed(() => tabs.find(t => t.id === cur.value) || tabs[0]);
+const menuGroups = computed(() => {
+    const c = p.value?.counts || {};
+    const m = p.value?.membership, up = p.value?.upcoming;
+    const extra = {
+        familie: { hint: m ? m.name + (m.valid_to ? ' · til ' + dato(m.valid_to) : '') : up ? up.name + ' · fra ' + dato(up.valid_from) : 'Intet gyldigt medlemskab', ...(!m && !up ? { badge: 'Ikke medlem', badgeCls: 'bad' } : {}) },
+        regninger: c.open_invoices ? { badge: c.open_invoices === 1 ? '1 åben' : `${c.open_invoices} åbne`, badgeCls: 'warn' } : {},
+        kvitteringer: c.pending_claims ? { badge: `${c.pending_claims} afventer`, badgeCls: 'info' } : {},
+    };
+    const rows = tabs.map(t => ({ ...t, ...(extra[t.id] || {}) }));
+    return [rows.filter(t => !t.group), rows.filter(t => t.group)];
+});
 const stCls = (s) => ({ paid: 'ok', open: 'info', overdue: 'bad', refunded: '', cancelled: '' })[s];
 
 const p = ref(null); const f = reactive({}); const cats = ref([]); const invoices = ref(null); const shop = ref(null); const busy = ref(false);
@@ -246,14 +293,19 @@ async function onTab(t) {
     if (t === 'regninger') invoices.value = await api('profile/invoices');
     if (t === 'familie' || t === 'tilkob') await loadShop();
 }
-watch(cur, onTab);
-// På mobil kan fanebjælken være bredere end skærmen – vis den aktive fane
-const showTab = () => nextTick(() => document.querySelector('.tabs .on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
-watch(cur, showTab);
-onMounted(async () => { await load(); onTab(cur.value); showTab(); });
+watch(cur, (t) => { onTab(t); if (!t) load(); }); // tilbage til menuen: opdatér tællerne
+onMounted(async () => { await load(); onTab(cur.value); });
 </script>
 
 <style scoped>
 .lbl { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+.back { display: inline-block; margin-bottom: 6px; }
+.menu { padding: 2px 16px; }
+.menu .list > li { padding: 0; }
+.mrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink); min-height: 56px; }
+.mi { width: 22px; height: 22px; color: var(--accent); flex-shrink: 0; }
+.mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mtext .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chev { color: var(--ink-3); font-size: 1.4rem; line-height: 1; }
 .newp { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; display: grid; gap: 8px; }
 </style>

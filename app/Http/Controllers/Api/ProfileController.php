@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\ExpenseClaim;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Support\Audit;
@@ -23,6 +24,11 @@ class ProfileController extends Controller
             'profile' => self::profile($u),
             'household' => $u->managedMembers()->map(fn ($m) => self::profile($m))->values(),
             'membership_valid' => $u->hasValidMembership(),
+            // Til statuslinjerne i profilmenuen på mobil
+            'counts' => [
+                'open_invoices' => Invoice::where('payer_id', $u->id)->whereIn('status', ['open', 'overdue'])->count(),
+                'pending_claims' => ExpenseClaim::where('user_id', $u->id)->where('status', 'submitted')->count(),
+            ],
             'membership' => ($c = $u->currentMembership()) ? ['name' => $c->package->name, 'valid_to' => $c->valid_to?->toDateString()] : null,
             'upcoming' => ($n = $u->upcomingMembership()) ? ['name' => $n->package->name, 'valid_from' => $n->valid_from->toDateString()] : null,
             'signup_invoice_id' => $u->status === 'pending' ? Invoice::where('member_id', $u->id)->where('kind', 'membership')->where('status', 'open')->value('id') : null,
