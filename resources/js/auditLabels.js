@@ -7,7 +7,7 @@ export const auditLabels = {
     'expense_claim.submitted': 'Udlæg indsendt', 'expense_claim.paid': 'Udlæg udbetalt', 'expense_claim.rejected': 'Udlæg afvist', 'expense_claim.approved': 'Udlæg godkendt af revisor',
     'package.purchased': 'Køb', 'package.purchase_cancelled': 'Køb fortrudt', 'membership.legacy_upgrade_cancelled': 'Udvidelse annulleret',
     'activity.activated': 'Aktivitet aktiveret', 'activity_series.created': 'Fast aktivitet oprettet', 'post.deleted': 'Opslag slettet', 'post.reports_dismissed': 'Anmeldelse afvist',
-    'permission.roles': 'Rettigheder for rolle ændret', 'permission.granted': 'Rettighed givet', 'permission.ended': 'Rettighed afsluttet',
+    'permission.roles': 'Rettigheder for rolle ændret', 'permission.members': 'Medlemmers adgang til rettighed ændret', 'permission.granted': 'Rettighed givet', 'permission.ended': 'Rettighed afsluttet',
     'package.created': 'Pakke oprettet', 'package.updated': 'Pakke rettet', 'package.archived': 'Pakke arkiveret', 'package.restored': 'Pakke genoprettet',
     'punchcard.used': 'Klip brugt', 'punchcard.returned': 'Klip givet tilbage', 'punchcard.transferred': 'Papkort overført', 'guest.created': 'Gæst oprettet', 'guest.login_created': 'Gæst fik login',
     'equipment.created': 'Udstyr oprettet', 'equipment.booked': 'Udstyr booket', 'equipment.booking_cancelled': 'Booking annulleret', 'equipment.booking_moved': 'Booking flyttet',

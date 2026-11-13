@@ -130,11 +130,11 @@ class AuthController extends Controller
                 'settings' => $can['categories_manage'] || $can['packages_manage'] || $can['prices_edit'] || $can['roles_manage'] || $can['audit_view'],
                 // Trænerportalen: egen utilgængelighed (trænere) og/eller oversigten over alle trænere
                 'portal' => $can['trainers_portal'] || $can['activities_take'],
-                // Udstyrssiden: vedligehold, underkategorier eller booking (også medlemmer med udstyrsleje)
-                'equipment' => $can['equipment_manage'] || $can['equipment_types'] || $can['equipment_book'] || \App\Support\Equipment::hasRental($u)
+                // Udstyrssiden: vedligehold, underkategorier eller booking (også almindelige medlemmer, hvis admin tillader det)
+                'equipment' => $can['equipment_manage'] || $can['equipment_types'] || $can['equipment_book'] || \App\Support\Equipment::memberCanBook($u)
                     || \App\Models\EquipmentBooking::where('user_id', $u->id)->whereIn('status', ['confirmed', 'requested'])->where('ends_at', '>', now())->exists() // egne bookinger
                     || \App\Support\Equipment::unpaidRentalInvoiceIds($u), // købt leje, ikke betalt endnu
-                'equipment_book_any' => $can['equipment_book'] || \App\Support\Equipment::hasRental($u),
+                'equipment_book_any' => $can['equipment_book'] || \App\Support\Equipment::memberCanBook($u),
             ],
         ];
     }

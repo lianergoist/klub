@@ -32,6 +32,9 @@ class PermissionController extends Controller
             'permissions' => collect(Permissions::CATALOG)->map(fn ($c, $key) => [
                 'key' => $key, 'group' => $c[0], 'label' => $c[1], 'description' => $c[2],
                 'roles' => Permissions::rolesFor($key), 'default' => $c[3], 'locked' => Permissions::locked($key),
+                'members' => isset(Permissions::MEMBERS[$key]) ? [
+                    'value' => Permissions::membersRule($key), 'default' => Permissions::MEMBERS[$key][0], 'options' => Permissions::MEMBERS[$key][1],
+                ] : null,
                 'users' => ($grants[$key] ?? collect())->map(fn ($g) => [
                     'id' => $g->id, 'user_id' => $g->user_id, 'name' => $g->user->name, 'note' => $g->note,
                     'starts_on' => $g->starts_on->toDateString(), 'ends_on' => $g->ends_on?->toDateString(),
@@ -51,6 +54,19 @@ class PermissionController extends Controller
         Audit::log('permission.roles', null, ['permission' => $permission, 'before' => $before, 'after' => Permissions::rolesFor($permission)]);
 
         return ['roles' => Permissions::rolesFor($permission)];
+    }
+
+    /** Almindelige medlemmers adgang til en rettighed, der har det valg (fx booke udstyr). */
+    public function members(Request $r, string $permission)
+    {
+        $this->guard($r);
+        abort_unless(isset(Permissions::MEMBERS[$permission]), 404);
+        $d = $r->validate(['members' => ['required', Rule::in(array_keys(Permissions::MEMBERS[$permission][1]))]]);
+        $before = Permissions::membersRule($permission);
+        Permissions::setMembersRule($permission, $d['members']);
+        Audit::log('permission.members', null, ['permission' => $permission, 'before' => $before, 'after' => $d['members']]);
+
+        return ['members' => Permissions::membersRule($permission)];
     }
 
     public function grant(Request $r, User $member)

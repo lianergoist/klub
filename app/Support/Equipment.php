@@ -18,10 +18,21 @@ use Illuminate\Support\Carbon;
  */
 class Equipment
 {
-    /** Må brugeren booke udstyr på datoen? (rettighed eller betalt udstyrsleje/dagsleje, der gælder på datoen) */
+    /** Må brugeren booke udstyr på datoen? (rettighed, eller som almindeligt medlem efter admins valg under Rettigheder) */
     public static function canBook(User $u, $date = null): bool
     {
-        return $u->may('equipment.book') || self::hasRental($u, $date);
+        return $u->may('equipment.book') || self::memberCanBook($u, $date);
+    }
+
+    /** Almindelige medlemmer: ingen, kun med betalt udstyrsleje/dagsleje, eller alle med betalt medlemskab på datoen. */
+    public static function memberCanBook(User $u, $date = null): bool
+    {
+        return match (Permissions::membersRule('equipment.book')) {
+            'all' => $u->purchases()->activeOn($date)->whereHas('package', fn ($q) => $q->where('kind', 'membership'))->exists()
+                || self::hasRental($u, $date),
+            'rental' => self::hasRental($u, $date),
+            default => false,
+        };
     }
 
     public static function hasRental(User $u, $date = null): bool
@@ -32,6 +43,7 @@ class Equipment
     /** Regninger for købt udstyrsleje/dagsleje, der ikke er betalt endnu (så man kan se, hvorfor man ikke kan booke). */
     public static function unpaidRentalInvoiceIds(User $u): array
     {
+        if (Permissions::membersRule('equipment.book') === 'none') return [];
         $today = now()->toDateString();
 
         return $u->purchases()->whereNull('cancelled_at')

@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
  * handling kræver, og kan give enkelte medlemmer en rettighed (fx en kasserer-opgave) uden hele rollen.
  *
  * Nye handlinger tilføjes her med en standard; standarden gælder, indtil admin ændrer den.
- * "Medlem" kan ikke vælges som rolle: almindelige medlemmers adgang styres af medlemskabet, ikke her.
+ * "Medlem" kan ikke vælges som rolle: almindelige medlemmers adgang styres af medlemskabet. Enkelte rettigheder
+ * (MEMBERS) har dog et valg for almindelige medlemmer, som admin sætter samme sted.
  */
 class Permissions
 {
@@ -34,7 +35,7 @@ class Permissions
         'equipment.types' => ['Udstyr', 'Oprette og rette underkategorier af udstyr',
             'Underkategorier som sejl, master og boards under hver aktivitetskategori.', ['admin']],
         'equipment.book' => ['Udstyr', 'Booke udstyr',
-            'Booke bestemte stykker udstyr i et tidsrum. Medlemmer med betalt udstyrsleje eller dagsleje kan altid booke.', ['trainer', 'board', 'admin']],
+            'Booke bestemte stykker udstyr i et tidsrum. Om almindelige medlemmer også må, vælges nedenfor.', ['trainer', 'board', 'admin']],
         'equipment.decide' => ['Udstyr', 'Svare på ønsker om udstyr på alle aktiviteter',
             'Godkende eller afvise ønsker om at låne udstyr, som en aktivitet har booket – også når man ikke selv er træner på aktiviteten.', ['board', 'admin']],
         'equipment.cancel_overdue' => ['Udstyr', 'Annullere en booking, når fristen for at flytte den er overskredet',
@@ -69,6 +70,32 @@ class Permissions
         'packages.manage' => ['Økonomi', 'Oprette og rette medlemskaber og tilkøb',
             'Oprette, rette og arkivere pakker (medlemskaber, tilkøb, klippekort) og personkategorier.', ['board', 'admin']],
     ];
+
+    /** Rettigheder med et valg for almindelige medlemmer: key => [standard, [værdi => tekst]] */
+    public const MEMBERS = [
+        'equipment.book' => ['rental', [
+            'none' => 'Kan ikke booke',
+            'rental' => 'Kun med betalt udstyrsleje eller dagsleje',
+            'all' => 'Alle med betalt medlemskab',
+        ]],
+    ];
+
+    /** Almindelige medlemmers adgang til rettigheden (gemt valg, ellers standard); null hvis rettigheden ikke har valget. */
+    public static function membersRule(string $p): ?string
+    {
+        if (! isset(self::MEMBERS[$p])) return null;
+        $v = Cache::rememberForever('permission_members', fn () => DB::table('permission_roles')->whereNotNull('members')->pluck('members', 'permission')->all())[$p] ?? null;
+
+        return $v !== null && isset(self::MEMBERS[$p][1][$v]) ? $v : self::MEMBERS[$p][0];
+    }
+
+    public static function setMembersRule(string $p, string $v): void
+    {
+        DB::table('permission_roles')->updateOrInsert(['permission' => $p],
+            ['roles' => json_encode(self::rolesFor($p)), 'members' => $v, 'updated_by' => auth()->id(), 'updated_at' => now(), 'created_at' => now()]);
+        Cache::forget('permission_roles');
+        Cache::forget('permission_members');
+    }
 
     public static function exists(string $p): bool { return isset(self::CATALOG[$p]); }
 
