@@ -216,6 +216,8 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Afklares:** skal video være tilladt fast, og er 100 MB / 5 minutter de rigtige grænser? Videoer fylder mere på serveren end billeder.
 
+- **Senere (evt.):** billeder og videoer fra opslag gemmes i et **objektlager** (S3-kompatibelt, fx MinIO på en anden server eller en tjeneste som Hetzner Object Storage, Cloudflare R2 eller Backblaze B2) i stedet for på klubserverens egen disk. Medlemmerne henter så filerne direkte fra lageret via tidsbegrænsede, signerede links, så serveren ikke skal sende de store videofiler videre, og lageret kan vokse uafhængigt af serveren. Kræver nogle få dages arbejde (lagring og videobehandling) og en flytning af de eksisterende filer. Lageret skal være privat og ligge i EU, og det skal med i databehandleraftalen og i backup. Kvitteringer og regnskabsbilag kan flyttes med, men skal gemmes i 5 år efter bogføringsloven. Bliver først aktuelt, hvis der kommer mange videoer, eller hvis den endelige server får en lille disk.
+
 - **Afklares:** regler for opslagstavlen (hvad må deles, reklame/salg, billeder af børn) – bør formuleres af bestyrelsen og vises for medlemmerne.
 
 - **Afklares:** skal alle trænere kunne moderere, eller kun udvalgte personer? Hvor længe gemmes opslag og billeder, og skal de slettes, når et medlem melder sig ud?
