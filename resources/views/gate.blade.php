@@ -34,7 +34,7 @@
         (function () {
             var t = new URLSearchParams(location.search).get('tema');
             var m = /[?&]tema=(klub|auto|standard)/.exec(decodeURIComponent(new URLSearchParams(location.search).get('til') || ''));
-            try { t = t || (m && m[1]) || localStorage.getItem('tema'); } catch (e) {}
+            try { t = t || (m && m[1]) || (localStorage.getItem('tema-valgt') ? localStorage.getItem('tema') : null); } catch (e) {}
             if (!t || t === 'klub' || t === 'auto') document.documentElement.dataset.tema = 'klub'; // SurfHorsens er standard
         })();
     </script>
