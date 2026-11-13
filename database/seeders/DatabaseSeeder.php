@@ -406,6 +406,9 @@ class DatabaseSeeder extends Seeder
         // Aktivitetskategorier
         Category::where('name', 'Klubliv og teori')->update(['name' => 'Klubliv', 'mandatory' => true]);
         Category::firstOrCreate(['name' => 'Teori'], ['color' => '#778899']);
+        $catIds = fn (array $names) => Category::whereIn('name', $names)->pluck('id')->all();
+        Activity::where('title', 'Teoriaften: vejr, vind og strøm')->first()?->categories()->sync($catIds(['Klubliv', 'Teori']));
+        Activity::where('title', 'Sæsonstart: standerhejsning')->first()?->categories()->sync($catIds(['Klubliv']));
 
         // Medlemskaber og tilkøb
         $pkg = fn ($name) => \App\Models\Package::where('name', $name);
