@@ -5,6 +5,8 @@ import { store } from './api';
 export const THEMES = { auto: 'Automatisk', klub: 'SurfHorsens', standard: 'Blå', gron: 'Grøn', orange: 'Orange', mork: 'Mørk' };
 const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', 'klub-mork': '#1d1520', mork: '#0d1716' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
+// Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
+const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);
 
 function read() {
     try {
@@ -19,10 +21,13 @@ function read() {
 function apply() {
     const html = document.documentElement;
     const t = store.tema === 'auto' ? 'klub' : store.tema;
-    const klubMork = store.tema === 'auto' && dark.matches;
+    const klubMork = store.tema === 'auto' && systemDark();
     html.dataset.tema = t;
     if (klubMork) html.dataset.mork = ''; else delete html.dataset.mork;
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', COLORS[klubMork ? 'klub-mork' : t]);
+    // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke
+    // eslint-disable-next-line no-undef
+    if (__APP__) import('./native').then((m) => m.setStatusBarDark(klubMork || t === 'mork')).catch(() => {});
 }
 
 /** remember=true, når medlemmet selv vælger – kun aktive valg gemmes. */
@@ -39,5 +44,8 @@ export function initTheme() {
     if (THEMES[fromUrl]) setTheme(fromUrl, true);
     else setTheme(read() || 'auto');
     // Følg med, når telefonen skifter mellem lys og mørk (fx om aftenen)
-    dark.addEventListener('change', () => { if (store.tema === 'auto') apply(); });
+    const follow = () => { if (store.tema === 'auto') apply(); };
+    dark.addEventListener('change', follow);
+    window.addEventListener('nativecolorscheme', follow); // fra Android-appen
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) follow(); }); // tilbage i appen efter skift
 }

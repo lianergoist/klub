@@ -39,8 +39,6 @@ export async function unregisterPush() {
 export function initNative(router) {
     document.documentElement.classList.add('native', `native-${Capacitor.getPlatform()}`);
 
-    StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-    if (Capacitor.getPlatform() === 'android') StatusBar.setBackgroundColor({ color: '#7e5a8c' }).catch(() => {});
     router.isReady().then(() => SplashScreen.hide().catch(() => {}));
 
     // Androids tilbageknap: tilbage i appen, eller luk appen på forsiden
@@ -85,4 +83,12 @@ export async function shareFile(blob, filename) {
     const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
     const { uri } = await Filesystem.writeFile({ path: filename.replace(/[\\/:*?"<>|]/g, '_'), data, directory: Directory.Cache });
     try { await Share.share({ title: filename, files: [uri] }); } catch { /* brugeren lukkede Del-menuen */ }
+}
+
+/** Statuslinjen: lyse ikoner på mørke temaer (Style.Dark), mørke ikoner på lyse temaer (Style.Light). Kaldes fra theme.js. */
+export function setStatusBarDark(isDark) {
+    StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {});
+    // Ældre Android (før 15) tegner ikke siden bag statuslinjen: giv den sidens baggrundsfarve
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    if (Capacitor.getPlatform() === 'android' && bg) StatusBar.setBackgroundColor({ color: bg }).catch(() => {});
 }
