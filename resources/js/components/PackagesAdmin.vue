@@ -132,21 +132,29 @@
 
                 <fieldset>
                     <legend>Hvem dækker den?</legend>
-                    <div class="grid c2">
-                        <label class="field"><span>Personer i alt, mindst</span><input v-model.number="ed.total_min" type="number" min="1" required></label>
-                        <label class="field"><span>Personer i alt, højst</span><input v-model.number="ed.total_max" type="number" min="1" placeholder="ingen grænse"></label>
+                    <div v-if="!ed.split" class="grid c2">
+                        <label class="field"><span>Antal personer, mindst</span><input v-model.number="ed.total_min" type="number" min="1" required></label>
+                        <label class="field"><span>Antal personer, højst</span><input v-model.number="ed.total_max" type="number" min="1" placeholder="ingen grænse"></label>
                     </div>
-                    <table class="slots">
-                        <thead><tr><th>Kategori</th><th>Med</th><th>Mindst</th><th>Højst</th></tr></thead>
-                        <tbody>
-                            <tr v-for="s in ed.slotRows" :key="s.person_category_id">
-                                <td>{{ s.label }}</td>
-                                <td><input type="checkbox" v-model="s.on"></td>
-                                <td><input v-model.number="s.min" type="number" min="0" :disabled="!s.on"></td>
-                                <td><input v-model.number="s.max" type="number" min="0" :disabled="!s.on"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div v-if="!ed.split" class="field"><span>Hvem kan være med</span>
+                        <div class="row" style="gap:16px;flex-wrap:wrap">
+                            <label v-for="s in ed.slotRows" :key="s.person_category_id" class="check"><input type="checkbox" v-model="s.on"> {{ s.label }}</label>
+                        </div>
+                    </div>
+                    <label class="check"><input type="checkbox" :checked="ed.split" @change="setSplit($event.target.checked)"> Bestemt fordeling på kategorier <span class="small muted">(fx 2 voksne og 1–3 børn)</span></label>
+                    <template v-if="ed.split">
+                        <table class="slots">
+                            <thead><tr><th>Kategori</th><th>Med</th><th>Mindst</th><th>Højst</th></tr></thead>
+                            <tbody>
+                                <tr v-for="s in ed.slotRows" :key="s.person_category_id">
+                                    <td>{{ s.label }}</td>
+                                    <td><input type="checkbox" v-model="s.on"></td>
+                                    <td><input v-model.number="s.min" type="number" min="0" :disabled="!s.on"></td>
+                                    <td><input v-model.number="s.max" type="number" min="0" :disabled="!s.on"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </template>
                     <p class="small" style="margin:6px 0 0"><span class="muted">Eksempel:</span> {{ preview }}</p>
                 </fieldset>
 
@@ -240,8 +248,27 @@ function blank(over = {}) {
         slotRows: d.value.categories.filter(c => !c.archived || p.slots.some(s => s.person_category_id === c.id)).map(c => {
             const s = p.slots.find(s => s.person_category_id === c.id);
             return { person_category_id: c.id, label: `${c.name} (${c.min_age}${c.max_age === null ? '+' : '–' + c.max_age} år)`, on: !!s || !p.id, min: s?.min ?? 0, max: s?.max ?? (p.total_max || 1) };
-        }) };
+        }),
+        // Enkel visning, medmindre kategorierne faktisk begrænser fordelingen (fx 2 voksne og 1–3 børn)
+        split: p.slots.some(s => s.min > 0 || s.max < (p.total_max ?? NO_LIMIT)) };
 }
+const NO_LIMIT = 50; // højeste antal, API'et tillader
+/** Det, der gemmes: enkel visning → valgte kategorier 0–total; fordeling → total = summen af kategorierne. */
+function who(e) {
+    const on = e.slotRows.filter(s => s.on);
+    if (!e.split) return { total_min: e.total_min, total_max: e.total_max || null,
+        slots: on.map(s => ({ person_category_id: s.person_category_id, min: 0, max: e.total_max || NO_LIMIT })) };
+    const slots = on.map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: s.max || 0 }));
+    const sum = (k) => slots.reduce((a, s) => a + s[k], 0);
+    return { total_min: Math.max(1, sum('min')), total_max: Math.max(1, sum('max')), slots };
+}
+function setSplit(on) {
+    const e = ed.value;
+    if (on) e.slotRows.forEach(s => { s.min = 0; s.max = e.total_max || 1; });
+    else { const w = who(e); e.total_min = w.total_min; e.total_max = w.total_max; }
+    e.split = on;
+}
+const totalText = (w) => (w.total_min === w.total_max ? `${w.total_min}` : `${w.total_min}–${w.total_max ?? ''}`.replace(/–$/, '+')) + (w.total_max === 1 ? ' person' : ' personer');
 const catNames = (ids) => (ids || []).map(id => d.value.activity_categories.find(c => c.id === id)?.name).filter(Boolean).join(', ');
 function toggleCat(id) { const a = ed.value.category_ids; const i = a.indexOf(id); i >= 0 ? a.splice(i, 1) : a.push(id); }
 function openEdit(p) { error.value = ''; ed.value = blank(JSON.parse(JSON.stringify(p))); }
@@ -255,11 +282,16 @@ const periodHelp = computed(() => {
 const preview = computed(() => {
     const e = ed.value; if (!e) return '';
     const age = (s) => d.value.categories.find(c => c.id === s.person_category_id)?.min_age || 0;
-    const rows = e.slotRows.filter(s => s.on && s.max > 0).sort((a, b) => age(b) - age(a));
+    const w = who(e); const cat = (id) => d.value.categories.find(c => c.id === id);
+    if (!w.slots.length) return 'Vælg mindst én kategori.';
+    if (!e.split) {
+        const names = w.slots.map(s => cat(s.person_category_id)).sort((a, b) => b.min_age - a.min_age).map(c => c.plural.toLowerCase());
+        return `${totalText(w)} – ${w.slots.length === d.value.categories.filter(c => !c.archived).length ? 'alle aldre' : 'kun ' + names.join(' og ')}`;
+    }
     const r = (a, b) => a === b ? `${a}` : `${a}–${b}`;
-    const total = e.total_max ? r(e.total_min, e.total_max) : `${e.total_min}+`;
-    const cats = rows.map(s => { const c = d.value.categories.find(c => c.id === s.person_category_id); return `${r(s.min, s.max)} ${(s.max === 1 ? c.name : c.plural).toLowerCase()}`; });
-    return `${total === '1' ? '1 person' : total + ' personer'}${cats.length ? ' – ' + cats.join(' og ') : ''}`;
+    const cats = w.slots.filter(s => s.max > 0).sort((a, b) => cat(b.person_category_id).min_age - cat(a.person_category_id).min_age)
+        .map(s => { const c = cat(s.person_category_id); return `${r(s.min, s.max)} ${(s.max === 1 ? c.name : c.plural).toLowerCase()}`; });
+    return `${totalText(w)} – ${cats.join(' og ')}`;
 });
 
 async function savePkg() {
@@ -272,11 +304,10 @@ async function savePkg() {
         sale_from: e.hasSale && e.period_type !== 'once' ? `${pad(e.sFromM)}-${pad(e.sFromD)}` : null,
         sale_to: e.hasSale && e.period_type !== 'once' ? `${pad(e.sToM)}-${pad(e.sToD)}` : null,
         next_from: e.hasNext && e.period_type === 'dates' ? `${pad(e.nM)}-${pad(e.nD)}` : null,
-        total_min: e.total_min, total_max: e.total_max || null,
+        ...who(e),
         gives_access: e.gives_access, early_access: e.early_access, requires_membership: e.guest_only ? false : e.requires_membership,
         uses: e.isPunch ? e.uses : null, guest_only: e.guest_only, equipment_booking: e.kind === 'product' && !!e.equipment_booking, category_ids: e.isPunch ? e.category_ids : [], self_service: e.self_service,
         renews_to_id: e.period_type === 'dates' ? e.renews_to_id : null, account_id: e.account_id,
-        slots: e.slotRows.filter(s => s.on).map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: s.max || 0 })),
         ...(e.id ? {} : { kind: e.kind, price: e.price }),
     };
     try {

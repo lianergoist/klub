@@ -265,7 +265,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 | Familiekontingent, 4 eller flere i samme husstand | 3.000 kr. |
 
 - **Kerne:** alle medlemskaber og tilkøb er **pakker**, som bestyrelse og admin selv opretter under Indstillinger → Medlemskaber og tilkøb. En pakke beskriver:
-  - **hvem** den dækker: antal personer i alt (mindst–højst) og pr. personkategori (fx "2 voksne og 1–3 børn" eller "1 voksen og 1 barn"),
+  - **hvem** den dækker: antal personer (mindst–højst) og hvilke personkategorier der kan være med (fx kun voksne). Skal pakken have en bestemt sammensætning, slås "Bestemt fordeling på kategorier" til, og der angives mindst–højst pr. kategori (fx "2 voksne og 1–3 børn" eller "1 voksen og 1 barn"); antallet i alt følger så af kategorierne,
   - **hvor længe** den gælder: faste datoer hvert år (fx 1/5–30/4 eller 1/8–30/4), et antal dage fra køb (1–365) eller engangsbetaling,
   - **pris** med historik ("gælder fra"), hvilken konto indtægten bogføres på, og om medlemmerne selv kan vælge den.
   - Medlemskaber kan give adgang til aktiviteter eller ej (støttemedlem). Tilkøb kan kræve gyldigt medlemskab.
