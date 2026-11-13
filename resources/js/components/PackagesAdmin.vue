@@ -133,8 +133,8 @@
                 <fieldset>
                     <legend>Hvem dækker den?</legend>
                     <div v-if="!ed.split" class="grid c2">
-                        <label class="field"><span>Antal personer, mindst</span><input v-model.number="ed.total_min" type="number" min="1" required></label>
-                        <label class="field"><span>Antal personer, højst</span><input v-model.number="ed.total_max" type="number" min="1" placeholder="ingen grænse"></label>
+                        <label class="field"><span>Antal personer, mindst</span><input v-model.number="ed.total_min" type="number" min="1" required @input="fixMax(ed, 'total_min', 'total_max')"></label>
+                        <label class="field"><span>Antal personer, højst</span><input v-model.number="ed.total_max" type="number" :min="ed.total_min || 1" placeholder="ingen grænse" @change="fixMin(ed, 'total_min', 'total_max')"></label>
                     </div>
                     <div v-if="!ed.split" class="field"><span>Hvem kan være med</span>
                         <div class="row" style="gap:16px;flex-wrap:wrap">
@@ -149,8 +149,8 @@
                                 <tr v-for="s in ed.slotRows" :key="s.person_category_id">
                                     <td>{{ s.label }}</td>
                                     <td><input type="checkbox" v-model="s.on"></td>
-                                    <td><input v-model.number="s.min" type="number" min="0" :disabled="!s.on"></td>
-                                    <td><input v-model.number="s.max" type="number" min="0" :disabled="!s.on"></td>
+                                    <td><input v-model.number="s.min" type="number" min="0" :disabled="!s.on" @input="fixMax(s, 'min', 'max')"></td>
+                                    <td><input v-model.number="s.max" type="number" :min="s.min || 0" :disabled="!s.on" @change="fixMin(s, 'min', 'max')"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -262,6 +262,10 @@ function who(e) {
     const sum = (k) => slots.reduce((a, s) => a + s[k], 0);
     return { total_min: Math.max(1, sum('min')), total_max: Math.max(1, sum('max')), slots };
 }
+// Højst er aldrig mindre end mindst: øges mindst, følger højst med (tomt højst = ingen grænse røres ikke).
+// Sættes højst under mindst, følger mindst med ned – først når feltet forlades, så man kan skrive fx 12 i fred.
+function fixMax(o, lo, hi) { if (o[hi] !== '' && o[hi] !== null && typeof o[lo] === 'number' && o[hi] < o[lo]) o[hi] = o[lo]; }
+function fixMin(o, lo, hi) { if (o[hi] !== '' && o[hi] !== null && typeof o[hi] === 'number' && o[hi] < o[lo]) o[lo] = o[hi]; }
 function setSplit(on) {
     const e = ed.value;
     if (on) e.slotRows.forEach(s => { s.min = 0; s.max = e.total_max || 1; });
