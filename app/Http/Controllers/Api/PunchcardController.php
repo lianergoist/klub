@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Klippekort for ikke-medlemmer (fx SUP 10-turskort).
  * Gæster køber kortet og opretter et login på /klippekort, ser deres kort og de aktiviteter, kortet gælder til,
- * og tilmelder sig med et klip. Kassereren kan overføre papkort (klip uden betaling).
+ * og tilmelder sig med et klip.
  */
 class PunchcardController extends Controller
 {
@@ -43,33 +43,27 @@ class PunchcardController extends Controller
     public function signup(Request $r)
     {
         $d = $r->validate([
-            'package_id' => 'nullable|integer',
+            'package_id' => 'required|integer',
             'name' => 'required|string|max:120',
             'email' => 'required|email',
             'phone' => 'required|string|max:30',
             'birthdate' => 'required|date|before:today',
             'password' => 'required|min:8',
             'consent' => 'accepted',
-        ], ['consent.accepted' => 'Du skal give samtykke for at kunne oprette et login.']);
+        ], ['consent.accepted' => 'Du skal give samtykke for at kunne oprette et login.', 'package_id.required' => 'Vælg et klippekort.']);
         $existing = User::where('email', $d['email'])->first();
         abort_if($existing && $existing->status !== 'guest', 422, 'Du er medlem af klubben. Klippekort er kun for ikke-medlemmer – log ind og tilmeld dig som medlem.');
         abort_if($existing && $existing->password, 422, 'Du har allerede et login. Log ind for at købe et nyt klippekort.');
-        $package = null;
-        if (! empty($d['package_id'])) {
-            $package = Package::where('uses', '>', 0)->where('guest_only', true)->whereNull('archived_at')->findOrFail($d['package_id']);
-        }
+        $package = Package::where('uses', '>', 0)->where('guest_only', true)->whereNull('archived_at')->findOrFail($d['package_id']);
 
         $fields = ['name' => $d['name'], 'phone' => $d['phone'], 'birthdate' => $d['birthdate'], 'password' => Hash::make($d['password']), 'consent_at' => now()];
         $guest = $existing ?? User::create($fields + ['email' => $d['email'], 'status' => 'guest', 'notify_email' => true]);
         if ($existing) $existing->update($fields);
-        Audit::log($existing ? 'guest.login_created' : 'guest.created', $guest, ['punchcard' => (bool) $package]);
+        Audit::log($existing ? 'guest.login_created' : 'guest.created', $guest, ['punchcard' => $package->id]);
 
-        $invoiceId = null;
-        if ($package) {
-            $purchase = Packages::buy($guest->fresh(), $package, [$guest->id]);
-            Packages::settleIfFree($purchase->invoice);
-            $invoiceId = $purchase->invoice->fresh()->status === 'open' ? $purchase->invoice_id : null;
-        }
+        $purchase = Packages::buy($guest->fresh(), $package, [$guest->id]);
+        Packages::settleIfFree($purchase->invoice);
+        $invoiceId = $purchase->invoice->fresh()->status === 'open' ? $purchase->invoice_id : null;
 
         return ['token' => $guest->createToken('app')->plainTextToken, 'user' => AuthController::me($guest->fresh()), 'invoice_id' => $invoiceId];
     }
@@ -130,21 +124,5 @@ class PunchcardController extends Controller
         Punchcards::unpunch($r->user(), $activity);
 
         return $this->home($r);
-    }
-
-    /** Kassereren/bestyrelsen overfører et papkort: et klippekort med et antal klip, uden betaling. */
-    public function transfer(Request $r, User $member)
-    {
-        abort_unless($r->user()->may('members.approve'), 403);
-        abort_unless($member->status === 'guest', 422, 'Klippekort er kun for ikke-medlemmer.');
-        $d = $r->validate(['package_id' => 'required|integer', 'uses_left' => 'required|integer|min:1|max:100', 'note' => 'nullable|string|max:200']);
-        $package = Package::where('uses', '>', 0)->findOrFail($d['package_id']);
-        [$from, $to] = $package->windowFor(now()) ?? [now(), now()->addYear()];
-        $p = Purchase::create(['package_id' => $package->id, 'payer_id' => $member->id, 'valid_from' => $from, 'valid_to' => $to,
-            'uses_left' => $d['uses_left'], 'note' => $d['note'] ?: 'Overført fra papkort']);
-        $p->users()->attach($member->id);
-        Audit::log('punchcard.transferred', $p, ['member' => $member->name, 'uses_left' => $d['uses_left'], 'by' => $r->user()->name]);
-
-        return ['ok' => true];
     }
 }

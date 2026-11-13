@@ -14,7 +14,7 @@
             <h2>Mit klippekort</h2>
             <div v-if="!activeCards.length" class="card">
                 <p style="margin:0 0 10px">Du har ikke et klippekort med klip tilbage.</p>
-                <p v-if="!d.offers.length" class="small muted" style="margin:0">Der er ingen klippekort til salg lige nu. Har du et papkort, så kontakt kassereren, der kan overføre dine klip.</p>
+                <p v-if="!d.offers.length" class="small muted" style="margin:0">Der er ingen klippekort til salg lige nu.</p>
                 <button v-for="o in d.offers" :key="o.id" class="btn primary" style="margin:0 8px 8px 0" :disabled="busy" @click="buy(o)">Køb {{ o.name }} – {{ o.price_fmt }}</button>
             </div>
             <div v-for="c in activeCards" :key="c.id" class="card klip">

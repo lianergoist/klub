@@ -369,8 +369,6 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Kerne:** en aktivitet åbnes for klippekort med feltet "Åben for klippekort" (også på faste aktiviteter). Feltet vises kun, når der findes et klippekort til en af aktivitetens kategorier. Tilmelding bruger ét klip; afmelding inden afmeldingsfristen giver klippet tilbage, udeblivelse gør ikke. Trænerne ser gæsterne på deltagerlisten med mærket "Gæst" og kan registrere fremmøde som for alle andre. Klubben kan dermed se, hvor mange der kommer.
 
-- **Kerne:** papkort: den, der allerede har betalt for et papkort, opretter kun et login på /klippekort. Kassereren eller bestyrelsen overfører derefter de resterende klip under Medlemmer → gæstens side ("Overfør papkort"); kortet gælder 12 måneder fra overførslen.
-
 - **Afklares:** prisen på SUP 10-turskortet. I proof of concept er den foreløbigt 600 kr. Bestyrelsen kan rette den under Indstillinger.
 
 - **Afklares:** skal et betalt klippekort trækkes fra kontingentet, hvis gæsten melder sig ind (som prøvetræning og SUP-kursus inden for 12 måneder)? I proof of concept trækkes det ikke fra.

@@ -44,8 +44,8 @@ class Permissions
 
         'members.view' => ['Medlemmer', 'Se medlemskartoteket',
             'Se og eksportere alle medlemmers oplysninger, roller og regninger.', ['board', 'treasurer', 'admin']],
-        'members.approve' => ['Medlemmer', 'Godkende nye medlemmer og overføre papkort',
-            'Godkende indmeldelser, der venter, og overføre klip fra papklippekort.', ['board', 'treasurer', 'admin']],
+        'members.approve' => ['Medlemmer', 'Godkende nye medlemmer',
+            'Godkende indmeldelser, der venter.', ['board', 'treasurer', 'admin']],
         'members.edit' => ['Medlemmer', 'Rette medlemsoplysninger',
             'Rette navn, kontaktoplysninger, status m.m. på andre medlemmer.', ['admin']],
         'roles.manage' => ['Medlemmer', 'Tildele roller og rettigheder',

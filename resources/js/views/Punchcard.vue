@@ -9,7 +9,7 @@
 
         <div v-if="!offers" class="spinner"></div>
         <template v-else>
-            <div v-for="o in offers" :key="o.id" :class="['card', 'offer', { on: f.package_id === o.id && !paper }]" @click="f.package_id = o.id; paper = false">
+            <div v-for="o in offers" :key="o.id" :class="['card', 'offer', { on: f.package_id === o.id }]" @click="f.package_id = o.id">
                 <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
                     <div><h2 style="margin:0">{{ o.name }}</h2>
                         <p class="small muted" style="margin:4px 0 0">{{ o.uses }} klip · gælder {{ o.period_label }} · {{ o.categories.join(', ') }}</p>
@@ -18,7 +18,6 @@
                 </div>
             </div>
             <p v-if="!offers.length" class="card muted">Der er ingen klippekort til salg lige nu.</p>
-            <label class="check small" style="margin:0 4px 12px"><input type="checkbox" v-model="paper"> Jeg har allerede et papkort – opret kun et login, så overfører kassereren mine klip</label>
 
             <form class="card stack" autocomplete="on" @submit.prevent="submit">
                 <h2 style="margin:0">Opret login</h2>
@@ -34,7 +33,7 @@
                 <div class="banner info small" style="margin:0">Klubben gemmer dine oplysninger for at kunne holde styr på dit klippekort og dine tilmeldinger. Du kan altid se, rette og hente dine data.</div>
                 <label class="check"><input type="checkbox" v-model="f.consent"> Jeg giver samtykke til ovenstående.</label>
                 <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
-                <button class="btn primary block" :disabled="busy || (!paper && !chosen)">{{ paper ? 'Opret login' : chosen ? `Opret login og betal ${chosen.price_fmt}` : 'Vælg et klippekort' }}</button>
+                <button class="btn primary block" :disabled="busy || !chosen">{{ chosen ? `Opret login og betal ${chosen.price_fmt}` : 'Vælg et klippekort' }}</button>
             </form>
             <p class="small muted" style="text-align:center">Har du allerede et login? <RouterLink to="/login">Log ind</RouterLink> · Medlem? Så tilmelder du dig under Aktiviteter.</p>
         </template>
@@ -46,17 +45,17 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, setSession, toast } from '../api';
 const router = useRouter();
-const offers = ref(null); const paper = ref(false); const busy = ref(false); const error = ref('');
+const offers = ref(null); const busy = ref(false); const error = ref('');
 const f = reactive({ package_id: null, name: '', email: '', phone: '', birthdate: '', password: '', consent: false });
 const chosen = computed(() => offers.value?.find(o => o.id === f.package_id) || null);
 onMounted(async () => { offers.value = await api('punchcards'); if (offers.value.length === 1) f.package_id = offers.value[0].id; });
 async function submit() {
     busy.value = true; error.value = '';
     try {
-        const r = await api('punchcards/signup', { method: 'POST', body: { ...f, package_id: paper.value ? null : f.package_id } });
+        const r = await api('punchcards/signup', { method: 'POST', body: f });
         setSession(r.token, r.user);
         if (r.invoice_id) return router.push(`/betal/${r.invoice_id}`);
-        toast(paper.value ? 'Dit login er oprettet. Kassereren overfører dine klip.' : 'Klippekortet er klar');
+        toast('Klippekortet er klar');
         router.push('/klip');
     } catch (e) { error.value = e.message; } finally { busy.value = false; }
 }

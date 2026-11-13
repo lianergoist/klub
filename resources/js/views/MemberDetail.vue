@@ -17,17 +17,6 @@
             <button class="btn" @click="approve">Aktivér profilen</button>
         </div>
 
-        <form v-if="m.punchcard_packages?.length && can.members_approve" class="card stack" @submit.prevent="transfer">
-            <h3 style="margin:0">Overfør papkort</h3>
-            <p class="small muted" style="margin:0">Har gæsten et betalt papkort, kan klippene overføres her. Kortet gælder 12 måneder fra i dag og koster ikke noget.</p>
-            <div class="grid c3">
-                <label class="field"><span>Klippekort</span><select v-model="tr.package_id" required><option v-for="p in m.punchcard_packages" :key="p.id" :value="p.id">{{ p.name }}</option></select></label>
-                <label class="field"><span>Klip tilbage</span><input v-model.number="tr.uses_left" type="number" min="1" max="100" required></label>
-                <label class="field"><span>Note</span><input v-model="tr.note" placeholder="Overført fra papkort"></label>
-            </div>
-            <button class="btn">Overfør klip</button>
-        </form>
-
         <div v-if="m.purchases?.length" class="card">
             <h3>Medlemskaber og tilkøb</h3>
             <ul class="list">
@@ -146,12 +135,6 @@ const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });
 async function load() { m.value = await api(`members/${props.id}`); }
 onMounted(load); watch(() => props.id, load);
-const tr = reactive({ package_id: null, uses_left: 10, note: '' });
-watch(m, (v) => { if (v?.punchcard_packages?.length && !tr.package_id) tr.package_id = v.punchcard_packages[0].id; });
-async function transfer() {
-    try { await api(`members/${props.id}/punchcard`, { method: 'POST', body: tr }); toast(`${tr.uses_left} klip er overført`); load(); }
-    catch (e) { toast(e.message, 'error'); }
-}
 async function approve() { await api(`members/${props.id}/approve`, { method: 'POST' }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rollen er afsluttet'); load(); }

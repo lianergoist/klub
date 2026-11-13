@@ -133,7 +133,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('members/{member}', [MemberController::class, 'show']);
     Route::put('members/{member}', [MemberController::class, 'update']);
     Route::post('members/{member}/approve', [MemberController::class, 'approve']);
-    Route::post('members/{member}/punchcard', [\App\Http\Controllers\Api\PunchcardController::class, 'transfer']);
     Route::post('members/{member}/roles', [MemberController::class, 'addRole']);
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
     Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
