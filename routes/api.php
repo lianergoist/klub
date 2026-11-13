@@ -19,6 +19,7 @@ Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
 Route::get('packages/offer', [\App\Http\Controllers\Api\PackageController::class, 'offer']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
+Route::get('login-links', [GuestController::class, 'loginLinks']);
 Route::post('guest/book', [GuestController::class, 'book'])->middleware('throttle:10,1');
 Route::get('punchcards', [\App\Http\Controllers\Api\PunchcardController::class, 'offer']);
 Route::post('punchcards/signup', [\App\Http\Controllers\Api\PunchcardController::class, 'signup'])->middleware('throttle:10,1');

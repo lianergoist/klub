@@ -174,7 +174,7 @@ class PackageController extends Controller
                 $hist = $prices[$p->priceCode()] ?? collect();
                 $current = $hist->first(fn ($x) => $x->valid_from <= $today);
 
-                return $p->only('id', 'kind', 'name', 'description', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
+                return $p->only('id', 'kind', 'name', 'description', 'login_text', 'period_type', 'period_days', 'date_from', 'date_to', 'sale_from', 'sale_to', 'next_from', 'early_access', 'total_min', 'total_max',
                     'gives_access', 'requires_membership', 'self_service', 'renews_to_id', 'account_id', 'uses', 'guest_only', 'creditable', 'equipment_booking') + [
                     'upcoming_activities' => $p->isOffer() ? \App\Models\Activity::where('guest_package_id', $p->id)->whereNull('cancelled_at')->where('starts_at', '>', now())->count() : 0,
                     'category_ids' => $p->categories->pluck('id')->values(),
@@ -200,6 +200,7 @@ class PackageController extends Controller
             'kind' => [$p ? 'prohibited' : 'required', 'in:membership,product,offer'],
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
+            'login_text' => 'nullable|string|max:60',
             'period_type' => 'required|in:days,dates,once',
             'period_days' => 'required_if:period_type,days|nullable|integer|min:1|max:365',
             'date_from' => ['required_if:period_type,dates', 'nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'],
@@ -249,6 +250,8 @@ class PackageController extends Controller
         $d = $r->validate($this->rules($p, $r->input('kind')), self::messages(), ['total_min' => 'antal personer (mindst)', 'total_max' => 'antal personer (højst)']);
         $kind = $p?->kind ?? $d['kind'];
         if ($kind === 'offer') { $d['creditable'] = (bool) ($d['creditable'] ?? false); return $d; }
+        // Linjen på login-siden findes kun for tilbud og klippekort til ikke-medlemmer
+        if (! (! empty($d['guest_only']) && ! empty($d['uses']))) $d['login_text'] = null;
         unset($d['creditable']);
         $mins = array_sum(array_column($d['slots'], 'min'));
         $maxs = array_sum(array_column($d['slots'], 'max'));

@@ -28,12 +28,12 @@ class PunchcardController extends Controller
         return self::offers();
     }
 
-    private static function offers()
+    public static function offers()
     {
         return Package::with('categories')->where('uses', '>', 0)->where('guest_only', true)->where('self_service', true)
             ->whereNull('archived_at')->orderBy('position')->get()->filter(fn ($p) => $p->buyableOn(now()))
             ->map(fn ($p) => [
-                'id' => $p->id, 'name' => $p->name, 'description' => $p->description, 'uses' => $p->uses,
+                'id' => $p->id, 'name' => $p->name, 'description' => $p->description, 'login_text' => $p->login_text, 'uses' => $p->uses,
                 'price' => $p->price(), 'price_fmt' => Money::fmt($p->price()), 'period_label' => $p->periodLabel(),
                 'categories' => $p->categories->pluck('name')->values(),
             ])->values();

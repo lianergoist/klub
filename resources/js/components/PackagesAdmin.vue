@@ -86,6 +86,10 @@
                 <p v-if="ed.id && ed.purchases" class="banner info small" style="margin-bottom:0">{{ ed.purchases }} køb bruger pakken. Ændringer gælder kun nye køb – de eksisterende beholder deres personer og periode.</p>
                 <label class="field"><span>Navn</span><input v-model="ed.name" required maxlength="120" :placeholder="{ membership: 'Fx Familie, 2 voksne og 1–3 børn', offer: 'Fx Prøvetræning eller Wingfoil-kursus' }[ed.kind] || 'Fx Adgang til motionsrum'"></label>
                 <label class="field"><span>Beskrivelse ({{ ed.kind === 'offer' ? 'vises på siden "Prøv SurfHorsens"' : 'vises for medlemmerne' }})</span><textarea v-model="ed.description" maxlength="1000" rows="2"></textarea></label>
+                <label v-if="ed.kind === 'offer' || (ed.isPunch && ed.guest_only)" class="field"><span>Tekst på login-siden (valgfri)</span>
+                    <input v-model="ed.login_text" maxlength="40" :placeholder="ed.kind === 'offer' ? 'Fx Prøv windsurf' : 'Fx Køb et klippekort til SUP-ture'">
+                    <small class="muted">Vises som link under "Log ind" – kun når {{ ed.kind === 'offer' ? 'der er kommende aktiviteter, man kan tilmelde sig' : 'kortet er til salg' }}. Tom = vises ikke. Hold den kort (højst 40 tegn), så den står på én linje.</small>
+                </label>
 
                 <fieldset v-if="ed.kind === 'offer'">
                     <legend>Tilbud til ikke-medlemmer</legend>
@@ -260,8 +264,8 @@ const preview = computed(() => {
 
 async function savePkg() {
     const e = ed.value; error.value = ''; busy.value = true;
-    const body = e.kind === 'offer' ? { name: e.name, description: e.description || null, account_id: e.account_id, creditable: !!e.creditable, ...(e.id ? {} : { kind: 'offer', price: e.price }) } : {
-        name: e.name, description: e.description || null, period_type: e.period_type,
+    const body = e.kind === 'offer' ? { name: e.name, description: e.description || null, login_text: e.login_text || null, account_id: e.account_id, creditable: !!e.creditable, ...(e.id ? {} : { kind: 'offer', price: e.price }) } : {
+        name: e.name, description: e.description || null, login_text: e.login_text || null, period_type: e.period_type,
         period_days: e.period_type === 'days' ? e.period_days : null,
         date_from: e.period_type === 'dates' ? `${pad(e.fromM)}-${pad(e.fromD)}` : null,
         date_to: e.period_type === 'dates' ? `${pad(e.toM)}-${pad(e.toD)}` : null,

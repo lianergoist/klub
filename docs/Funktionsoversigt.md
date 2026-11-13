@@ -367,6 +367,8 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Kerne:** ikke-medlemmer køber kortet og opretter et login på siden /klippekort (linket fra login-siden) og betaler med MobilePay. De logger ind som gæst og ser kun deres klippekort, de aktiviteter, kortet gælder til, og deres egne regninger.
 
+- **Kerne:** **login-siden** viser under "Log ind" altid "Ikke medlem endnu? Meld dig ind". Tilbud og klippekort til ikke-medlemmer kan få deres egen linje, fx "Prøv en træning", "Tag et SUP-kursus" eller "Køb et klippekort til SUP-ture". Teksten sættes på tilbuddet under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer (feltet "Tekst på login-siden", højst 40 tegn). Linjen vises kun, når der er noget at købe: kommende aktiviteter, man kan tilmelde sig, eller et klippekort til salg. Et tilbud åbner siden "Prøv SurfHorsens" med kun det tilbud. I appen åbnes tilbuddene i browseren.
+
 - **Kerne:** en aktivitet åbnes for klippekort med feltet "Åben for klippekort" (også på faste aktiviteter). Feltet vises kun, når der findes et klippekort til en af aktivitetens kategorier. Tilmelding bruger ét klip; afmelding inden afmeldingsfristen giver klippet tilbage, udeblivelse gør ikke. Trænerne ser gæsterne på deltagerlisten med mærket "Gæst" og kan registrere fremmøde som for alle andre. Klubben kan dermed se, hvor mange der kommer.
 
 - **Afklares:** prisen på SUP 10-turskortet. I proof of concept er den foreløbigt 600 kr. Bestyrelsen kan rette den under Indstillinger.

@@ -22,11 +22,33 @@ use Illuminate\Support\Facades\DB;
  */
 class GuestController extends Controller
 {
-    public function offers()
+    /** Kommende aktiviteter, ikke-medlemmer kan tilmelde sig nu */
+    private static function openActivities()
     {
-        $acts = Activity::whereNotNull('guest_package_id')->where('status', 'active')->whereNull('cancelled_at')->where('starts_at', '>', now())
+        return Activity::whereNotNull('guest_package_id')->where('status', 'active')->whereNull('cancelled_at')->where('starts_at', '>', now())
             ->where(fn ($q) => $q->whereNull('signup_deadline')->orWhere('signup_deadline', '>', now()))
             ->orderBy('starts_at')->get();
+    }
+
+    /**
+     * Linjerne under "Log ind" (ud over "Meld dig ind"): tilbud og klippekort med en tekst til login-siden,
+     * men kun når der er noget at købe – kommende aktiviteter for tilbuddet, eller et klippekort til salg.
+     */
+    public function loginLinks()
+    {
+        $open = self::openActivities()->pluck('guest_package_id')->unique();
+        $offers = \App\Models\Package::where('kind', 'offer')->whereNull('archived_at')->whereIn('id', $open)
+            ->whereNotNull('login_text')->where('login_text', '!=', '')->orderBy('position')->orderBy('id')->get()
+            ->map(fn ($o) => ['text' => $o->login_text, 'to' => '/prov?tilbud='.$o->id, 'web' => true]);
+        $cards = collect(PunchcardController::offers())->filter(fn ($p) => filled($p['login_text']))
+            ->map(fn ($p) => ['text' => $p['login_text'], 'to' => '/klippekort', 'web' => false]);
+
+        return $offers->concat($cards)->values();
+    }
+
+    public function offers()
+    {
+        $acts = self::openActivities();
 
         return \App\Models\Package::where('kind', 'offer')->whereNull('archived_at')->orderBy('position')->orderBy('id')->get()->map(fn ($o) => [
             'code' => $o->id, 'label' => $o->name, 'text' => $o->description, 'creditable' => $o->creditable,

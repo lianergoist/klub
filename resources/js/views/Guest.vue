@@ -9,11 +9,13 @@
 
         <div v-if="!offers" class="spinner"></div>
         <template v-else-if="!picked">
-            <div v-for="o in offers" :key="o.code" class="card">
-                <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
-                    <div><h2 style="margin:0">{{ o.label }}</h2><p class="small muted" style="margin:4px 0 0">{{ o.text }}</p></div>
+            <p v-if="only" class="small" style="margin:0 4px 10px"><RouterLink :to="{ query: {} }">← Se alle tilbud</RouterLink></p>
+            <div v-for="o in shown" :key="o.code" class="card">
+                <div class="row between" style="align-items:baseline;flex-wrap:nowrap">
+                    <h2 style="margin:0">{{ o.label }}</h2>
                     <div class="price">{{ o.price_fmt }}</div>
                 </div>
+                <p v-if="o.text" class="small muted" style="margin:4px 0 0">{{ o.text }}</p>
                 <ul class="list" style="margin-top:10px">
                     <li v-for="a in o.activities" :key="a.id" class="row between" style="flex-wrap:nowrap">
                         <div><strong>{{ datoLang(a.starts_at) }}</strong> kl. {{ klok(a.starts_at) }}<div class="small muted">{{ a.title }}<span v-if="a.location"> · {{ a.location }}</span></div></div>
@@ -50,10 +52,14 @@
 </template>
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { api, setSession, datoLang, klok } from '../api';
 const router = useRouter();
-const offers = ref(null); const picked = ref(null); const error = ref(''); const busy = ref(false);
+const offers = ref(null); const picked = ref(null);
+// ?tilbud=ID (fx fra linket på login-siden) viser kun det ene tilbud
+const route = useRoute();
+const only = computed(() => Number(route.query.tilbud) || null);
+const shown = computed(() => (offers.value || []).filter(o => !only.value || o.code === only.value)); const error = ref(''); const busy = ref(false);
 const f = reactive({ name: '', email: '', phone: '', birthdate: '', guardian_name: '', guardian_phone: '', consent: false });
 const minor = computed(() => { if (!f.birthdate) return false; const b = new Date(f.birthdate), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a < 18; });
 onMounted(async () => { offers.value = await api('guest/offers'); });

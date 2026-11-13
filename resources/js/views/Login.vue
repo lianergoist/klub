@@ -13,8 +13,11 @@
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink></p>
-                <p v-if="!IS_APP" class="small muted" style="text-align:center;margin-top:4px">Prøv en <RouterLink to="/prov">træning eller et SUP-kursus</RouterLink></p>
-                <p class="small muted" style="text-align:center;margin-top:4px">Ikke medlem, men vil med til SUP-ture? <RouterLink to="/klippekort">Køb et klippekort</RouterLink></p>
+                <!-- Tilbud og klippekort til ikke-medlemmer: tekst sættes under Indstillinger → Medlemskaber og tilkøb, vises kun når der er noget at købe -->
+                <p v-for="l in links" :key="l.to" class="small offer-link">
+                    <a v-if="l.web && IS_APP" href="#" @click.prevent="openWeb(l.to)">{{ l.text }}</a>
+                    <RouterLink v-else :to="l.to">{{ l.text }}</RouterLink>
+                </p>
             </form>
         </div>
         <div v-if="demo.length" class="card login-card">
@@ -38,9 +41,14 @@ import ThemeSwitch from '../components/ThemeSwitch.vue';
 
 const router = useRouter();
 const email = ref(''); const password = ref(''); const error = ref(''); const busy = ref(false);
-const demo = ref([]);
+const demo = ref([]); const links = ref([]);
 
-onMounted(async () => { try { demo.value = await api('demo-accounts'); } catch {} });
+onMounted(async () => {
+    api('login-links').then(r => (links.value = r)).catch(() => {});
+    try { demo.value = await api('demo-accounts'); } catch {}
+});
+// Prøvetræning/kurser findes kun på weben – i appen åbnes de i browseren
+async function openWeb(path) { (await import('../native')).openWeb(path); }
 
 async function done(res) { setSession(res.token, res.user); router.push('/aktiviteter'); }
 async function login() {
@@ -56,5 +64,6 @@ async function demoLogin(e) { await done(await api('demo-login', { method: 'POST
 .login-hero { text-align: center; margin-bottom: 20px; }
 .login-hero img { border-radius: 16px; }
 .login-hero p { color: var(--ink-2); }
+.offer-link { text-align: center; margin: 4px 0 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .demo-btn { flex-direction: column; align-items: flex-start; text-align: left; gap: 0; padding: 10px 12px; }
 </style>
