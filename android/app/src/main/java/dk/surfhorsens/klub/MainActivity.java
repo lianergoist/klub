@@ -4,6 +4,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -17,6 +18,12 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean isDark() {
             return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        }
+
+        /** Navigationsknapperne nederst: mørke ikoner på lyse temaer, lyse på mørke (statuslinjen klares af StatusBar-pluginet). */
+        @JavascriptInterface
+        public void setNavigationBarDark(boolean dark) {
+            runOnUiThread(() -> new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView()).setAppearanceLightNavigationBars(!dark));
         }
     }
 

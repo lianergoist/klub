@@ -13,8 +13,8 @@
                 <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" name="bday" id="bday" type="date" required autocomplete="bday"></label>
             </div>
             <label class="field"><span>Adresse</span><input v-model="f.address" name="address" id="address" autocomplete="address-line1"></label>
-            <div class="grid c2">
-                <label class="field"><span>Postnr.</span><input v-model="f.postal_code" name="postal-code" id="postal-code" inputmode="numeric" autocomplete="postal-code"></label>
+            <div class="grid c2 addr">
+                <label class="field"><span>Postnr.</span><input v-model="f.postal_code" name="postal-code" id="postal-code" inputmode="numeric" maxlength="4" autocomplete="postal-code"></label>
                 <label class="field"><span>By</span><input v-model="f.city" name="city" id="city" autocomplete="address-level2"></label>
             </div>
 
@@ -107,6 +107,8 @@ async function submit() {
 }
 </script>
 <style scoped>
+/* Postnr. og By på samme linje på mobil */
+@media (max-width: 699.98px) { .addr { grid-template-columns: 1fr 2fr; } }
 .other { grid-template-columns: 1fr 150px auto; gap: 8px; margin-bottom: 6px; }
 .yn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .yn .btn { min-height: 48px; }

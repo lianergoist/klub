@@ -88,6 +88,7 @@ export async function shareFile(blob, filename) {
 /** Statuslinjen: lyse ikoner på mørke temaer (Style.Dark), mørke ikoner på lyse temaer (Style.Light). Kaldes fra theme.js. */
 export function setStatusBarDark(isDark) {
     StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {});
+    try { window.KlubNative?.setNavigationBarDark?.(isDark); } catch {} // Android: navigationsknapperne nederst
     // Ældre Android (før 15) tegner ikke siden bag statuslinjen: giv den sidens baggrundsfarve
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
     if (Capacitor.getPlatform() === 'android' && bg) StatusBar.setBackgroundColor({ color: bg }).catch(() => {});

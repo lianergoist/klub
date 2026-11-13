@@ -5,12 +5,14 @@
         <p v-if="!groups.length" class="small muted" style="margin:0">Der er ikke registreret udstyr{{ categoryIds?.length ? ' i de valgte kategorier' : '' }}.</p>
         <div v-for="g in groups" :key="g.key" class="grp">
             <div class="row between" style="flex-wrap:nowrap">
-                <div><strong class="small">{{ g.category }} · {{ g.type }}</strong>
+                <div><component :is="collapsible ? 'button' : 'span'" type="button" class="ghead" :aria-expanded="isOpen(g)" @click="collapsible && flip(g)">
+                    <strong class="small">{{ g.category }} · {{ g.type }}</strong>
+                    <span v-if="collapsible" class="small muted">&nbsp;{{ chosenIn(g) ? `· ${chosenIn(g)} valgt` : `· ${g.items.filter(pickable).length} ledige` }} {{ isOpen(g) ? '▴' : '▾' }}</span></component>
                     <div v-for="(h, k) in g.common" :key="k" class="small d warnc">{{ label(h) }}</div>
                     <div v-if="mode === 'book' && g.items.some(i => byActivity(i) && pickable(i))" class="small d ask">Du kan vælge det udstyr, du gerne vil booke, og sende et ønske til træneren, som så kan sige ja eller nej.</div></div>
-                <button type="button" class="btn small ghost" @click="all(g)">{{ g.items.every(i => !pickable(i) || model.includes(i.id)) ? 'Fravælg alle' : 'Vælg alle' }}</button>
+                <button v-if="isOpen(g)" type="button" class="btn small ghost" @click="all(g)">{{ g.items.every(i => !pickable(i) || model.includes(i.id)) ? 'Fravælg alle' : 'Vælg alle' }}</button>
             </div>
-            <div class="items">
+            <div v-if="isOpen(g)" class="items">
                 <label v-for="i in g.items" :key="i.id" :class="['it', { off: !pickable(i), warn: busyBy(i), act: byActivity(i) && pickable(i) }]">
                     <input type="checkbox" :disabled="!pickable(i)" :checked="model.includes(i.id)" @change="toggle(i.id)">
                     <span>{{ i.name }}
@@ -24,11 +26,12 @@
     </div>
 </template>
 <script setup>
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 const props = defineProps({
     items: Array,          // fra equipment/availability
     categoryIds: Array,    // vis kun disse kategorier (valgfri)
     mode: { type: String, default: 'book' }, // book: bookinger kan ikke vælges · activity: alt (undtagen defekt) kan vælges
+    collapsible: Boolean,  // underkategorierne kan foldes sammen (booking på mobil)
 });
 const model = defineModel({ type: Array, default: () => [] });
 const visible = computed(() => props.items.filter(i => !props.categoryIds?.length || props.categoryIds.includes(i.category_id)));
@@ -51,6 +54,11 @@ const anyAct = computed(() => visible.value.some(i => byActivity(i) && pickable(
 const label = (h) => h.kind === 'activity' ? 'Booket til aktiviteten ' + h.title : 'Booket af ' + h.name;
 const own = (i, g) => i.holders.filter(h => !g.commonKeys.includes(g.key2(h)));
 const pickable = (i) => i.status !== 'defect' && (props.mode === 'activity' || !i.holders.some(h => h.kind === 'booking'));
+// Sammenfoldning: er der kun 1–2 grupper, er de åbne; ellers lukkede, undtagen dem med valgt udstyr
+const opened = reactive({}); // grupper, man selv har åbnet/lukket
+const chosenIn = (g) => g.items.filter(i => model.value.includes(i.id)).length;
+const isOpen = (g) => !props.collapsible || (opened[g.key] ?? (groups.value.length <= 2 || chosenIn(g) > 0));
+function flip(g) { opened[g.key] = !isOpen(g); }
 function toggle(id) { model.value = model.value.includes(id) ? model.value.filter(x => x !== id) : [...model.value, id]; }
 function all(g) {
     const ids = g.items.filter(pickable).map(i => i.id);
@@ -60,6 +68,8 @@ function all(g) {
 </script>
 <style scoped>
 .grp { border-top: 1px solid var(--line); padding: 10px 0; }
+.ghead { background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+span.ghead { cursor: default; padding: 0; }
 .grp:first-child { border-top: 0; padding-top: 0; }
 .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 8px; margin-top: 6px; }
 .it { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: .92rem; padding: 5px 7px; border-radius: 8px; border: 1px solid transparent; }

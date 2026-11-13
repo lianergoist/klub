@@ -68,14 +68,19 @@
                     <label class="field"><span>Fra</span><input type="datetime-local" v-model="bf.starts_at" @change="autoEnd"></label>
                     <label class="field"><span>Til</span><input type="datetime-local" v-model="bf.ends_at"></label>
                 </div>
-                <div class="chips">
-                    <button v-for="c in availCats" :key="c.id" type="button" :class="['chip', { on: bookCats.includes(c.id) }]" @click="toggle(bookCats, c.id)">{{ c.name }}</button>
+                <div>
+                    <span class="small" style="font-weight:600;color:var(--ink-2)">Hvad skal du bruge?</span>
+                    <div class="chips" style="margin-top:6px">
+                        <button v-for="c in availCats" :key="c.id" type="button" :class="['chip', { on: bookCats.includes(c.id) }]" @click="toggle(bookCats, c.id)">{{ c.name }}</button>
+                    </div>
                 </div>
                 <div v-if="avail === null && validTime" class="spinner"></div>
                 <p v-else-if="!validTime" class="small muted" style="margin:0">Vælg tidsrum for at se, hvad der er ledigt.</p>
-                <EquipmentPicker v-else v-model="bf.equipment_ids" :items="avail" :category-ids="bookCats" mode="book" />
+                <!-- Kun den valgte kategori vises, så listen ikke bliver uoverskuelig -->
+                <p v-else-if="!bookCats.length" class="small muted" style="margin:0">Vælg en eller flere kategorier ovenfor for at se, hvad der er ledigt.</p>
+                <EquipmentPicker v-else v-model="bf.equipment_ids" :items="avail" :category-ids="bookCats" mode="book" collapsible />
                 <label class="field"><span>Bemærkning (valgfri)</span><input v-model="bf.note" placeholder="Fx hvad du skal bruge det til"></label>
-                <button class="btn primary block" :disabled="busy || !bf.equipment_ids.length || !validTime" @click="book(pickedHeld.length > 0)">
+                <button class="btn primary block book-btn" :disabled="busy || !bf.equipment_ids.length || !validTime" @click="book(pickedHeld.length > 0)">
                     {{ pickedHeld.length ? 'Send ønske til træneren' : bf.replaces ? 'Flyt booking' : `Book ${bf.equipment_ids.length || ''} stk.` }}</button>
             </div>
         </template>
@@ -247,7 +252,10 @@ async function archiveItem(i) {
 const local = (dt) => { const x = new Date(dt); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
 const next = new Date(); next.setDate(next.getDate() + 1); next.setHours(10, 0, 0, 0);
 const bf = reactive({ starts_at: local(next), ends_at: local(new Date(next.getTime() + 3 * 3600e3)), equipment_ids: [], note: '', replaces: null, replacesLabel: '' });
-const avail = ref(null); const bookCats = ref([]); const conflict = ref(null);
+const avail = ref(null); const conflict = ref(null);
+// Husk sidst valgte kategorier til booking (på denne enhed)
+const bookCats = ref((() => { try { return JSON.parse(localStorage.getItem('book-kategorier') || '[]'); } catch { return []; } })());
+watch(bookCats, (v) => { try { localStorage.setItem('book-kategorier', JSON.stringify(v)); } catch {} }, { deep: true });
 const validTime = computed(() => bf.starts_at && bf.ends_at && bf.ends_at > bf.starts_at);
 const availCats = computed(() => { const m = {}; for (const i of avail.value || []) m[i.category_id] = { id: i.category_id, name: i.category }; return Object.values(m); });
 const pickedHeld = computed(() => (avail.value || []).filter(i => bf.equipment_ids.includes(i.id) && i.holders.some(h => h.kind === 'activity')).map(i => i.name));
@@ -308,6 +316,8 @@ onMounted(() => { load(); loadBookings(); if (tab.value === 'book') loadAvail();
 </script>
 
 <style scoped>
+/* Book-knappen bliver stående over bundmenuen på mobil, så man ser antallet, mens man vælger */
+@media (max-width: 899.98px) { .book-btn { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .count { margin-left: 6px; background: var(--warn); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .72rem; font-weight: 700; }
 h2 .sw, .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .type { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }

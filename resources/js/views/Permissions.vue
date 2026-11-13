@@ -4,14 +4,16 @@
             <h1>Rettigheder</h1>
             <RouterLink to="/indstillinger" class="btn small ghost">← Indstillinger</RouterLink>
         </div>
-        <p class="muted" style="margin-top:0">Her vælger du, hvilke roller der giver adgang til hver handling. Tryk på en rolle for at slå den til eller fra – det gælder med det samme for alle med rollen.
-            Skal ét medlem kunne noget uden at få hele rollen, så giv en <strong>personlig rettighed</strong> på medlemmets side (Medlemmer → medlem → Personlige rettigheder).
-            Almindelige medlemmers adgang (tilmelding, betaling, profil) følger af medlemskabet og styres ikke her.</p>
+        <div class="muted" style="margin:0 0 14px">Vælg, hvilke roller der må hvad. Tryk på en rolle for at slå den til eller fra – det gælder med det samme.
+            <details class="more-info"><summary class="small">Mere om rettigheder</summary>
+                <p class="small" style="margin:6px 0 0">Skal ét medlem kunne noget uden at få hele rollen, så giv en <strong>personlig rettighed</strong> på medlemmets side (Medlemmer → medlem → Personlige rettigheder). Almindelige medlemmers adgang (tilmelding, betaling, profil) følger af medlemskabet og styres ikke her.</p>
+            </details></div>
         <div v-if="!data" class="spinner"></div>
         <template v-else>
-            <div v-for="(list, g) in groups" :key="g" class="card">
-                <h2>{{ g }}</h2>
-                <ul class="list">
+            <!-- Grupperne kan foldes sammen; på mobil starter de lukkede -->
+            <details v-for="(list, g) in groups" :key="g" class="card grp" :open="!isMobile">
+                <summary><h2 style="margin:0;flex:1">{{ g }}</h2><span class="small muted">{{ list.length }} {{ list.length === 1 ? 'rettighed' : 'rettigheder' }}<template v-if="list.some(changed)"> · ændret</template></span></summary>
+                <ul class="list" style="margin-top:10px">
                     <li v-for="p in list" :key="p.key" class="stack" style="gap:6px">
                         <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
                             <div>
@@ -32,7 +34,7 @@
                         </p>
                     </li>
                 </ul>
-            </div>
+            </details>
             <p class="small muted">Alle ændringer skrives i ændringsloggen.</p>
         </template>
     </div>
@@ -40,6 +42,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { api, dato, toast, refreshMe } from '../api';
+import { isMobile } from '../mobile';
 
 const data = ref(null); const busy = ref(null);
 const today = new Date().toISOString().slice(0, 10);
@@ -65,3 +68,10 @@ const reset = (p) => save(p, p.default);
 
 onMounted(async () => { data.value = await api('settings/permissions'); });
 </script>
+<style scoped>
+.grp > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.grp > summary::-webkit-details-marker { display: none; }
+.grp > summary::after { content: '▾'; color: var(--ink-3); }
+.grp[open] > summary::after { content: '▴'; }
+.more-info summary { cursor: pointer; color: var(--accent); }
+</style>

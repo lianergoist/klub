@@ -37,23 +37,23 @@
         </template>
 
         <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="saveProfile">
-            <label class="field"><span>Navn</span><input v-model="f.name" required></label>
+            <label class="field"><span>Navn</span><input v-model="f.name" required autocomplete="name"></label>
             <div class="grid c2">
-                <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required></label>
-                <label class="field"><span>Telefon</span><input v-model="f.phone"></label>
+                <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="email" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><span>Telefon</span><input v-model="f.phone" type="tel" inputmode="tel" autocomplete="tel"></label>
             </div>
-            <label class="field"><span>Adresse</span><input v-model="f.address"></label>
-            <div class="grid c3">
-                <label class="field"><span>Postnr.</span><input v-model="f.postal_code"></label>
-                <label class="field"><span>By</span><input v-model="f.city"></label>
-                <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" type="date"></label>
+            <label class="field"><span>Adresse</span><input v-model="f.address" autocomplete="address-line1"></label>
+            <div class="grid c3 addr">
+                <label class="field"><span>Postnr.</span><input v-model="f.postal_code" inputmode="numeric" maxlength="4" autocomplete="postal-code"></label>
+                <label class="field"><span>By</span><input v-model="f.city" autocomplete="address-level2"></label>
+                <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" type="date" autocomplete="bday"></label>
             </div>
             <h3 style="margin-top:8px">Nødkontakt</h3>
             <div class="grid c2">
-                <label class="field"><span>Navn</span><input v-model="f.emergency_name"></label>
-                <label class="field"><span>Telefon</span><input v-model="f.emergency_phone"></label>
+                <label class="field"><span>Navn</span><input v-model="f.emergency_name" autocomplete="off"></label>
+                <label class="field"><span>Telefon</span><input v-model="f.emergency_phone" type="tel" inputmode="tel" autocomplete="off"></label>
             </div>
-            <button class="btn primary">Gem</button>
+            <button class="btn primary block save-btn">Gem</button>
         </form>
 
         <div v-if="cur === 'familie'">
@@ -119,7 +119,8 @@
             <h2>Hvordan vil du have besked?</h2>
             <div class="stack">
                 <label class="check"><input type="checkbox" v-model="f.notify_email" @change="saveProfile"> E-mail</label>
-                <label class="check"><input type="checkbox" v-model="f.notify_push" @change="saveProfile"> Push-besked på telefonen <span class="small muted">(kræver appen)</span></label>
+                <label class="check"><input type="checkbox" v-model="f.notify_push" @change="saveProfile"> Push-besked på telefonen</label>
+                <p v-if="!IS_APP" class="small muted" style="margin:-4px 0 0 30px">Virker kun, når du har klubbens app på telefonen og er logget ind dér.</p>
             </div>
             <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
@@ -214,7 +215,7 @@ import Receipt from './Receipt.vue';
 import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import AppVersion from '../components/AppVersion.vue';
-import { api, store, dato, kr, toast, download, roleLabel, logout as doLogout } from '../api';
+import { api, store, dato, kr, toast, download, roleLabel, IS_APP, logout as doLogout } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();
@@ -299,6 +300,9 @@ onMounted(async () => { await load(); onTab(cur.value); });
 <style scoped>
 .lbl { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 .back { display: inline-block; margin-bottom: 6px; }
+/* Postnr. og By på samme linje (fødselsdato under) på mobil */
+@media (max-width: 699.98px) { .addr { grid-template-columns: 1fr 2fr; } .addr > :last-child { grid-column: 1 / -1; } }
+@media (max-width: 899.98px) { .save-btn { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .menu { padding: 2px 16px; }
 .menu .list > li { padding: 0; }
 .mrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink); min-height: 56px; }
