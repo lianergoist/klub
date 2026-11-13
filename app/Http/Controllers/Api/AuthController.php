@@ -127,7 +127,7 @@ class AuthController extends Controller
             'season' => \App\Support\Season::label(),
             'can' => ($can = \App\Support\Permissions::flags($u)) + [
                 // Indstillinger vises, hvis man må mindst én af tingene dér
-                'settings' => $can['categories_manage'] || $can['packages_manage'] || $can['prices_edit'] || $can['roles_manage'],
+                'settings' => $can['categories_manage'] || $can['packages_manage'] || $can['prices_edit'] || $can['roles_manage'] || $can['audit_view'],
                 // Trænerportalen: egen utilgængelighed (trænere) og/eller oversigten over alle trænere
                 'portal' => $can['trainers_portal'] || $can['activities_take'],
                 // Udstyrssiden: vedligehold, underkategorier eller booking (også medlemmer med udstyrsleje)

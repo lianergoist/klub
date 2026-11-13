@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Activity;
-use App\Models\AuditLog;
 use App\Models\Budget;
 use App\Models\Entry;
 use App\Models\Invoice;
@@ -376,10 +375,7 @@ class FinanceController extends Controller
     {
         $this->read($r);
 
-        return AuditLog::with('user')->latest('id')->limit(300)->get()->map(fn ($l) => [
-            'id' => $l->id, 'at' => $l->created_at->toIso8601String(), 'by' => $l->user?->name ?? 'System',
-            'action' => $l->action, 'subject' => $l->subject_type ? $l->subject_type.' #'.$l->subject_id : null, 'changes' => $l->changes,
-        ]);
+        return \App\Support\Audit::rows(financeOnly: true);
     }
 
     /** Pristabel med "gælder fra" og historik (læsning for bestyrelse og økonomi). */

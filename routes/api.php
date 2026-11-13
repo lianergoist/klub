@@ -137,6 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
     Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
     Route::put('user-permissions/{grant}/end', [\App\Http\Controllers\Api\PermissionController::class, 'end']);
+    Route::get('settings/audit', [\App\Http\Controllers\Api\AuditController::class, 'index']);
     Route::get('settings/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'index']);
     Route::put('settings/permissions/{permission}', [\App\Http\Controllers\Api\PermissionController::class, 'update']);
 

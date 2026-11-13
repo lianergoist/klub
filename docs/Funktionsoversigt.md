@@ -36,7 +36,7 @@ Et medlem kan have flere roller samtidigt (fx træner og bestyrelsesmedlem). Rol
 - **Kerne:** **personlige rettigheder:** administrator kan give et enkelt medlem én rettighed uden hele rollen (fx må Y godkende nye medlemmer uden at sidde i bestyrelsen), med fra-dato, evt. til-dato og en bemærkning. Det sker på medlemmets side under "Personlige rettigheder", hvor man også kan se, hvad medlemmet må i dag.
 - **Kerne:** "Tildele roller og rettigheder" er låst til administrator, så ingen kan låse sig selv ude. Nye funktioner (fx udstyr) får deres egne rettigheder i listen.
 - **Afklares:** hvilke roller skal have hvilke rettigheder? Proof of concept starter med standarden i tabellen ovenfor; bestyrelsen kan gennemgå listen under Indstillinger → Rettigheder.
-- **Afklares:** hvilke af disse skal være admin-opgaver: spærre/genåbne et login og sende nyt login-link, slette/anonymisere medlemmer (GDPR), se hele ændringsloggen, klubindstillinger (navn, logo, kontaktoplysninger, sæsondatoer), opsætning af betaling og e-mail, import/eksport af medlemsdata? Forslag: admin er en teknisk rolle, mens priser, pakker og kategorier forbliver bestyrelsens.
+- **Afklares:** hvilke af disse skal være admin-opgaver: spærre/genåbne et login og sende nyt login-link, slette/anonymisere medlemmer (GDPR), klubindstillinger (navn, logo, kontaktoplysninger, sæsondatoer), opsætning af betaling og e-mail, import/eksport af medlemsdata? Forslag: admin er en teknisk rolle, mens priser, pakker og kategorier forbliver bestyrelsens.
 
 
 ## Medlemskartotek
@@ -530,7 +530,7 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 - **Afklares:** hvad sker der med børn og partner, når husstandens betaler melder sig ud? Hvad med refusion af kontingent midt i sæsonen og ubetalte regninger? Skal opslag og beskeder slettes eller stå som "Tidligere medlem"?
 
-- **Kerne:** ændringslog over, hvem der har rettet i medlemsdata, roller og regnskab.
+- **Kerne:** ændringslog over, hvem der har gjort hvad og hvornår. Under **Økonomi → Ændringslog** vises kun det, der vedrører regnskabet (posteringer, betalinger, regninger og køb, udlæg, budget og priser), så kasserer og revisor kan følge bogføringen. Den fulde log med alle handlinger (medlemmer, roller og rettigheder, aktiviteter, opslag, udstyr m.m.) ligger under **Indstillinger → Ændringslog** og kan som standard kun ses af administrator (rettigheden "Se den fulde ændringslog"). Hvert medlems egen historik vises stadig på medlemssiden.
 
 - **Kerne:** automatisk sikkerhedskopi og en plan for, hvem der kan genskabe systemet.
 

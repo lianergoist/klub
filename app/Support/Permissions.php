@@ -50,6 +50,8 @@ class Permissions
             'Rette navn, kontaktoplysninger, status m.m. på andre medlemmer.', ['admin']],
         'roles.manage' => ['Medlemmer', 'Tildele roller og rettigheder',
             'Tildele og afslutte roller, give enkelte medlemmer rettigheder og ændre denne oversigt. Er altid administratorens, så ingen kan låse sig selv ude.', ['admin'], true],
+        'audit.view' => ['Medlemmer', 'Se den fulde ændringslog',
+            'Se alle handlinger i systemet (medlemmer, aktiviteter, opslag, udstyr, rettigheder m.m.) under Indstillinger. Regnskabets egen ændringslog ligger under Økonomi.', ['admin']],
 
         'feed.moderate' => ['Kommunikation', 'Moderere opslagstavlen',
             'Skjule og slette opslag og kommentarer og afvise anmeldelser.', ['trainer', 'board', 'admin']],

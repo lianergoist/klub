@@ -40,6 +40,7 @@ const routes = [
     { path: '/medlemmer', component: v('Members'), meta: { can: 'members_view', wide: true } },
     { path: '/medlemmer/:id', component: v('MemberDetail'), props: true, meta: { can: 'members_view' } },
     { path: '/indstillinger', component: v('Settings'), meta: { can: 'settings' } },
+    { path: '/indstillinger/aendringslog', component: v('AuditLog'), meta: { can: 'audit_view', wide: true } },
     { path: '/indstillinger/rettigheder', component: v('Permissions'), meta: { can: 'roles_manage', wide: true } },
     ...(__APP__ ? [] : [
     {

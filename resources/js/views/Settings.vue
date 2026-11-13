@@ -5,6 +5,10 @@
             <div><h2 style="margin:0">Rettigheder</h2><div class="small muted">Vælg hvilke roller der må hvad, og se personlige rettigheder.</div></div>
             <span class="btn small">Åbn</span>
         </RouterLink>
+        <RouterLink v-if="can.audit_view" to="/indstillinger/aendringslog" class="card row between" style="text-decoration:none;color:inherit">
+            <div><h2 style="margin:0">Ændringslog</h2><div class="small muted">Alle handlinger i systemet med hvem og hvornår.</div></div>
+            <span class="btn small">Åbn</span>
+        </RouterLink>
         <div v-if="can.categories_manage" class="card">
             <h2>Kategorier</h2>
             <p class="small muted">Medlemmer bruger kategorierne til at filtrere og vælge notifikationer. Ret kun navnet ved små rettelser: det nye navn gælder også for alle, der følger kategorien, og for tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
