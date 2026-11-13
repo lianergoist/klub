@@ -148,7 +148,7 @@
 
                 <fieldset>
                     <legend>Indstillinger</legend>
-                    <label v-if="ed.kind === 'membership'" class="check"><input type="checkbox" v-model="ed.gives_access"> Giver adgang til aktiviteter <span class="small muted">(fra for fx støttemedlem)</span></label>
+                    <label v-if="ed.kind === 'membership'" class="check"><input type="checkbox" v-model="ed.gives_access"> Giver adgang til aktiviteter <span class="small muted">(slå fra for medlemskaber uden aktiviteter, fx støttemedlem eller passivt medlem)</span></label>
                     <template v-else>
                         <label class="check"><input type="checkbox" v-model="ed.equipment_booking"> Giver ret til at booke udstyr <span class="small muted">(fx udstyrsleje og dagsleje – gælder i pakkens periode)</span></label>
                         <label class="check"><input type="checkbox" v-model="ed.isPunch"> Klippekort med klip <span class="small muted">(tilmelding til en aktivitet bruger et klip)</span></label>
