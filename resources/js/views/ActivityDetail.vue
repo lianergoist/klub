@@ -57,7 +57,10 @@
             <div class="row between"><h2 style="margin:0">{{ a.is_leader ? 'Tilmeld familiemedlemmer' : 'Tilmelding' }}</h2>
                 <span class="small muted" v-if="a.max_participants">{{ a.signed_up_count }} / {{ a.max_participants }} pladser</span>
             </div>
-            <div v-if="a.deadline_passed" class="banner warn" style="margin-top:12px">Svarfristen er overskredet. Kontakt træneren, hvis du vil med.</div>
+            <div v-if="a.deadline_passed && store.user.can.activities_manage" class="banner warn" style="margin-top:12px">Svarfristen er overskredet – du kan stadig tilmelde, fordi du er træner eller i bestyrelsen.</div>
+            <div v-else-if="a.deadline_passed" class="banner warn" style="margin-top:12px">Svarfristen er overskredet.
+                <template v-if="a.trainers.length && store.user.can_message"><a href="#" @click.prevent="contactTrainer">Skriv til {{ a.trainers.length === 1 ? 'træneren' : 'trænerne' }}</a>, hvis du vil med.</template>
+                <template v-else>Kontakt {{ a.trainers.length ? a.trainers.map(t => t.name).join(' eller ') : 'træneren' }}, hvis du vil med.</template></div>
             <div v-else-if="a.is_full" class="banner warn" style="margin-top:12px">Holdet er fuldt.</div>
             <ul class="list" style="margin-top:6px">
                 <li v-for="m in a.household" :key="m.id">
@@ -73,6 +76,7 @@
                                 <RouterLink :to="`/betal/${m.invoice_id}`" class="btn small primary">Betal</RouterLink>
                             </template>
                             <span v-else-if="a.members_only && !m.membership_valid" class="tag bad">Kontingent ikke betalt</span>
+                            <span v-else-if="!canPick(m)" class="small muted">Ikke tilmeldt</span>
                             <button v-if="m.status === 'signed_up' || m.status === 'pending_payment'" class="btn small" :disabled="a.cancel_locked && !store.user.can.activities_manage" @click="unsign(m)">{{ solo && m.id === store.user.id ? 'Afmeld mig' : 'Afmeld' }}</button>
                         </div>
                     </div>
@@ -84,7 +88,7 @@
                     </details>
                 </li>
             </ul>
-            <p v-if="a.cancel_locked" class="small muted" style="margin-top:8px">Afmelding er lukket, fordi der er under {{ a.cancel_hours }} timer til start.</p>
+            <p v-if="a.cancel_locked && a.household.some(m => ['signed_up', 'pending_payment'].includes(m.status))" class="small muted" style="margin-top:8px">Afmelding er lukket, fordi der er under {{ a.cancel_hours }} timer til start.</p>
             <button v-if="pickable.length" class="btn primary block" style="margin-top:10px" :disabled="!picked.length || busy" @click="signup">
                 {{ btnLabel }}
             </button>
@@ -221,6 +225,15 @@ import { api, store, kr, klok, datoLang, tidspunkt, toast, refreshMe } from '../
 
 const props = defineProps({ id: String });
 const router = useRouter();
+// "Skriv til træneren" efter svarfristen: åbner en samtale (gruppe ved flere trænere) med et forslag til beskeden
+async function contactTrainer() {
+    try {
+        const ids = a.value.trainers.map(t => t.id);
+        const r = await api('messages/start', { method: 'POST', body: { user_ids: ids, title: ids.length > 1 ? a.value.title : null } });
+        const tekst = `Hej! Svarfristen til "${a.value.title}" (${datoLang(a.value.starts_at).toLowerCase()}) er overskredet. Er der plads til, at jeg kommer med?`;
+        router.push({ path: `/beskeder/${r.id}`, query: { tekst } });
+    } catch (e) { toast(e.message, 'error'); }
+}
 const a = ref(null); const picked = ref([]); const busy = ref(false); const att = ref(false);
 const showTrainers = ref(false); const trainerOpts = ref([]); const selTrainers = ref([]); const showUnavailable = ref(false);
 const showCancel = ref(false); const cancelReason = ref(''); const cancelSeries = ref(false);

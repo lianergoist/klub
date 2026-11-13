@@ -39,7 +39,7 @@
         </div>
 
         <form v-if="c.can_send" class="composer" @submit.prevent="send">
-            <textarea v-model="draft" rows="1" placeholder="Skriv en besked …" maxlength="4000" @keydown.enter.exact.prevent="send" @input="grow"></textarea>
+            <textarea ref="box" v-model="draft" rows="1" placeholder="Skriv en besked …" maxlength="4000" @keydown.enter.exact.prevent="send" @input="grow"></textarea>
             <button class="btn primary" :disabled="!draft.trim() || busy" aria-label="Send">Send</button>
         </form>
         <div v-else class="banner warn small" style="margin:8px 0 0">{{ c.cannot_reason }}</div>
@@ -67,11 +67,12 @@ import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import MemberPicker from '../components/MemberPicker.vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { api, store, klok, toast } from '../api';
 
 const props = defineProps({ id: String });
-const c = ref(null); const draft = ref(''); const busy = ref(false); const scroller = ref(null); const menu = ref(false);
+// ?tekst=… foreslår en besked (fx fra 'Skriv til træneren' på en aktivitet)
+const c = ref(null); const draft = ref(String(useRoute().query.tekst || '')); const busy = ref(false); const scroller = ref(null); const menu = ref(false);
 const reportMsg = ref(null); const reportReason = ref(''); const alsoBlock = ref(false);
 let timer;
 const router = useRouter();
@@ -132,7 +133,10 @@ async function leave() { await api(`messages/${props.id}/leave`, { method: 'POST
 }
 async function refreshBadge() { try { const u = await api('messages/unread'); if (store.user) { store.user.unread_messages = u.messages; store.user.unread = u.notifications; } } catch {} }
 
+const box = ref(null);
 onMounted(() => { load(); timer = setInterval(poll, 6000); });
+// Foreslået tekst (?tekst=…): gør feltet højt nok til at vise den
+watch(box, (el) => { if (el && draft.value) nextTick(() => grow({ target: el })); });
 onUnmounted(() => clearInterval(timer));
 watch(() => props.id, load);
 </script>

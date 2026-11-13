@@ -58,7 +58,10 @@ class FinanceController extends Controller
     public function invoices(Request $r)
     {
         $this->read($r);
-        $q = Invoice::with('payer', 'member', 'payments')->latest('id');
+        // Det, kassereren skal handle på, står øverst: forfaldne, derefter opkrævede, derefter resten – nyeste først i hver gruppe
+        $q = Invoice::with('payer', 'member', 'payments')
+            ->orderByRaw("CASE WHEN status = 'open' AND due_on < ? THEN 0 WHEN status = 'open' THEN 1 ELSE 2 END", [now()->toDateString()])
+            ->latest('id');
         if ($k = $r->query('kind')) $q->where('kind', $k);
         if ($s = $r->query('q')) $q->where(fn ($q) => $q->where('description', 'like', "%$s%")->orWhereHas('payer', fn ($q) => $q->where('name', 'like', "%$s%")));
         $rows = $q->limit(500)->get()->map(fn ($i) => self::invoiceRow($i));

@@ -41,4 +41,6 @@ option { color: var(--ink); background: var(--surface); }
 .sidebar .theme-switch .ts-box { flex-basis: 100%; }
 .sidebar .theme-switch select { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); color: inherit; }
 .sidebar .theme-switch option { color: #10201f; background: #fff; }
+/* Sidemenuen er smal og lav: forklaringen til Automatisk vises under Profil i stedet */
+.sidebar .theme-switch .ts-hint { display: none; }
 </style>

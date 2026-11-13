@@ -26,7 +26,7 @@
                 <div class="dots"><i v-for="n in c.uses" :key="n" :class="{ used: n > c.uses_left }"></i></div>
                 <p v-if="!c.paid" class="small" style="color:var(--warn);margin:8px 0 0">Kortet kan bruges, når det er betalt.</p>
             </div>
-            <p v-if="activeCards.length && d.offers.length" class="small"><a href="#" @click.prevent="buy(d.offers[0])">Køb et nyt {{ d.offers[0].name }} ({{ d.offers[0].price_fmt }})</a></p>
+            <p v-if="activeCards.length && d.offers.length && runningOut" class="small"><a href="#" @click.prevent="buy(d.offers[0])">Køb et nyt {{ d.offers[0].name }} ({{ d.offers[0].price_fmt }})</a></p>
 
             <h2 style="margin-top:22px">Træninger</h2>
             <p class="small muted" style="margin-top:-6px">Tilmelding bruger ét klip. Melder du fra senest {{ d.activities[0]?.cancel_hours ?? 24 }} timer før start, får du klippet tilbage.</p>
@@ -62,6 +62,9 @@ import { api, toast, dato, datoLang, klok, logout as doLogout } from '../api';
 const router = useRouter();
 const d = ref(null); const busy = ref(false);
 const activeCards = computed(() => d.value ? d.value.cards.filter(c => !c.expired && (c.uses_left > 0 || !c.paid)) : []);
+// "Køb et nyt kort" først, når kortet er ved at være brugt op eller udløbe
+const runningOut = computed(() => activeCards.value.reduce((n, c) => n + c.uses_left, 0) <= 2
+    || activeCards.value.every(c => c.valid_to && (new Date(c.valid_to) - new Date()) / 864e5 <= 30));
 async function load() { d.value = await api('klip'); }
 onMounted(load);
 async function run(fn, msg) {

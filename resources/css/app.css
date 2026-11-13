@@ -93,7 +93,7 @@ p { margin: 0 0 .75rem; }
     .sidebar svg { width: 20px; height: 20px; opacity: .9; }
     .sidebar .sect { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #8fbcc3; margin: 16px 12px 6px; }
     .sidebar .dot { position: static; margin-left: auto; }
-    .sidebar .who { margin-top: auto; padding: 12px; border-top: 1px solid rgba(255,255,255,.12); font-size: .85rem; }
+    .sidebar .who { margin-top: auto; padding: 10px 12px 8px; border-top: 1px solid rgba(255,255,255,.12); font-size: .85rem; }
     .sidebar .who button { margin-top: 8px; }
     .tabbar, .mobile-only { display: none !important; }
     .main { padding: 28px 32px 48px; }
@@ -194,6 +194,9 @@ textarea { min-height: 90px; }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .tag.bad { background: var(--bad-soft); color: var(--bad); }
 .tag.info { background: var(--accent-soft); color: var(--accent); }
+/* Små mærker i mørke temaer: lysere tekst, så de er lette at læse */
+html[data-tema=klub][data-mork] .tag.info { color: #ead3f3; }
+html[data-tema=mork] .tag.info { color: #a8eef4; }
 .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: .92rem; }
 .banner.warn { background: var(--warn-soft); color: var(--warn); }
 .banner.info { background: var(--accent-soft); color: var(--ink); }
