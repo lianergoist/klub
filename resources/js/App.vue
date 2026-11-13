@@ -10,7 +10,6 @@
                 <RouterLink v-if="can.equipment" to="/udstyr"><Icon name="board" /> Udstyr</RouterLink>
                 <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
-                <RouterLink to="/kvittering"><Icon name="receipt" /> Indsend kvittering</RouterLink>
                 <template v-if="can.members_view || can.finance_read || can.settings">
                     <div class="sect">Administration</div>
                     <RouterLink v-if="can.members_view" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>

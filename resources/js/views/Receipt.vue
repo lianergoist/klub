@@ -1,7 +1,8 @@
 <template>
     <div>
-        <h1 style="margin-bottom:4px">Indsend kvittering</h1>
-        <p class="muted small" style="margin:0 0 14px">Har du lagt ud for klubben? Send kvitteringen til kassereren, så får du pengene tilbage.</p>
+        <h1 v-if="!embedded" style="margin-bottom:4px">Indsend kvittering</h1>
+        <h2 v-else style="margin:0 4px 4px">Indsend kvittering</h2>
+        <p class="muted small" style="margin:0 4px 14px">Har du lagt ud for klubben? Send kvitteringen til kassereren, så får du pengene tilbage.</p>
 
         <form class="card stack" @submit.prevent="submit">
             <div>
@@ -79,6 +80,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
+
+defineProps({ embedded: Boolean });
 import { api, toast, dato } from '../api';
 
 const f = reactive({ description: '', payout_method: 'mobilepay', mobilepay_phone: '', bank_reg: '', bank_account: '' });

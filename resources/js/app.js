@@ -36,7 +36,7 @@ const routes = [
     { path: '/opslag', component: v('Feed') },
     { path: '/profil/:tab?', component: v('Profile'), props: true },
     { path: '/mere', component: v('More') },
-    { path: '/kvittering', component: v('Receipt') },
+    { path: '/kvittering', redirect: '/profil/kvitteringer' }, // gamle links og beskeder
     { path: '/medlemmer', component: v('Members'), meta: { can: 'members_view', wide: true } },
     { path: '/medlemmer/:id', component: v('MemberDetail'), props: true, meta: { can: 'members_view' } },
     { path: '/indstillinger', component: v('Settings'), meta: { can: 'settings' } },

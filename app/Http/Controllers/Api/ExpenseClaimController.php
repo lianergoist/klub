@@ -141,7 +141,7 @@ class ExpenseClaimController extends Controller
         $claim->user->notify(new ClubMessage(
             'Udlæg udbetalt: '.Money::fmt($claim->amount),
             'Dit udlæg ('.str($claim->description)->limit(60).') er udbetalt til '.$claim->payoutLabel().'.',
-            '/kvittering'
+            '/profil/kvitteringer'
         ));
 
         return $this->row($claim->fresh(['user', 'handler', 'approver']), true);
@@ -179,7 +179,7 @@ class ExpenseClaimController extends Controller
         $claim->user->notify(new ClubMessage(
             'Udlæg afvist',
             'Dit udlæg på '.Money::fmt($claim->amount).' ('.str($claim->description)->limit(60).') er afvist. Begrundelse: '.$reason,
-            '/kvittering'
+            '/profil/kvitteringer'
         ));
 
         return $this->row($claim->fresh(['user', 'handler', 'approver']), true);

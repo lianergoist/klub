@@ -107,6 +107,8 @@
             </ul>
         </div>
 
+        <Receipt v-if="cur === 'kvitteringer'" embedded />
+
         <div v-if="cur === 'regninger'">
             <div v-if="!invoices" class="spinner"></div>
             <div v-else class="card" style="padding:4px 16px">
@@ -179,18 +181,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import PackageList from '../components/PackageList.vue';
+import Receipt from './Receipt.vue';
 import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import { api, store, dato, kr, toast, download, logout as doLogout } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();
-const tabs = [{ id: 'oplysninger', label: 'Oplysninger' }, { id: 'familie', label: 'Familie' }, { id: 'beskeder', label: 'Beskeder' }, { id: 'regninger', label: 'Regninger' }, { id: 'tilkob', label: 'Tilkøb' }, { id: 'data', label: 'Mine data' }];
+const tabs = [{ id: 'oplysninger', label: 'Oplysninger' }, { id: 'familie', label: 'Familie' }, { id: 'beskeder', label: 'Beskeder' }, { id: 'regninger', label: 'Regninger' }, { id: 'kvitteringer', label: 'Kvitteringer' }, { id: 'tilkob', label: 'Tilkøb' }, { id: 'data', label: 'Mine data' }];
 const cur = computed(() => props.tab || 'oplysninger');
 const stCls = (s) => ({ paid: 'ok', open: 'info', overdue: 'bad', refunded: '', cancelled: '' })[s];
 
@@ -244,7 +247,10 @@ async function onTab(t) {
     if (t === 'familie' || t === 'tilkob') await loadShop();
 }
 watch(cur, onTab);
-onMounted(async () => { await load(); onTab(cur.value); });
+// På mobil kan fanebjælken være bredere end skærmen – vis den aktive fane
+const showTab = () => nextTick(() => document.querySelector('.tabs .on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+watch(cur, showTab);
+onMounted(async () => { await load(); onTab(cur.value); showTab(); });
 </script>
 
 <style scoped>

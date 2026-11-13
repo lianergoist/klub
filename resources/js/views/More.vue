@@ -1,11 +1,6 @@
 <template>
     <div>
         <h1 style="margin-bottom:14px">Mere</h1>
-        <div class="card" style="padding:4px 16px">
-            <ul class="list">
-                <li><RouterLink to="/kvittering" class="row"><Icon name="receipt" style="width:20px" /> Indsend kvittering</RouterLink></li>
-            </ul>
-        </div>
         <div v-if="can.portal || can.equipment || can.members_view || can.finance_read || can.settings" class="card" style="padding:4px 16px">
             <ul class="list">
                 <li v-if="can.portal"><RouterLink to="/traener" class="row"><Icon name="whistle" style="width:20px" /> Trænerportal</RouterLink></li>

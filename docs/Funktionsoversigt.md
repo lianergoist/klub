@@ -448,7 +448,7 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 
 - **Kerne:** tilknytte en postering til en aktivitet eller et projekt, så man kan se, hvad en enkelt aktivitet kostede og indbragte.
 
-- **Kerne:** **udlæg**: alle medlemmer kan under "Indsend kvittering" (Mere-menuen på mobil og i appen, sidemenuen på computer) sende et billede eller en PDF af en kvittering til kassereren med en beskrivelse og beløbet. Medlemmet vælger, om pengene skal udbetales via MobilePay (telefonnummeret fra profilen foreslås, men kan rettes) eller til en bankkonto (reg. nr. og kontonummer). Store billeder skaleres ned før upload, så teksten stadig kan læses. Medlemmet kan følge status (afventer, udbetalt, afvist).
+- **Kerne:** **udlæg**: alle medlemmer kan under Min profil → fanen "Kvitteringer" sende et billede eller en PDF af en kvittering til kassereren med en beskrivelse og beløbet. Medlemmet vælger, om pengene skal udbetales via MobilePay (telefonnummeret fra profilen foreslås, men kan rettes) eller til en bankkonto (reg. nr. og kontonummer). Store billeder skaleres ned før upload, så teksten stadig kan læses. Medlemmet kan følge status (afventer, udbetalt, afvist).
 
   - Økonomi findes kun på web. Trykker man i appen på en besked med link til Økonomi (fx et nyt udlæg), åbnes siden i browseren.
 
