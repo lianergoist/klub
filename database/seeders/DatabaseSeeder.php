@@ -394,6 +394,32 @@ class DatabaseSeeder extends Seeder
         // Linjer på login-siden for tilbuddene (migrationen kører før seederen, så de sættes her)
         \App\Models\Package::where('kind', 'offer')->where('name', 'like', 'Prøvetræning%')->update(['login_text' => 'Prøv en træning']);
         \App\Models\Package::where('kind', 'offer')->where('name', 'like', '%SUP-kursus%')->update(['login_text' => 'Tag et SUP-kursus']);
+        $this->adminDefaults();
+    }
+
+    /**
+     * Administratorens valg (rettigheder, medlemskaber/tilkøb, aktivitetskategorier), som demodatabasen starter med.
+     * Sættes direkte uden ændringslog, så det står som udgangspunktet.
+     */
+    private function adminDefaults(): void
+    {
+        // Aktivitetskategorier
+        Category::where('name', 'Klubliv og teori')->update(['name' => 'Klubliv', 'mandatory' => true]);
+        Category::firstOrCreate(['name' => 'Teori'], ['color' => '#778899']);
+
+        // Medlemskaber og tilkøb
+        $pkg = fn ($name) => \App\Models\Package::where('name', $name);
+        \App\Models\Package::where(fn ($q) => $q->where('name', 'like', 'Udstyrsleje%')->orWhere('name', 'like', 'Dagsleje%'))->update(['equipment_booking' => true]);
+        \App\Models\Package::whereIn('name', ['Husstand med 2 personer – hel sæson', 'Husstand med 2 personer – halv sæson', 'Familie: 2 voksne og 1–3 børn',
+            'Opbevaring: skab i container', 'Udstyrsleje i sæsonen, 2 personer', 'Adgang til motionsrum, 30 dage'])->update(['archived_at' => $this->now]);
+        foreach ([3, 4, 5] as $n) $pkg("Udstyrsleje i sæsonen, $n personer")->update(['name' => "Udstyrsleje i sæsonen, familie - $n personer"]);
+        if ($day = $pkg('Dagsleje af board og sejl')->first()) {
+            \App\Support\Prices::set($day->priceCode(), 25000, \App\Support\Season::start($this->now)->addYear()->toDateString(), null);
+        }
+
+        // Rettigheder
+        \App\Support\Permissions::setRoles('prices.edit', ['board', 'treasurer']);
+        \App\Support\Permissions::setMembersRule('equipment.book', 'none');
     }
 
     private function seedMessages(array $p): void
