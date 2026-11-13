@@ -281,3 +281,6 @@ tfoot td { font-weight: 700; border-bottom: 0; }
     html.typing .tabbar { display: none; }
     html.typing { --sticky-bottom: 8px; }
 }
+
+/* Appen tegner siden bag telefonens statuslinje (Android 15+ / iOS). Dæk området, så indholdet ikke ruller ind under klokkeslæt og ikoner. */
+html.native body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 40; pointer-events: none; }
