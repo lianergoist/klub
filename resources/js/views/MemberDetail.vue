@@ -71,9 +71,16 @@
 
         <div class="card" v-if="m.invoices.length">
             <h2>Betalinger</h2>
-            <div class="table-wrap"><table><tbody>
-                <tr v-for="i in m.invoices" :key="i.id"><td>{{ i.description }}</td><td class="num">{{ i.amount_fmt }}</td><td><span :class="['tag', { paid: 'ok', overdue: 'bad', open: 'info' }[i.status]]">{{ i.status_label }}</span></td></tr>
-            </tbody></table></div>
+            <ul class="mlist">
+                <li v-for="i in m.invoices" :key="i.id">
+                    <div class="l1"><span>{{ i.description }}</span><strong class="num">{{ i.amount_fmt }}</strong></div>
+                    <div class="l2">
+                        <span>{{ i.paid_at ? 'betalt ' + dato(i.paid_at) + ' · ' + i.method : 'forfald ' + dato(i.due_on) }}<template v-if="i.payer && i.payer !== m.profile.name"> · betales af {{ i.payer }}</template></span>
+                        <span :class="['tag', { paid: 'ok', overdue: 'bad', open: 'info' }[i.status]]">{{ i.status_label }}</span>
+                    </div>
+                    <div v-if="can.finance_write && ['open', 'overdue'].includes(i.status)" class="acts"><button class="btn small" @click="paying = i">Registrér betaling</button></div>
+                </li>
+            </ul>
         </div>
 
         <div class="card">
@@ -89,6 +96,8 @@
             <ul class="timeline"><li v-for="(l, i) in m.log" :key="i">{{ l.action }} · {{ tidspunkt(l.at) }} af {{ l.by || 'system' }}</li></ul>
             <p class="small muted">Også opslag i kartoteket bliver logget (persondata).</p>
         </div>
+
+        <RegisterPayment v-if="paying" :invoice="paying" @close="paying = null" @done="paying = null; load()" />
 
         <Modal v-if="showRole" title="Tildel rolle" @close="showRole = false">
             <div class="stack">
@@ -126,10 +135,12 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import Modal from '../components/Modal.vue';
+import RegisterPayment from '../components/RegisterPayment.vue';
 import { api, store, dato, tidspunkt, toast } from '../api';
 const props = defineProps({ id: String });
 const year = new Date().getFullYear(); const today = new Date().toISOString().slice(0, 10);
 const can = computed(() => store.user.can);
+const paying = ref(null);
 const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', auditor: 'Revisor', admin: 'Administrator' };
 const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });

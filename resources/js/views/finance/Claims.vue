@@ -14,7 +14,7 @@
         <div v-else-if="!list.length" class="card empty">{{ status === 'submitted' ? 'Ingen udlæg venter. 👍' : 'Ingen udlæg.' }}</div>
         <div v-else class="claims">
             <div v-for="c in list" :key="c.id" class="card claim">
-                <a :href="c.file_url" target="_blank" rel="noopener" class="thumb" title="Åbn kvittering">
+                <a :href="c.file_url" target="_blank" rel="noopener" class="thumb" title="Åbn kvittering" @click="openFile($event, c)">
                     <img v-if="!c.is_pdf" :src="c.file_url" alt="Kvittering" loading="lazy">
                     <span v-else class="pdf"><Icon name="file" style="width:28px" />PDF</span>
                 </a>
@@ -31,8 +31,11 @@
                     </p>
                     <p style="margin:6px 0;white-space:pre-line">{{ c.description }}</p>
                     <div class="payto">
-                        <template v-if="c.payout_method === 'mobilepay'"><span class="muted small">MobilePay til</span> <strong>{{ c.mobilepay_phone }}</strong></template>
-                        <template v-else><span class="muted small">Bank</span> reg. <strong>{{ c.bank_reg }}</strong> konto <strong>{{ c.bank_account }}</strong></template>
+                        <template v-if="c.payout_method === 'mobilepay'"><span class="muted small">MobilePay til</span> <strong>{{ c.mobilepay_phone }}</strong>
+                            <button v-if="c.status === 'submitted'" type="button" class="btn ghost small copy" @click="copy(c.mobilepay_phone, 'Nummeret')">Kopiér</button></template>
+                        <template v-else><span class="muted small">Bank</span> reg. <strong>{{ c.bank_reg }}</strong> konto <strong>{{ c.bank_account }}</strong>
+                            <button v-if="c.status === 'submitted'" type="button" class="btn ghost small copy" @click="copy(`${c.bank_reg} ${c.bank_account}`, 'Reg.- og kontonummer')">Kopiér</button></template>
+                        <div v-if="c.status === 'submitted'" class="small muted" style="margin-top:2px">{{ c.amount_fmt }} <button type="button" class="btn ghost small copy" @click="copy((c.amount / 100).toLocaleString('da-DK', { minimumFractionDigits: 2 }), 'Beløbet')">Kopiér beløb</button></div>
                     </div>
                     <p v-if="c.status === 'rejected'" class="small" style="margin:6px 0 0;color:var(--bad)">Afvist af {{ c.handled_by }} {{ dato(c.handled_at) }}: {{ c.reject_reason }}</p>
                     <p v-if="c.status === 'paid'" class="small muted" style="margin:6px 0 0">Bogført af {{ c.handled_by }} {{ dato(c.handled_at) }} som postering #{{ c.entry_id }}.</p>
@@ -65,6 +68,12 @@
             <button class="btn primary block" style="margin-top:12px" :disabled="!pay.account_id || busy" @click="savePay">Bogfør og giv besked</button>
         </Modal>
 
+        <!-- Kvitteringen i fuld størrelse -->
+        <Modal v-if="viewing" title="Kvittering" @close="viewing = null">
+            <img :src="viewing.file_url" alt="Kvittering" style="width:100%;height:auto;border-radius:10px;display:block">
+            <p class="small muted" style="margin:8px 0 0">{{ viewing.member }} · {{ viewing.amount_fmt }} · {{ viewing.description }}</p>
+        </Modal>
+
         <Modal v-if="rejecting" title="Afvis udlæg" @close="rejecting = null">
             <p class="small" style="margin-top:0">{{ rejecting.member }} · {{ rejecting.amount_fmt }}. Medlemmet får begrundelsen.</p>
             <label class="field"><span>Begrundelse</span><textarea v-model="rejectReason" placeholder="Fx kvitteringen kan ikke læses – send et nyt billede"></textarea></label>
@@ -77,7 +86,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import Icon from '../../components/Icon.vue';
 import Modal from '../../components/Modal.vue';
-import { api, store, toast, dato } from '../../api';
+import { api, store, toast, dato, IS_APP } from '../../api';
 
 const can = computed(() => store.user.can);
 const isAuditor = computed(() => store.user.can.claims_approve);
@@ -93,15 +102,30 @@ async function load() { list.value = null; list.value = await api(`finance/expen
 watch(status, load);
 onMounted(async () => { load(); accounts.value = await api('finance/accounts'); });
 
-function openPay(c) {
-    Object.assign(pay, { account_id: null, entry_date: new Date().toISOString().slice(0, 10), kr: c.amount / 100, text: `Udlæg ${c.member}: ${c.description.slice(0, 120)}`, error: '' });
+const viewing = ref(null);
+/** Billeder vises i appen/siden; PDF'er åbnes i en ny fane (web) eller deles via Del-menuen (app). */
+async function openFile(e, c) {
+    if (!c.is_pdf) { e.preventDefault(); viewing.value = c; return; }
+    if (!IS_APP) return;
+    e.preventDefault();
+    try { const blob = await (await fetch(c.file_url)).blob(); (await import('../../native')).shareFile(blob, `kvittering-${c.id}.pdf`); }
+    catch { toast('Kvitteringen kunne ikke åbnes', 'error'); }
+}
+async function copy(text, what) {
+    try { await navigator.clipboard.writeText(String(text)); toast(`${what} er kopieret`); }
+    catch { toast('Kunne ikke kopiere', 'error'); }
+}
+let lastAccount = null;
+async function openPay(c) {
+    if (lastAccount === null) { try { lastAccount = (await api('finance/expense-claims/last-account')).account_id || 0; } catch { lastAccount = 0; } }
+    Object.assign(pay, { account_id: expenseAccounts.value.some(a => a.id === lastAccount) ? lastAccount : null, entry_date: new Date().toISOString().slice(0, 10), kr: c.amount / 100, text: `Udlæg ${c.member}: ${c.description.slice(0, 120)}`, error: '' });
     paying.value = c;
 }
 async function savePay() {
     busy.value = true; pay.error = '';
     try {
         await api(`finance/expense-claims/${paying.value.id}/pay`, { method: 'POST', body: { account_id: pay.account_id, entry_date: pay.entry_date, amount: Math.round(pay.kr * 100), text: pay.text } });
-        paying.value = null; toast('Udlægget er bogført, og medlemmet har fået besked'); load();
+        lastAccount = pay.account_id; paying.value = null; toast('Udlægget er bogført, og medlemmet har fået besked'); load();
     } catch (e) { pay.error = e.message; } finally { busy.value = false; }
 }
 async function approve(c) {
@@ -127,4 +151,6 @@ async function saveReject() {
 .pdf { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; font-size: .8rem; color: var(--ink-2); }
 .body { flex: 1; min-width: 0; }
 .payto { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; font-size: .95rem; }
+.copy { padding: 2px 8px; min-height: 0; margin-left: 4px; }
+@media (max-width: 520px) { .claim { flex-direction: column; } .thumb { width: 100%; height: 180px; } }
 </style>

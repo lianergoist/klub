@@ -16,7 +16,10 @@
                 <select v-model="kind" style="max-width:180px"><option value="">Alle typer</option><option value="membership">Kontingent</option><option value="activity">Aktiviteter</option><option value="product">Tilkøb</option></select>
                 </template>
             </div>
-            <button v-if="canWrite" class="btn primary small" @click="showGen = true">Opkræv kontingent</button>
+            <div v-if="canWrite" class="row" style="gap:8px">
+                <button v-if="d?.totals.overdue_count" class="btn small" :disabled="reminding" @click="remindAll">Påmind alle forfaldne ({{ d.totals.overdue_count }})</button>
+                <button class="btn primary small" @click="showGen = true">Opkræv kontingent</button>
+            </div>
         </div>
         <!-- Mobil: kort med beløb, status og handlinger -->
         <div class="mobile-only">
@@ -31,7 +34,7 @@
                         </div>
                         <!-- Ubetalte: handlinger vises altid. Betalte: tryk for at refundere -->
                         <div v-if="canWrite && (['open', 'overdue'].includes(i.status) || (i.status === 'paid' && open === i.id))" class="acts" @click.stop>
-                            <button v-if="['open', 'overdue'].includes(i.status)" class="btn small" @click="manual = i; mMethod = 'bank'">Registrér betaling</button>
+                            <button v-if="['open', 'overdue'].includes(i.status)" class="btn small" @click="manual = i">Registrér betaling</button>
                             <button v-if="i.status === 'overdue'" class="btn ghost small" @click="remind(i)">Påmind</button>
                             <button v-if="i.status === 'paid'" class="btn ghost small" @click="refund = i; rAmount = i.refundable / 100">Refundér</button>
                         </div>
@@ -53,7 +56,7 @@
                             <td class="small">{{ i.paid_at ? dato(i.paid_at) + ' · ' + i.method : dato(i.due_on) }}</td>
                             <td style="white-space:nowrap">
                                 <template v-if="canWrite">
-                                    <button v-if="['open', 'overdue'].includes(i.status)" class="btn small" @click="manual = i; mMethod = 'bank'">Registrér betaling</button>
+                                    <button v-if="['open', 'overdue'].includes(i.status)" class="btn small" @click="manual = i">Registrér betaling</button>
                                     <button v-if="i.status === 'overdue'" class="btn ghost small" @click="remind(i)">Påmind</button>
                                     <button v-if="i.status === 'paid'" class="btn ghost small" @click="refund = i; rAmount = i.refundable / 100">Refundér</button>
                                 </template>
@@ -64,14 +67,7 @@
             </div>
         </div>
 
-        <Modal v-if="manual" title="Registrér betaling" @close="manual = null">
-            <p>{{ manual.description }} · <strong>{{ manual.amount_fmt }}</strong></p>
-            <div class="stack">
-                <label class="field"><span>Betalt med</span><select v-model="mMethod"><option value="bank">Bankoverførsel</option><option value="cash">Kontant</option></select></label>
-                <label class="field"><span>Reference (valgfri)</span><input v-model="mRef" placeholder="Fx tekst fra kontoudtog"></label>
-                <button class="btn primary block" @click="doManual">Registrér og bogfør</button>
-            </div>
-        </Modal>
+        <RegisterPayment v-if="manual" :invoice="manual" @close="manual = null" @done="manual = null; load()" />
         <Modal v-if="refund" title="Refusion" @close="refund = null">
             <p>{{ refund.description }}</p>
             <div class="stack">
@@ -94,11 +90,12 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import Modal from '../../components/Modal.vue';
+import RegisterPayment from '../../components/RegisterPayment.vue';
 import { api, store, dato, toast } from '../../api';
 import { isMobile } from '../../mobile';
 const canWrite = computed(() => store.user.can.finance_write);
 const d = ref(null); const q = ref(''); const status = ref(''); const kind = ref('');
-const manual = ref(null); const mMethod = ref('bank'); const mRef = ref('');
+const manual = ref(null); const reminding = ref(false);
 const refund = ref(null); const rAmount = ref(0); const rReason = ref('');
 const showGen = ref(false);
 const showFilters = ref(false); const shown = ref(40); const open = ref(null);
@@ -108,8 +105,13 @@ const seasons = [seasonStartYear, seasonStartYear + 1]; const gYear = ref(season
 async function load() { shown.value = 40; d.value = await api(`finance/invoices?q=${encodeURIComponent(q.value)}&status=${status.value}&kind=${kind.value}`); }
 let t; const debounced = () => { clearTimeout(t); t = setTimeout(load, 250); };
 watch([status, kind], load); onMounted(load);
-async function doManual() { try { await api(`finance/invoices/${manual.value.id}/manual`, { method: 'POST', body: { method: mMethod.value, reference: mRef.value } }); manual.value = null; mRef.value = ''; toast('Betaling registreret og bogført'); load(); } catch (e) { toast(e.message, 'error'); } }
 async function doRefund() { try { await api(`finance/invoices/${refund.value.id}/refund`, { method: 'POST', body: { amount: Math.round(rAmount.value * 100), reason: rReason.value } }); refund.value = null; rReason.value = ''; toast('Refusion godkendt'); load(); } catch (e) { toast(e.message, 'error'); } }
+async function remindAll() {
+    if (!confirm(`Send påmindelse til alle med forfaldne regninger? Dem, der er påmindet inden for 3 dage, springes over.`)) return;
+    reminding.value = true;
+    try { const r = await api('finance/invoices/remind-overdue', { method: 'POST' }); toast(`${r.sent} påmindelser sendt` + (r.skipped ? ` · ${r.skipped} sprunget over (påmindet for nylig)` : '')); }
+    catch (e) { toast(e.message, 'error'); } finally { reminding.value = false; }
+}
 async function remind(i) { await api(`finance/invoices/${i.id}/remind`, { method: 'POST' }); toast(`Påmindelse sendt til ${i.payer}`); }
 const genSkipped = ref([]);
 async function generate() {

@@ -101,6 +101,14 @@ export async function refreshMe() {
 }
 
 /* ---- formattering ---- */
+/** "249,50" / "1.249,50" / "1.120" / "249.5" / "249 kr." → øre (null hvis ugyldigt eller ≤ 0) */
+export function parseKr(text) {
+    let t = String(text ?? '').trim().replace(/\s|kr\.?/gi, '');
+    if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); // "1.120" = tusind et hundrede og tyve (dansk)
+    const n = Number(t);
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
+}
 export const kr = (ore) => (ore / 100).toLocaleString('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kr.';
 export const krRound = (ore) => Math.round(ore / 100).toLocaleString('da-DK') + ' kr.';
 // Alle tider vises i klubbens tid (dansk tid), uanset hvor brugeren befinder sig

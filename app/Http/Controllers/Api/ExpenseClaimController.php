@@ -100,6 +100,14 @@ class ExpenseClaimController extends Controller
 
     /* ---------- Kasserer ---------- */
 
+    /** Udgiftskontoen fra det senest bogførte udlæg – foreslås, når næste udlæg bogføres. */
+    public function lastAccount(Request $r)
+    {
+        abort_unless($r->user()->may('finance.read'), 403);
+
+        return ['account_id' => Entry::whereIn('id', ExpenseClaim::where('status', 'paid')->whereNotNull('entry_id')->select('entry_id'))->latest('id')->value('account_id')];
+    }
+
     public function index(Request $r)
     {
         abort_unless($r->user()->may('finance.read'), 403);

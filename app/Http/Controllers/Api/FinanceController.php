@@ -121,6 +121,22 @@ class FinanceController extends Controller
         return ['ok' => true];
     }
 
+    /** Påmind alle med forfaldne regninger – dog ikke dem, der er påmindet inden for de sidste 3 dage. */
+    public function remindOverdue(Request $r)
+    {
+        $this->write($r);
+        $recent = \App\Models\AuditLog::where('action', 'invoice.reminded')->where('subject_type', 'Invoice')
+            ->where('created_at', '>=', now()->subDays(3))->pluck('subject_id')->all();
+        $sent = 0; $skipped = 0;
+        Invoice::with('payer')->where('status', 'open')->whereDate('due_on', '<', now()->toDateString())->get()
+            ->each(function ($i) use ($r, $recent, &$sent, &$skipped) {
+                if (in_array($i->id, $recent) || ! $i->payer) { $skipped++; return; }
+                $this->remind($r, $i); $sent++;
+            });
+
+        return ['sent' => $sent, 'skipped' => $skipped];
+    }
+
     /** Opkræv kontingent for en træningssæson (1. maj – 30. april). year = sæsonens startår. */
     public function generateMembership(Request $r)
     {

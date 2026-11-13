@@ -7,21 +7,7 @@
         <form class="card stack" @submit.prevent="submit">
             <div>
                 <span class="lbl">Kvittering</span>
-                <!-- To knapper: kameraet direkte (capture) og galleri/filer. Uden capture åbner Android ofte kun galleri og filer. -->
-                <input ref="camera" type="file" accept="image/*" capture="environment" class="hidden-input" @change="pick">
-                <input ref="picker" type="file" accept="image/*,application/pdf" class="hidden-input" @change="pick">
-                <div v-if="preview || file" class="drop has">
-                    <img v-if="preview" :src="preview" alt="Kvittering">
-                    <span v-else class="row" style="gap:8px"><Icon name="file" style="width:22px" /> {{ file.name }}</span>
-                </div>
-                <div v-else class="drop">
-                    <span class="drop-empty"><Icon name="receipt" style="width:34px;height:34px" /><span class="small muted">Et billede af kvitteringen eller en PDF</span></span>
-                    <div class="pick-btns">
-                        <button type="button" class="btn primary" @click="camera.click()">Tag billede</button>
-                        <button type="button" class="btn" @click="picker.click()">Vælg billede eller PDF</button>
-                    </div>
-                </div>
-                <button v-if="file" type="button" class="btn small ghost" style="margin-top:6px" @click="clearFile">Vælg et andet billede</button>
+                <FilePicker v-model="file" hint="Et billede af kvitteringen eller en PDF" />
             </div>
 
             <label class="field"><span>Hvad drejer det sig om?</span>
@@ -79,24 +65,18 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import Icon from '../components/Icon.vue';
+import FilePicker from '../components/FilePicker.vue';
 
 defineProps({ embedded: Boolean });
-import { api, toast, dato } from '../api';
+import { api, toast, dato, parseKr } from '../api';
 
 const f = reactive({ description: '', payout_method: 'mobilepay', mobilepay_phone: '', bank_reg: '', bank_account: '' });
-const amountText = ref(''); const file = ref(null); const preview = ref(''); const picker = ref(null); const camera = ref(null);
+const amountText = ref(''); const file = ref(null);
 const claims = ref(null); const suggested = ref(''); const busy = ref(false); const error = ref('');
 const statusText = { submitted: 'Afventer kasserer', paid: 'Udbetalt', rejected: 'Afvist' };
 const statusCls = { submitted: 'warn', paid: 'ok', rejected: 'bad' };
 
-// "249,50" / "1.249,50" / "249.5" → øre
-const amountOre = computed(() => {
-    let t = amountText.value.trim().replace(/\s|kr\.?/gi, '');
-    if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
-    const n = Number(t);
-    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
-});
+const amountOre = computed(() => parseKr(amountText.value));
 
 async function load() {
     const r = await api('expense-claims');
@@ -108,26 +88,7 @@ async function load() {
 }
 onMounted(load);
 
-/** Store telefonbilleder skaleres ned (max 2400 px), så upload går hurtigt, men teksten stadig kan læses. */
-async function shrink(img) {
-    if (!img.type.startsWith('image/') || img.size < 1.5e6) return img;
-    try {
-        const bmp = await createImageBitmap(img);
-        const scale = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
-        const c = document.createElement('canvas');
-        c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
-        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-        const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
-        return blob ? new File([blob], (img.name || 'kvittering').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : img;
-    } catch { return img; } // fx HEIC, som browseren ikke kan læse – send originalen
-}
-async function pick(e) {
-    const chosen = e.target.files?.[0]; if (!chosen) return;
-    file.value = await shrink(chosen);
-    if (preview.value) URL.revokeObjectURL(preview.value);
-    preview.value = file.value.type.startsWith('image/') && file.value.type !== 'image/heic' ? URL.createObjectURL(file.value) : '';
-}
-function clearFile() { file.value = null; if (preview.value) URL.revokeObjectURL(preview.value); preview.value = ''; picker.value.value = ''; camera.value.value = ''; }
+function clearFile() { file.value = null; }
 
 async function submit() {
     error.value = '';
@@ -152,13 +113,6 @@ async function submit() {
 
 <style scoped>
 .lbl { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
-.drop { display: grid; place-items: center; min-height: 150px; border: 2px dashed var(--line); border-radius: 14px; background: var(--surface-2); cursor: pointer; overflow: hidden; text-align: center; padding: 10px; }
-.drop.has { border-style: solid; padding: 6px; }
-.hidden-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.drop { gap: 12px; cursor: default; }
-.pick-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.drop img { max-width: 100%; max-height: 320px; border-radius: 10px; display: block; }
-.drop-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--accent); }
 .pay-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .opt { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; font-weight: 600; cursor: pointer; background: var(--surface); }
 .opt.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }

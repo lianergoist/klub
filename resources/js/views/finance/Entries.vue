@@ -59,15 +59,16 @@
         <Modal v-if="showNew" title="Ny postering" @close="showNew = false">
             <form class="stack" @submit.prevent="save">
                 <div class="tabs" style="margin:0"><button type="button" :class="{ on: kind === 'expense' }" @click="kind = 'expense'">Udgift</button><button type="button" :class="{ on: kind === 'income' }" @click="kind = 'income'">Indtægt</button></div>
+                <div class="field"><span>Bilag (foto eller PDF)</span><FilePicker v-model="file" hint="Kvittering eller faktura" /></div>
                 <div class="grid c2">
+                    <label class="field"><span>Beløb (kr.)</span><input v-model="n.amount" inputmode="decimal" required placeholder="Fx 249,50" autocomplete="off"></label>
                     <label class="field"><span>Dato</span><input type="date" v-model="n.entry_date" required></label>
-                    <label class="field"><span>Beløb (kr.)</span><input type="number" step="0.01" min="0.01" v-model="n.amount" required></label>
                 </div>
                 <label class="field"><span>Tekst</span><input v-model="n.text" required placeholder="Fx Nye trapez-liner"></label>
                 <label class="field"><span>Konto</span><select v-model="n.account_id" required><option v-for="a in accounts.filter(a => a.type === kind)" :key="a.id" :value="a.id">{{ a.number }} {{ a.name }}</option></select></label>
                 <label class="field"><span>Knyt til aktivitet (valgfrit)</span><select v-model="n.activity_id"><option value="">–</option><option v-for="a in acts" :key="a.id" :value="a.id">{{ a.title }} ({{ dato(a.starts_at) }})</option></select></label>
-                <label class="field"><span>Bilag (foto eller PDF)</span><input type="file" accept="image/*,application/pdf" capture="environment" @change="file = $event.target.files[0]"></label>
-                <button class="btn primary block">Bogfør</button>
+                <p v-if="newError" class="banner bad small" style="margin:0">{{ newError }}</p>
+                <button class="btn primary block" :disabled="saving">{{ saving ? 'Bogfører …' : 'Bogfør' }}</button>
             </form>
         </Modal>
 
@@ -82,7 +83,8 @@
 import { ref, reactive, computed, inject, watch, onMounted } from 'vue';
 import Icon from '../../components/Icon.vue';
 import Modal from '../../components/Modal.vue';
-import { api, store, kr, dato, toast, download } from '../../api';
+import FilePicker from '../../components/FilePicker.vue';
+import { api, store, kr, dato, toast, download, parseKr } from '../../api';
 const fy = inject('fy');
 const canWrite = computed(() => store.user.can.finance_write);
 const rows = ref([]); const accounts = ref([]); const acts = ref([]); const q = ref(''); const account = ref('');
@@ -105,14 +107,25 @@ let t; const debounced = () => { clearTimeout(t); t = setTimeout(load, 250); };
 watch(account, load);
 watch(showNew, async (v) => { if (v && !acts.value.length) acts.value = [...await api('activities?tab=upcoming'), ...await api('activities?tab=trainer&when=past')]; });
 onMounted(async () => { accounts.value = await api('finance/accounts'); load(); });
+// Husk sidst brugte konto for udgift og indtægt (på denne enhed), så den er valgt næste gang
+const lastAccount = (k) => { try { return Number(localStorage.getItem('konto-' + k)) || ''; } catch { return ''; } };
+watch([showNew, kind], () => { if (showNew.value) { const a = lastAccount(kind.value); n.account_id = accounts.value.some(x => x.id === a && x.type === kind.value) ? a : ''; } });
+const saving = ref(false); const newError = ref('');
 async function save() {
+    newError.value = '';
+    const amount = parseKr(n.amount);
+    if (!amount) return (newError.value = 'Skriv beløbet, fx 249,50.');
     const fd = new FormData();
     fd.append('entry_date', n.entry_date); fd.append('text', n.text); fd.append('account_id', n.account_id);
-    fd.append('amount', Math.round(parseFloat(String(n.amount).replace(',', '.')) * 100));
+    fd.append('amount', amount); // API'et sætter fortegnet ud fra kontoen
     if (n.activity_id) fd.append('activity_id', n.activity_id);
     if (file.value) fd.append('attachment', file.value);
-    try { await api('finance/entries', { method: 'POST', form: fd }); showNew.value = false; Object.assign(n, { amount: '', text: '', activity_id: '' }); file.value = null; toast('Bogført'); load(); }
-    catch (e) { toast(e.message, 'error'); }
+    saving.value = true;
+    try {
+        await api('finance/entries', { method: 'POST', form: fd });
+        try { localStorage.setItem('konto-' + kind.value, n.account_id); } catch {}
+        showNew.value = false; Object.assign(n, { amount: '', text: '', activity_id: '' }); file.value = null; toast('Bogført'); load();
+    } catch (e) { newError.value = e.message; } finally { saving.value = false; }
 }
 async function reverse() {
     try { await api(`finance/entries/${rev.value.id}/reverse`, { method: 'POST', body: { reason: revReason.value } }); rev.value = null; revReason.value = ''; toast('Modpostering oprettet'); load(); }

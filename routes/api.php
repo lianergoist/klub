@@ -144,6 +144,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('finance')->group(function () {
         Route::get('invoices', [FinanceController::class, 'invoices']);
         Route::get('expense-claims', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'index']);
+        Route::get('expense-claims/last-account', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'lastAccount']);
         Route::post('expense-claims/{claim}/pay', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'pay']);
         Route::post('expense-claims/{claim}/approve', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'approve']);
         Route::post('expense-claims/{claim}/reject', [\App\Http\Controllers\Api\ExpenseClaimController::class, 'reject']);
@@ -154,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('accounts', [FinanceController::class, 'accounts']);
         Route::get('overview', [FinanceController::class, 'overview']);
         Route::get('menu', [FinanceController::class, 'menu']);
+        Route::post('invoices/remind-overdue', [FinanceController::class, 'remindOverdue']);
         Route::put('budget', [FinanceController::class, 'saveBudget']);
         Route::get('entries', [FinanceController::class, 'entries']);
         Route::get('entries/export', [FinanceController::class, 'exportEntries']);

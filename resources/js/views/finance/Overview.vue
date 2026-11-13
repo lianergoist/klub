@@ -1,6 +1,15 @@
 <template>
     <div v-if="!d" class="spinner"></div>
     <div v-else class="viz-root">
+        <!-- Det, der venter på kassereren -->
+        <div v-if="tasks.length" class="card tasks">
+            <h2 style="margin:0 0 4px">Venter</h2>
+            <ul class="mlist">
+                <li v-for="t in tasks" :key="t.to"><RouterLink :to="t.to" class="task">
+                    <Icon :name="t.icon" class="ti" /><span style="flex:1">{{ t.text }}</span><span :class="['tag', t.cls]">{{ t.badge }}</span><span class="chev">›</span>
+                </RouterLink></li>
+            </ul>
+        </div>
         <div class="grid kpis c4">
             <div class="card kpi"><div class="l">Saldo</div><div class="v">{{ krRound(d.balance) }}</div><div class="s">bank og kasse</div></div>
             <div class="card kpi"><div class="l">Resultat {{ d.year }}</div><div class="v">{{ krRound(d.result) }}</div><div class="s">budget {{ krRound(d.budget_result) }}</div></div>
@@ -91,6 +100,7 @@
 <script setup>
 import { ref, computed, inject, onMounted } from 'vue';
 import { api, krRound } from '../../api';
+import Icon from '../../components/Icon.vue';
 const fy = inject('fy');
 const d = ref(null); const hover = ref(null);
 const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
@@ -113,9 +123,22 @@ function bar(x, v) {
 const sum = (rows, type, k) => rows.filter(r => r.type === type).reduce((s, r) => s + r[k], 0);
 const pct = (a, b) => b ? Math.round(a / b * 100) + ' %' : '–';
 const topActs = computed(() => [...d.value.activities].sort((a, b) => (b.income - b.expense) - (a.income - a.expense)).slice(0, 10));
-onMounted(async () => { d.value = await api(`finance/overview?year=${fy.year}`); });
+const st = ref(null);
+const tasks = computed(() => {
+    const s = st.value; if (!s) return [];
+    return [
+        s.claims_pending && { to: '/okonomi/udlaeg', icon: 'receipt', text: s.claims_pending === 1 ? 'Et udlæg venter på at blive udbetalt' : `${s.claims_pending} udlæg venter på at blive udbetalt`, badge: s.claims_pending, cls: 'warn' },
+        s.overdue_count && { to: '/okonomi/betalinger', icon: 'money', text: `Forfaldne regninger for ${krRound(s.overdue_amount)}`, badge: s.overdue_count, cls: 'bad' },
+        s.unmatched_payouts && { to: '/okonomi/bank', icon: 'bank', text: 'MobilePay-udbetalinger er ikke afstemt mod banken', badge: s.unmatched_payouts, cls: 'info' },
+    ].filter(Boolean);
+});
+onMounted(async () => { api('finance/menu').then(r => (st.value = r)).catch(() => {}); d.value = await api(`finance/overview?year=${fy.year}`); });
 </script>
 <style scoped>
+.tasks { padding-bottom: 6px; }
+.task { display: flex; align-items: center; gap: 10px; color: var(--ink); }
+.ti { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
+.chev { color: var(--ink-3); font-size: 1.3rem; line-height: 1; }
 .lg { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
 .tip { position: absolute; top: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-shadow: var(--shadow); font-size: .82rem; pointer-events: none; min-width: 170px; }
 .bud { position: relative; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: visible; margin: 6px 0 3px; }
