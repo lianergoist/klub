@@ -83,7 +83,7 @@
         <!-- Opret/rediger pakke -->
         <Modal v-if="ed" :title="ed.id ? `Rediger: ${ed.name}` : ({ membership: 'Nyt medlemskab', offer: 'Nyt tilbud til ikke-medlemmer' }[ed.kind] || (ed.isPunch && ed.guest_only ? 'Nyt klippekort' : 'Nyt tilkøb'))" @close="ed = null">
             <form class="stack" @submit.prevent="savePkg">
-                <p v-if="ed.id && ed.purchases" class="banner info small" style="margin:0">{{ ed.purchases }} køb bruger pakken. Ændringer gælder kun nye køb – de eksisterende beholder deres personer og periode.</p>
+                <p v-if="ed.id && ed.purchases" class="banner info small" style="margin-bottom:0">{{ ed.purchases }} køb bruger pakken. Ændringer gælder kun nye køb – de eksisterende beholder deres personer og periode.</p>
                 <label class="field"><span>Navn</span><input v-model="ed.name" required maxlength="120" :placeholder="{ membership: 'Fx Familie, 2 voksne og 1–3 børn', offer: 'Fx Prøvetræning eller Wingfoil-kursus' }[ed.kind] || 'Fx Adgang til motionsrum'"></label>
                 <label class="field"><span>Beskrivelse ({{ ed.kind === 'offer' ? 'vises på siden "Prøv SurfHorsens"' : 'vises for medlemmerne' }})</span><textarea v-model="ed.description" maxlength="1000" rows="2"></textarea></label>
 
@@ -171,7 +171,7 @@
                     <p v-else class="small muted" style="margin:0">Prisen ændres med "Ny pris", så den gamle pris bevares.</p>
                 </fieldset>
                 </template>
-                <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+                <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">{{ ed.id ? 'Gem ændringer' : 'Opret' }}</button>
             </form>
         </Modal>
@@ -189,7 +189,7 @@
                     <button type="button" class="chip" @click="nf.valid_from = nextSeason">Næste sæson ({{ dato(nextSeason) }})</button>
                 </div>
                 <p class="small muted" style="margin:0">Regninger oprettet før denne dato beholder den gamle pris. Ændringen skrives i ændringsloggen.</p>
-                <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+                <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Gem ny pris</button>
             </form>
         </Modal>

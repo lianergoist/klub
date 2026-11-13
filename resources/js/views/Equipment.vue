@@ -60,7 +60,7 @@
         <!-- ============ Book udstyr ============ -->
         <template v-if="tab === 'book'">
             <div class="card stack">
-                <div v-if="bf.replaces" class="banner info small row between" style="margin:0">
+                <div v-if="bf.replaces" class="banner info small row between" style="margin-bottom:0">
                     <span>Du flytter din booking af {{ bf.replacesLabel }}. Vælg nyt tidspunkt eller andet udstyr – den gamle booking annulleres, når du gemmer.</span>
                     <button class="btn small ghost" @click="bf.replaces = null">Fortryd</button>
                 </div>

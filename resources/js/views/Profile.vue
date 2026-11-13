@@ -108,7 +108,7 @@
                         <span class="lbl">Vælg medlemskab</span>
                         <PackageList v-model="ms.package_id" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" :price-of="(x) => priceFor(x, msPeople, shop.categories, shop.singles)" />
                     </div>
-                    <p v-if="msError" class="banner warn small" style="margin:0">{{ msError }}</p>
+                    <p v-if="msError" class="banner warn small" style="margin-bottom:0">{{ msError }}</p>
                     <button class="btn primary" :disabled="!msPkg || !!msError || busy">{{ msPkg ? `Køb og betal ${kr(priceFor(msPkg, msPeople, shop.categories, shop.singles).price)}` : 'Vælg personer og medlemskab' }}</button>
                 </form>
                 <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget medlemskab. Derefter kan du købe medlemskab til andre i husstanden.</div>
@@ -196,7 +196,7 @@
                     <label v-for="m in shop.household" :key="m.id" class="check" style="margin-top:6px"><input type="checkbox" :value="m.id" v-model="buyMembers"> {{ m.name }}<span v-if="buy.requires_membership && !m.membership" class="muted small"> (intet medlemskab)</span></label>
                 </div>
                 <label v-if="buy.needs_resource" class="field"><span>Plads</span><select v-model="buyRes"><option v-for="r in buy.free_resources" :key="r.id" :value="r.id">{{ r.label }}</option></select></label>
-                <p v-if="buyError" class="banner warn small" style="margin:0">{{ buyError }}</p>
+                <p v-if="buyError" class="banner warn small" style="margin-bottom:0">{{ buyError }}</p>
                 <p style="margin:0"><strong>{{ buy.price_fmt }}</strong> <span class="muted">({{ buy.valid_to ? `${dato(buy.valid_from)} – ${dato(buy.valid_to)}` : buy.period_label }})</span></p>
                 <button class="btn primary block" :disabled="!!buyError || busy" @click="order">Bestil og betal</button>
             </div>

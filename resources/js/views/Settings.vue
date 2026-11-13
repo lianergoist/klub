@@ -93,7 +93,7 @@
                     <button type="button" class="chip" @click="nf.valid_from = nextYear">1. januar</button>
                 </div>
                 <p class="small muted" style="margin:0">Regninger oprettet før denne dato beholder den gamle pris. Ændringen bliver skrevet i ændringsloggen.</p>
-                <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+                <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
                 <button class="btn primary block">Gem ny pris</button>
             </form>
         </Modal>

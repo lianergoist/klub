@@ -6,7 +6,7 @@
         <p class="muted">Testudgave – kun for bestyrelsen.</p>
         <form class="card stack" @submit.prevent="submit">
             <label class="field"><span>Adgangskode</span><input v-model="code" type="password" autocomplete="current-password" required autofocus></label>
-            <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+            <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
             <button class="btn primary block" :disabled="busy">Fortsæt</button>
         </form>
         <p class="small muted">Koden huskes i appen.</p>

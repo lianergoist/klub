@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+            <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
             <button class="btn primary block" :disabled="busy">{{ busy ? 'Sender …' : 'Send til kassereren' }}</button>
         </form>
 

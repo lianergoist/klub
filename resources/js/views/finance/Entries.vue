@@ -67,7 +67,7 @@
                 <label class="field"><span>Tekst</span><input v-model="n.text" required placeholder="Fx Nye trapez-liner"></label>
                 <label class="field"><span>Konto</span><select v-model="n.account_id" required><option v-for="a in accounts.filter(a => a.type === kind)" :key="a.id" :value="a.id">{{ a.number }} {{ a.name }}</option></select></label>
                 <label class="field"><span>Knyt til aktivitet (valgfrit)</span><select v-model="n.activity_id"><option value="">–</option><option v-for="a in acts" :key="a.id" :value="a.id">{{ a.title }} ({{ dato(a.starts_at) }})</option></select></label>
-                <p v-if="newError" class="banner bad small" style="margin:0">{{ newError }}</p>
+                <p v-if="newError" class="banner bad small" style="margin-bottom:0">{{ newError }}</p>
                 <button class="btn primary block" :disabled="saving">{{ saving ? 'Bogfører …' : 'Bogfør' }}</button>
             </form>
         </Modal>

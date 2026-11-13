@@ -10,7 +10,7 @@
                 </div>
             </div>
             <label class="field"><span>Reference (valgfri)</span><input v-model="reference" :placeholder="method === 'cash' ? 'Fx betalt i klubhuset' : 'Fx tekst fra kontoudtog'"></label>
-            <p v-if="error" class="banner bad small" style="margin:0">{{ error }}</p>
+            <p v-if="error" class="banner bad small" style="margin-bottom:0">{{ error }}</p>
             <button class="btn primary block" :disabled="busy" @click="save">{{ busy ? 'Registrerer …' : 'Registrér og bogfør' }}</button>
         </div>
     </Modal>

@@ -27,7 +27,7 @@
 
         <form v-else class="card stack" autocomplete="on" @submit.prevent="book">
             <a href="#" class="small" @click.prevent="picked = null">‹ Vælg en anden dato</a>
-            <div class="banner info" style="margin:0">
+            <div class="banner info" style="margin-bottom:0">
                 <strong>{{ picked.offer.label }}</strong>: {{ picked.activity.title }}<br>
                 <span>{{ datoLang(picked.activity.starts_at) }}</span> kl. {{ klok(picked.activity.starts_at) }}–{{ klok(picked.activity.ends_at) }} · <strong>{{ picked.offer.price_fmt }}</strong>
             </div>

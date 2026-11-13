@@ -10,12 +10,13 @@
         <div v-if="!offers" class="spinner"></div>
         <template v-else>
             <div v-for="o in offers" :key="o.id" :class="['card', 'offer', { on: f.package_id === o.id }]" @click="f.package_id = o.id">
-                <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
-                    <div><h2 style="margin:0">{{ o.name }}</h2>
-                        <p class="small muted" style="margin:4px 0 0">{{ o.uses }} klip · gælder {{ o.period_label }} · {{ o.categories.join(', ') }}</p>
-                        <p v-if="o.description" class="small" style="margin:6px 0 0">{{ o.description }}</p></div>
+                <!-- Navn og pris på første linje; detaljer og beskrivelse i fuld bredde under -->
+                <div class="row between" style="align-items:baseline;flex-wrap:nowrap">
+                    <h2 style="margin:0">{{ o.name }}</h2>
                     <div class="price">{{ o.price_fmt }}</div>
                 </div>
+                <p class="small muted" style="margin:4px 0 0">{{ o.uses }} klip · gælder {{ o.period_label }} · {{ o.categories.join(', ') }}</p>
+                <p v-if="o.description" class="small" style="margin:8px 0 0">{{ o.description }}</p>
             </div>
             <p v-if="!offers.length" class="card muted">Der er ingen klippekort til salg lige nu.</p>
 
@@ -30,9 +31,9 @@
                     <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" name="bday" id="bday" type="date" required autocomplete="bday"></label>
                     <label class="field"><span>Adgangskode (mindst 8 tegn)</span><input v-model="f.password" name="new-password" id="new-password" type="password" minlength="8" required autocomplete="new-password"></label>
                 </div>
-                <div class="banner info small" style="margin:0">Klubben gemmer dine oplysninger for at kunne holde styr på dit klippekort og dine tilmeldinger. Du kan altid se, rette og hente dine data.</div>
+                <div class="banner info small" style="margin-bottom:0">Klubben gemmer dine oplysninger for at kunne holde styr på dit klippekort og dine tilmeldinger. Du kan altid se, rette og hente dine data.</div>
                 <label class="check"><input type="checkbox" v-model="f.consent"> Jeg giver samtykke til ovenstående.</label>
-                <p v-if="error" class="banner bad" style="margin:0">{{ error }}</p>
+                <p v-if="error" class="banner bad" style="margin-bottom:0">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy || !chosen">{{ chosen ? `Opret login og betal ${chosen.price_fmt}` : 'Vælg et klippekort' }}</button>
             </form>
             <p class="small muted" style="text-align:center">Har du allerede et login? <RouterLink to="/login">Log ind</RouterLink> · Medlem? Så tilmelder du dig under Aktiviteter.</p>
