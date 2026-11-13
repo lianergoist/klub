@@ -302,7 +302,7 @@ onMounted(async () => { await load(); onTab(cur.value); });
 .back { display: inline-block; margin-bottom: 6px; }
 /* Postnr. og By på samme linje (fødselsdato under) på mobil */
 @media (max-width: 699.98px) { .addr { grid-template-columns: 1fr 2fr; } .addr > :last-child { grid-column: 1 / -1; } }
-@media (max-width: 899.98px) { .save-btn { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
+@media (max-width: 899.98px) { .save-btn { position: sticky; bottom: var(--sticky-bottom); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .menu { padding: 2px 16px; }
 .menu .list > li { padding: 0; }
 .mrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink); min-height: 56px; }

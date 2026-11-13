@@ -274,3 +274,10 @@ tfoot td { font-weight: 700; border-bottom: 0; }
     .grid.kpis .kpi .s { font-size: .78rem; }
 }
 
+/* Knapper, der bliver stående nederst på mobil (over bundmenuen) */
+:root { --sticky-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+/* Mens man skriver på mobil (tastaturet er oppe): skjul bundmenuen, så der er plads til feltet */
+@media (max-width: 899.98px) {
+    html.typing .tabbar { display: none; }
+    html.typing { --sticky-bottom: 8px; }
+}

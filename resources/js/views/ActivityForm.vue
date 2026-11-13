@@ -219,6 +219,6 @@ async function save(extra = {}) {
 .more > summary strong::after { content: ' ▾'; color: var(--ink-3); font-size: .8em; }
 .more[open] > summary strong::after { content: ' ▴'; }
 /* Knappen bliver stående over bundmenuen på mobil, så man ikke skal rulle ned for at gemme */
-@media (max-width: 899.98px) { .submit { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
+@media (max-width: 899.98px) { .submit { position: sticky; bottom: var(--sticky-bottom); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .repeat { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 </style>

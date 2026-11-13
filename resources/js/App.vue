@@ -68,6 +68,14 @@ onMounted(() => { poll = setInterval(async () => {
 }, 30000); });
 onUnmounted(() => clearInterval(poll));
 
+// Tastaturet er oppe, når et tekstfelt har fokus: markér det, så bundmenuen kan skjules på mobil (se app.css)
+const isTextField = (el) => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'file', 'color', 'range', 'date', 'datetime-local', 'time', 'month'].includes(el.type)));
+let typingT;
+const onFocusIn = (e) => { if (isTextField(e.target)) { clearTimeout(typingT); document.documentElement.classList.add('typing'); } };
+const onFocusOut = () => { typingT = setTimeout(() => { if (!isTextField(document.activeElement)) document.documentElement.classList.remove('typing'); }, 100); };
+onMounted(() => { document.addEventListener('focusin', onFocusIn); document.addEventListener('focusout', onFocusOut); });
+onUnmounted(() => { document.removeEventListener('focusin', onFocusIn); document.removeEventListener('focusout', onFocusOut); });
+
 async function logout() {
     await doLogout();
     router.push('/login');

@@ -317,7 +317,7 @@ onMounted(() => { load(); loadBookings(); if (tab.value === 'book') loadAvail();
 
 <style scoped>
 /* Book-knappen bliver stående over bundmenuen på mobil, så man ser antallet, mens man vælger */
-@media (max-width: 899.98px) { .book-btn { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
+@media (max-width: 899.98px) { .book-btn { position: sticky; bottom: var(--sticky-bottom); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .count { margin-left: 6px; background: var(--warn); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .72rem; font-weight: 700; }
 h2 .sw, .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .type { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
