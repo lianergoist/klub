@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#0c4a5e">
+    <meta name="theme-color" content="#7e5a8c">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="manifest" href="/manifest.webmanifest">
@@ -35,7 +35,7 @@
             var t = new URLSearchParams(location.search).get('tema');
             var m = /[?&]tema=(klub|standard)/.exec(decodeURIComponent(new URLSearchParams(location.search).get('til') || ''));
             try { t = t || (m && m[1]) || localStorage.getItem('tema'); } catch (e) {}
-            if (t === 'klub') document.documentElement.dataset.tema = 'klub';
+            if (!t || t === 'klub') document.documentElement.dataset.tema = 'klub'; // SurfHorsens er standard
         })();
     </script>
 </head>

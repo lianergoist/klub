@@ -17,5 +17,5 @@ export function setTheme(t) {
 /** Fx ?tema=klub, ?tema=mork eller ?tema=standard i adressen vælger tema (praktisk til at dele et link). */
 export function initTheme() {
     const fromUrl = new URLSearchParams(location.search).get('tema');
-    setTheme(THEMES[fromUrl] ? fromUrl : read() || (__APP__ ? 'klub' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'mork' : 'standard')); // eslint-disable-line no-undef
+    setTheme(THEMES[fromUrl] ? fromUrl : read() || 'klub'); // SurfHorsens er standard, indtil man selv vælger
 }
