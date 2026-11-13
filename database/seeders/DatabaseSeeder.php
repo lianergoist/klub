@@ -389,6 +389,9 @@ class DatabaseSeeder extends Seeder
             'total_min' => 1, 'total_max' => 1, 'requires_membership' => true, 'account_id' => $this->acc['1200']], ['Voksen' => [0, 1], 'Barn' => [0, 1]], 15000);
         \App\Support\Punchcards::createDemo($this->acc['1100'], $henrik->id, $this->now->toDateString());
         \App\Support\Equipment::createDemo();
+        // Linjer på login-siden for tilbuddene (migrationen kører før seederen, så de sættes her)
+        \App\Models\Package::where('kind', 'offer')->where('name', 'like', 'Prøvetræning%')->update(['login_text' => 'Prøv en træning']);
+        \App\Models\Package::where('kind', 'offer')->where('name', 'like', '%SUP-kursus%')->update(['login_text' => 'Tag et SUP-kursus']);
     }
 
     private function seedMessages(array $p): void

@@ -101,15 +101,16 @@ class Punchcards
         $sup = \App\Models\Category::where('name', 'SUP')->first();
         if (! $sup) return null;
         $p = \App\Models\Package::create([
-            'kind' => 'product', 'name' => 'SUP 10-turskort', 'description' => '10 SUP-træninger inden for 12 måneder. Tilmeld dig de træninger, du vil med til – hver gang bruger ét klip.',
+            'kind' => 'product', 'name' => 'SUP 10-turskort', 'description' => '10 SUP-træninger inden for 12 måneder. Tilmeld dig de ture, du vil med til – hver gang bruger ét klip. Det er sociale ture i roligt tempo. Man skal kunne stå op på boardet og padle, og selv kunne komme op når man falder i vandet.',
+            'login_text' => 'Køb et klippekort til SUP-ture',
             'period_type' => 'days', 'period_days' => 365, 'total_min' => 1, 'total_max' => 1, 'uses' => 10, 'guest_only' => true,
             'self_service' => true, 'account_id' => $accountId, 'created_by' => $by, 'position' => 60,
         ]);
         foreach (\App\Models\PersonCategory::all() as $c) $p->slots()->create(['person_category_id' => $c->id, 'min' => 0, 'max' => 1]);
         $p->categories()->sync([$sup->id]);
-        Prices::set($p->priceCode(), 60000, $from, $by);
+        Prices::set($p->priceCode(), 100000, $from, $by);
         Activity::whereIn('title', ['Vinter-SUP i tørdragt', 'Vinterbad og SUP-hygge', 'Nytårs-SUP'])->update(['punchcard' => true]);
-        Audit::log('package.created', $p, ['name' => $p->name, 'price' => '600,00 kr.']);
+        Audit::log('package.created', $p, ['name' => $p->name, 'price' => '1.000,00 kr.']);
 
         return $p;
     }
