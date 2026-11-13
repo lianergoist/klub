@@ -26,7 +26,9 @@ return new class extends Migration
             $t->foreignId('guest_package_id')->nullable()->after('members_only')->constrained('packages')->nullOnDelete();
         });
 
-        $account = DB::table('accounts')->where('number', '1100')->value('id');
+        $account = DB::table('accounts')->where('number', '1100')->value('id')
+            // Ny database (migrate:fresh): kontoplanen oprettes først af seederen, så kontoen til tilbuddene laves her
+            ?? DB::table('accounts')->insertGetId(['number' => '1100', 'name' => 'Aktivitetsindtægter', 'type' => 'income', 'created_at' => now(), 'updated_at' => now()]);
         $pos = 0;
         foreach (self::OLD as $code => [$name, $desc]) {
             $prices = DB::table('prices')->where('code', $code)->orderBy('valid_from')->get();

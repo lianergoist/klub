@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             ['2300', 'Kurser og uddannelse', 'expense'], ['2400', 'Trænerudgifter', 'expense'], ['2500', 'Administration', 'expense'],
             ['2600', 'Gebyrer', 'expense'], ['2700', 'Arrangementer', 'expense'], ['9000', 'Egenkapital primo', 'equity'],
         ] as [$n, $name, $type]) {
-            $this->acc[$n] = Account::create(['number' => $n, 'name' => $name, 'type' => $type])->id;
+            $this->acc[$n] = Account::updateOrCreate(['number' => $n], ['name' => $name, 'type' => $type])->id; // 1100 kan være oprettet af en migration
         }
 
         // Medlemstyper – priserne ligger i pristabellen (prices) med "gælder fra"-dato
@@ -270,14 +270,16 @@ class DatabaseSeeder extends Seeder
         }
 
         // --- Tilbud til ikke-medlemmer: prøvetræning og SUP-kursus (modregnes ved senere indmeldelse) ---
-        Activity::whereIn('title', ['Juniortræning – indendørs balance', 'Vinterbad og SUP-hygge'])->update(['guest_offer' => 'trial']);
+        // Tilbuddene er pakker (oprettet af migrationen ud fra standardpriserne, legacy_key offer.trial / offer.sup_course)
+        $offerPkg = fn ($code) => \App\Models\Package::where('legacy_key', 'offer.'.$code)->value('id');
+        Activity::whereIn('title', ['Juniortræning – indendørs balance', 'Vinterbad og SUP-hygge'])->update(['guest_package_id' => $offerPkg('trial')]);
         $sup = $cats['SUP']->id;
         foreach ([[166, 'Prøvetræning: windsurf for nybegyndere', 'trial', 0, 'Windsurf'], [172, 'SUP-kursus for begyndere (hold 1)', 'sup_course', 50000, 'SUP'], [186, 'SUP-kursus for begyndere (hold 2)', 'sup_course', 50000, 'SUP']] as [$days, $title, $offer, $price, $cat]) {
             $start = $this->now->copy()->addDays($days)->setTime(10, 0);
             $a = $this->activity([$title, [$cat], 'Strandpladsen', $offer === 'sup_course' ? 10 : 12, $price], $start, $cats, [$lars->id], $mette,
                 $offer === 'sup_course' ? 'Tre timers begynderkursus: udstyr, teknik og sikkerhed – og en tur ud på fjorden. Board, pagaj og våddragt er med. Prisen trækkes fra kontingentet, hvis du melder dig ind bagefter.'
                     : 'For dig, der vil prøve windsurf. Vi starter på land og tager så på vandet i lavt vand. Alt udstyr er med.');
-            $a->update(['guest_offer' => $offer, 'members_only' => false]);
+            $a->update(['guest_package_id' => $offerPkg($offer), 'members_only' => false]);
         }
         // En gæst, der har betalt prøvetræning (kan melde sig ind med e-mailen gaest@demo.dk og få beløbet modregnet)
         $gAct = Activity::where('title', 'Vinterbad og SUP-hygge')->first();
