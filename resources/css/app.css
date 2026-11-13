@@ -27,7 +27,7 @@
     --shadow: 0 1px 2px rgba(16,32,31,.06), 0 4px 16px rgba(16,32,31,.05);
     --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: SurfHorsens. */
+/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: Automatisk = SurfHorsens, mørk udgave (html[data-mork]) når enheden står på mørk tilstand. */
 /* ===== Tema: Mørk ===== */
 html[data-tema=mork] {
     color-scheme: dark;
@@ -122,6 +122,20 @@ html[data-tema=klub] {
     --series-2: #d4700c;
     --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
+/* Mørk SurfHorsens – bruges af Automatisk, når enheden står på mørk tilstand */
+html[data-tema=klub][data-mork] {
+    color-scheme: dark;
+    --bg: #1d1520; --surface: #291f2e; --surface-2: #33283a; --line: #45364c;
+    --ink: #f3ebef; --ink-2: #cbbcd0; --ink-3: #a090a6;
+    --heading: #d9b8e6; --brand: #4f3559; --accent: #c49ad6; --accent-soft: #3a2a43; --sand: #3a2a18;
+    --ok: #5fd08a; --ok-soft: #12301f; --warn: #f0b252; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
+    --series-1: #a274c0; --series-2: #d9781a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+html[data-tema=klub][data-mork] .btn.primary { color: #21142a; }
+html[data-tema=klub][data-mork] .act .when { background: #3a2a18; color: #ffd9ae; }
+html[data-tema=klub][data-mork] .act .when .m { color: #f0b46e; }
+html[data-tema=klub][data-mork] .demo-ribbon, html[data-tema=klub][data-mork] .banner.info { background: #3d2231; color: #f7cfe1; }
 html[data-tema=klub] body { letter-spacing: -.005em; }
 html[data-tema=klub] h1 { font-weight: 600; letter-spacing: -.015em; }
 html[data-tema=klub] h3 { color: var(--ink-3); }

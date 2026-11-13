@@ -33,9 +33,9 @@
     <script>
         (function () {
             var t = new URLSearchParams(location.search).get('tema');
-            var m = /[?&]tema=(klub|standard)/.exec(decodeURIComponent(new URLSearchParams(location.search).get('til') || ''));
+            var m = /[?&]tema=(klub|auto|standard)/.exec(decodeURIComponent(new URLSearchParams(location.search).get('til') || ''));
             try { t = t || (m && m[1]) || localStorage.getItem('tema'); } catch (e) {}
-            if (!t || t === 'klub') document.documentElement.dataset.tema = 'klub'; // SurfHorsens er standard
+            if (!t || t === 'klub' || t === 'auto') document.documentElement.dataset.tema = 'klub'; // SurfHorsens er standard
         })();
     </script>
 </head>

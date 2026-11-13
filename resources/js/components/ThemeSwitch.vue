@@ -3,11 +3,12 @@
         <span class="ts-label">Farvetema</span>
         <span class="ts-box">
             <span class="ts-sw" :style="{ background: SWATCH[store.tema] }" aria-hidden="true"></span>
-            <select :value="store.tema" @change="setTheme($event.target.value)">
+            <select :value="store.tema" @change="setTheme($event.target.value, true)">
                 <option v-for="(label, key) in THEMES" :key="key" :value="key">{{ label }}</option>
             </select>
             <span class="ts-chev" aria-hidden="true">▾</span>
         </span>
+        <span v-if="store.tema === 'auto'" class="ts-hint">SurfHorsens – lyst eller mørkt som din telefon/computer</span>
     </label>
 </template>
 <script setup>
@@ -16,6 +17,7 @@ import { THEMES, setTheme } from '../theme';
 
 // Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen)
 const SWATCH = {
+    auto: 'linear-gradient(135deg, #e665a1 0 25%, #7e5a8c 25% 50%, #4f3559 50% 75%, #1d1520 75%)',
     standard: 'linear-gradient(135deg, #0c4a5e 50%, #0f7c8c 50%)',
     gron: 'linear-gradient(135deg, #1d4d35 50%, #2a7a4f 50%)',
     orange: 'linear-gradient(135deg, #6b2f12 50%, #b84a12 50%)',
@@ -28,6 +30,7 @@ const SWATCH = {
 .ts-label { font-size: .78rem; font-weight: 600; opacity: .75; }
 .ts-box { position: relative; display: inline-flex; align-items: center; flex: 0 1 190px; min-width: 150px; }
 .ts-sw { position: absolute; left: 11px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(128,128,128,.45); pointer-events: none; }
+.ts-hint { flex-basis: 100%; font-size: .75rem; opacity: .7; margin-top: -4px; }
 .ts-chev { position: absolute; right: 11px; font-size: .8rem; opacity: .7; pointer-events: none; }
 select { appearance: none; -webkit-appearance: none; padding: 7px 30px 7px 36px; min-height: 40px; font-weight: 500; cursor: pointer; }
 option { color: var(--ink); background: var(--surface); }
