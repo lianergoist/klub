@@ -103,8 +103,13 @@ class MemberController extends Controller
                 'valid_to' => $p->valid_to?->toDateString(), 'status' => $p->cancelled_at ? 'cancelled' : ($p->invoice ? $p->invoice->displayStatus() : 'paid'),
                 'uses_left' => $p->package->uses ? $p->uses_left : null, 'uses' => $p->package->uses, 'note' => $p->note,
             ]),
-            'log' => \App\Models\AuditLog::with('user')->where('subject_type', 'User')->where('subject_id', $member->id)->latest('id')->limit(30)->get()
+            // Opslag i kartoteket samles til én linje, så de ikke fylder hele loggen
+            'log' => \App\Models\AuditLog::with('user')->where('subject_type', 'User')->where('subject_id', $member->id)->where('action', '!=', 'member.viewed')->latest('id')->limit(30)->get()
                 ->map(fn ($l) => ['action' => $l->action, 'by' => $l->user?->name, 'at' => $l->created_at->toIso8601String()]),
+            'views' => ($v = \App\Models\AuditLog::with('user')->where('subject_type', 'User')->where('subject_id', $member->id)->where('action', 'member.viewed')->latest('id')->get())->isEmpty() ? null : [
+                'count' => $v->count(), 'last' => $v->first()->created_at->toIso8601String(),
+                'people' => $v->map(fn ($l) => $l->user?->name)->filter()->unique()->values(),
+            ],
         ];
     }
 

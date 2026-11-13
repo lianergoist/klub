@@ -1,27 +1,25 @@
 <template>
     <div>
         <h1 style="margin-bottom:14px">Indstillinger</h1>
-        <RouterLink v-if="can.roles_manage" to="/indstillinger/rettigheder" class="card row between" style="text-decoration:none;color:inherit">
-            <div><h2 style="margin:0">Rettigheder</h2><div class="small muted">Vælg hvilke roller der må hvad, og se personlige rettigheder.</div></div>
-            <span class="btn small">Åbn</span>
-        </RouterLink>
-        <RouterLink v-if="can.audit_view" to="/indstillinger/aendringslog" class="card row between" style="text-decoration:none;color:inherit">
-            <div><h2 style="margin:0">Ændringslog</h2><div class="small muted">Alle handlinger i systemet med hvem og hvornår.</div></div>
-            <span class="btn small">Åbn</span>
-        </RouterLink>
+        <div v-if="can.roles_manage || can.audit_view" class="card links">
+            <ul class="list">
+                <li v-if="can.roles_manage"><RouterLink to="/indstillinger/rettigheder" class="mrow">
+                    <Icon name="users" class="mi" /><span class="mtext"><strong>Rettigheder</strong><span class="small muted">Hvilke roller der må hvad, og personlige rettigheder</span></span><span class="chev">›</span>
+                </RouterLink></li>
+                <li v-if="can.audit_view"><RouterLink to="/indstillinger/aendringslog" class="mrow">
+                    <Icon name="clock" class="mi" /><span class="mtext"><strong>Ændringslog</strong><span class="small muted">Alle handlinger i systemet med hvem og hvornår</span></span><span class="chev">›</span>
+                </RouterLink></li>
+            </ul>
+        </div>
         <div v-if="can.categories_manage" class="card">
             <h2>Kategorier</h2>
-            <p class="small muted">Medlemmer bruger kategorierne til at filtrere og vælge notifikationer. Ret kun navnet ved små rettelser: det nye navn gælder også for alle, der følger kategorien, og for tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
-            <ul class="list">
-                <li v-for="c in active" :key="c.id">
-                    <div class="row" style="flex-wrap:nowrap">
-                        <input type="color" v-model="c.color" style="width:44px;padding:2px">
-                        <input v-model="c.name">
-                        <button class="btn small" @click="save(c)">Gem</button>
-                        <button class="btn small ghost" @click="archive(c, true)">Arkivér</button>
-                    </div>
-                    <div class="small muted" style="margin-top:4px">{{ c.followers }} følger · brugt på {{ c.activities }} aktiviteter</div>
-                </li>
+            <p class="small muted">Medlemmer filtrerer og vælger notifikationer efter kategorierne. Tryk på en kategori for at rette navn og farve eller arkivere den.</p>
+            <ul class="list cats">
+                <li v-for="c in active" :key="c.id"><button type="button" class="catrow" @click="openCat(c)">
+                    <span class="sw" :style="{ background: c.color }"></span>
+                    <span class="mtext"><strong>{{ c.name }}</strong><span class="small muted">{{ c.followers }} følger · brugt på {{ c.activities }} aktiviteter</span></span>
+                    <span class="chev">›</span>
+                </button></li>
             </ul>
             <details v-if="archived.length" style="margin-top:10px">
                 <summary class="small muted" style="cursor:pointer">Arkiverede ({{ archived.length }})</summary>
@@ -39,6 +37,17 @@
                 <button class="btn primary small">Tilføj</button>
             </form>
         </div>
+        <Modal v-if="cat" :title="cat.orig" @close="cat = null">
+            <div class="stack">
+                <div class="row" style="flex-wrap:nowrap">
+                    <label class="field" style="flex:0 0 auto"><span>Farve</span><input type="color" v-model="cat.color" style="width:56px;padding:2px"></label>
+                    <label class="field" style="flex:1"><span>Navn</span><input v-model="cat.name"></label>
+                </div>
+                <p class="small muted" style="margin:0">Ret kun navnet ved små rettelser: det nye navn gælder også for de {{ cat.followers }}, der følger kategorien, og for {{ cat.activities }} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori og arkivér evt. den gamle.</p>
+                <button class="btn primary block" @click="save(cat)">Gem</button>
+                <button class="btn ghost block" @click="archive(cat, true)">Arkivér kategorien</button>
+            </div>
+        </Modal>
         <PackagesAdmin v-if="priceAccess" />
         <div v-if="priceAccess && pr?.groups?.length" class="card">
             <h2>Øvrige priser</h2>
@@ -93,6 +102,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import Modal from '../components/Modal.vue';
+import Icon from '../components/Icon.vue';
 import PackagesAdmin from '../components/PackagesAdmin.vue';
 import { api, toast, dato, store } from '../api';
 const can = computed(() => store.user.can);
@@ -102,16 +112,18 @@ const nf = reactive({ amount: '', valid_from: '' });
 const nextSeason = (() => { const d = new Date(); const y = d.getMonth() >= 4 ? d.getFullYear() + 1 : d.getFullYear(); return `${y}-05-01`; })();
 const nextYear = `${new Date().getFullYear() + 1}-01-01`; const nc = reactive({ name: '', color: '#0f7c8c' });
 const active = computed(() => cats.value.filter(c => !c.archived));
+// Rettes på en kopi, så listen først ændres, når der gemmes
+const cat = ref(null); const openCat = (c) => { cat.value = { ...c }; };
 const archived = computed(() => cats.value.filter(c => c.archived));
 async function loadCats() { cats.value = (await api('categories')).map(c => ({ ...c, orig: c.name })); }
 onMounted(async () => { await loadCats(); if (priceAccess.value) pr.value = await api('finance/prices'); });
 async function save(c) {
     if (c.name !== c.orig && !confirm(`Omdøb "${c.orig}" til "${c.name}"?\n\nNavnet ændres for alle ${c.followers}, der følger kategorien, og på ${c.activities} tidligere aktiviteter. Er det en ny slags aktivitet, så opret en ny kategori i stedet.`)) return;
-    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.name, color: c.color } }); c.orig = c.name; toast('Gemt'); } catch (e) { toast(e.message, 'error'); }
+    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.name, color: c.color } }); cat.value = null; await loadCats(); toast('Gemt'); } catch (e) { toast(e.message, 'error'); }
 }
 async function archive(c, on) {
     if (on && !confirm(`Arkivér "${c.name}"?\n\nDen kan ikke længere vælges til nye aktiviteter eller af medlemmer. Tidligere aktiviteter beholder den, og den kan gendannes.`)) return;
-    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.orig, color: c.color, archived: on } }); await loadCats(); toast(on ? 'Arkiveret' : 'Gendannet'); } catch (e) { toast(e.message, 'error'); }
+    try { await api(`categories/${c.id}`, { method: 'PUT', body: { name: c.orig, color: c.color, archived: on } }); cat.value = null; await loadCats(); toast(on ? 'Arkiveret' : 'Gendannet'); } catch (e) { toast(e.message, 'error'); }
 }
 function openEdit(p) { edit.value = p; error.value = ''; nf.amount = p.current ? p.current.amount / 100 : ''; nf.valid_from = nextSeason; }
 async function savePrice() {
@@ -127,5 +139,12 @@ async function add() { try { cats.value.push({ ...(await api('categories', { met
 </script>
 <style scoped>
 .prices > li { padding: 12px 0; }
+.links { padding: 2px 16px; }
+.links .list > li, .cats > li { padding: 0; }
+.mrow, .catrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink); min-height: 56px; width: 100%; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.mi { width: 22px; height: 22px; color: var(--accent); flex-shrink: 0; }
+.catrow .sw { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; }
+.mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.chev { color: var(--ink-3); font-size: 1.4rem; line-height: 1; }
 .upcoming { margin-top: 6px; font-size: .88rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 </style>

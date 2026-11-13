@@ -26,35 +26,8 @@
                 </template>
             </div>
             <p v-else-if="seriesLabel" class="small muted" style="margin:0">Del af en fast aktivitet ({{ seriesLabel }}). Ændringer her gælder kun denne gang.</p>
-            <div class="equip">
-                <span class="small" style="font-weight:600;color:var(--ink-2)">Udstyr</span>
-                <label class="check" style="margin-top:6px"><input type="radio" value="all" v-model="f.equipment_mode"> Book alt udstyr i kategorien <span class="small muted" v-if="avail">({{ catItems.length }} stk.)</span></label>
-                <label class="check"><input type="radio" value="selected" v-model="f.equipment_mode"> Book kun bestemt udstyr – resten kan bookes af andre</label>
-                <div v-if="f.equipment_mode === 'selected'" style="margin-top:8px">
-                    <p v-if="!f.starts_at || !f.ends_at" class="small muted" style="margin:0">Vælg først tidspunkt.</p>
-                    <EquipmentPicker v-else-if="avail" v-model="f.equipment_ids" :items="avail" :category-ids="f.category_ids" mode="activity" />
-                </div>
-                <p v-if="busyNames.length" class="small" style="margin:8px 0 0;color:var(--warn)"><strong>Allerede booket i tidsrummet:</strong> {{ busyNames.join(', ') }}<span v-if="repeat"> (første gang)</span></p>
-            </div>
             <label class="field"><span>Sted</span><input v-model="f.location" placeholder="Fx Strandpladsen"></label>
             <label class="field"><span>Beskrivelse</span><textarea v-model="f.description" placeholder="Hvad skal deltagerne vide? Udstyr, niveau, vejrforbehold …"></textarea></label>
-            <div class="grid c2">
-                <label class="field"><span>Max deltagere</span><input v-model.number="f.max_participants" type="number" min="1" placeholder="Ubegrænset"></label>
-                <label class="field"><span>Min deltagere</span><input v-model.number="f.min_participants" type="number" min="1"></label>
-            </div>
-            <div class="grid c2">
-                <label class="field"><span>Svarfrist</span><input v-model="f.signup_deadline" type="datetime-local" :disabled="repeat"><small v-if="repeat" class="muted">Ingen svarfrist ved faste aktiviteter</small></label>
-                <label class="field"><span>Afmelding lukker (timer før start)</span><input v-model.number="f.cancel_hours" type="number" min="0"></label>
-            </div>
-            <div class="grid c2">
-                <label class="field"><span>Pris pr. deltager (kr.)</span><input v-model.number="priceKr" type="number" min="0" step="1" placeholder="Gratis"></label>
-                <label class="check" style="margin-top:22px"><input type="checkbox" v-model="f.members_only"> Kræver betalt kontingent</label>
-            </div>
-            <label v-if="guestOffers.length || f.guest_package_id" class="field"><span>Åben for ikke-medlemmer</span>
-                <select v-model="f.guest_package_id"><option :value="null">Nej</option><option v-for="o in guestOffers" :key="o.id" :value="o.id">Ja, som {{ lcFirst(o.label) }} ({{ o.price_fmt }})</option></select>
-            </label>
-            <label v-if="punchOk" class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
-            <p v-if="f.guest_package_id" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler tilbuddets pris<template v-if="guestOffers.find(o => o.id === f.guest_package_id)?.creditable">, og beløbet trækkes fra kontingentet, hvis de melder sig ind</template>. Tilbuddene oprettes under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer.</p>
             <p v-if="repeat" class="small muted" style="margin:0"><strong>Trænere:</strong> en fast aktivitet oprettes uden træner. Trænerne melder sig selv på de enkelte gange bagefter (Trænerportalen → Mangler træner).</p>
             <div v-else>
                 <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
@@ -66,9 +39,42 @@
                 </div>
                 <p v-if="hidden.length" class="small muted" style="margin-top:6px">Utilgængelige: {{ hidden.map(t => `${t.name} (${t.reason || 'ikke angivet'})`).join(', ') }}</p>
             </div>
+            <!-- Sjældnere brugte felter er foldet sammen; resuméet viser, hvad der er valgt -->
+            <details class="more" :open="moreOpen" @toggle="moreOpen = $event.target.open">
+                <summary><strong>Flere indstillinger</strong> <span class="small muted">{{ moreSummary }}</span></summary>
+                <div class="stack" style="margin-top:12px">
+                <div class="equip">
+                    <span class="small" style="font-weight:600;color:var(--ink-2)">Udstyr</span>
+                    <label class="check" style="margin-top:6px"><input type="radio" value="all" v-model="f.equipment_mode"> Book alt udstyr i kategorien <span class="small muted" v-if="avail">({{ catItems.length }} stk.)</span></label>
+                    <label class="check"><input type="radio" value="selected" v-model="f.equipment_mode"> Book kun bestemt udstyr – resten kan bookes af andre</label>
+                    <div v-if="f.equipment_mode === 'selected'" style="margin-top:8px">
+                        <p v-if="!f.starts_at || !f.ends_at" class="small muted" style="margin:0">Vælg først tidspunkt.</p>
+                        <EquipmentPicker v-else-if="avail" v-model="f.equipment_ids" :items="avail" :category-ids="f.category_ids" mode="activity" />
+                    </div>
+                    <p v-if="busyNames.length" class="small" style="margin:8px 0 0;color:var(--warn)"><strong>Allerede booket i tidsrummet:</strong> {{ busyNames.join(', ') }}<span v-if="repeat"> (første gang)</span></p>
+                </div>
+                <div class="grid c2">
+                    <label class="field"><span>Max deltagere</span><input v-model.number="f.max_participants" type="number" min="1" placeholder="Ubegrænset"></label>
+                    <label class="field"><span>Min deltagere</span><input v-model.number="f.min_participants" type="number" min="1"></label>
+                </div>
+                <div class="grid c2">
+                    <label class="field"><span>Svarfrist</span><input v-model="f.signup_deadline" type="datetime-local" :disabled="repeat"><small v-if="repeat" class="muted">Ingen svarfrist ved faste aktiviteter</small></label>
+                    <label class="field"><span>Afmelding lukker (timer før start)</span><input v-model.number="f.cancel_hours" type="number" min="0"></label>
+                </div>
+                <div class="grid c2">
+                    <label class="field"><span>Pris pr. deltager (kr.)</span><input v-model.number="priceKr" type="number" min="0" step="1" placeholder="Gratis"></label>
+                    <label class="check" style="margin-top:22px"><input type="checkbox" v-model="f.members_only"> Kræver betalt kontingent</label>
+                </div>
+                <label v-if="guestOffers.length || f.guest_package_id" class="field"><span>Åben for ikke-medlemmer</span>
+                    <select v-model="f.guest_package_id"><option :value="null">Nej</option><option v-for="o in guestOffers" :key="o.id" :value="o.id">Ja, som {{ lcFirst(o.label) }} ({{ o.price_fmt }})</option></select>
+                </label>
+                <label v-if="punchOk" class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
+                <p v-if="f.guest_package_id" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler tilbuddets pris<template v-if="guestOffers.find(o => o.id === f.guest_package_id)?.creditable">, og beløbet trækkes fra kontingentet, hvis de melder sig ind</template>. Tilbuddene oprettes under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer.</p>
+                </div>
+            </details>
             <label v-if="!id" class="check"><input type="checkbox" v-model="f.notify"> Send besked til medlemmer, der følger kategorien</label>
             <p v-if="error" class="banner bad">{{ error }}</p>
-            <button class="btn primary block" :disabled="busy || (repeat && occurrences.length < 2)">{{ id ? 'Gem ændringer' : repeat && occurrences.length > 1 ? `Opret ${occurrences.length} gange` : 'Opret aktivitet' }}</button>
+            <button class="btn primary block submit" :disabled="busy || (repeat && occurrences.length < 2)">{{ id ? 'Gem ændringer' : repeat && occurrences.length > 1 ? `Opret ${occurrences.length} gange` : 'Opret aktivitet' }}</button>
         </form>
 
         <Modal v-if="conflicts" title="Udstyret er booket" @close="conflicts = null">
@@ -110,6 +116,18 @@ const cats = ref([]); const guestOffers = ref([]); const trainers = ref([]); con
 const f = reactive({ title: '', description: '', starts_at: '', ends_at: '', location: '', max_participants: null, min_participants: null, signup_deadline: '', cancel_hours: 24, price: 0, members_only: true, guest_package_id: null, punchcard: false, category_ids: [], trainer_ids: [], notify: true, repeat_until: '', equipment_mode: 'all', equipment_ids: [] });
 const priceKr = computed({ get: () => f.price ? f.price / 100 : '', set: (v) => (f.price = Math.round((Number(v) || 0) * 100)) });
 const repeat = ref(false); const seriesLabel = ref('');
+const moreOpen = ref(false);
+// Resumé af "Flere indstillinger", så man kan se valgene uden at folde ud
+const moreSummary = computed(() => [
+    f.max_participants ? `maks ${f.max_participants}` : 'ubegrænset antal',
+    f.min_participants && `min ${f.min_participants}`,
+    f.signup_deadline && 'svarfrist',
+    f.price ? `${f.price / 100} kr.` : 'gratis',
+    !f.members_only && 'uden kontingentkrav',
+    f.guest_package_id && 'åben for ikke-medlemmer',
+    f.punchcard && 'klippekort',
+    f.equipment_mode === 'selected' ? 'bestemt udstyr' : 'alt udstyr',
+].filter(Boolean).join(' · '));
 const kortDato = (d) => d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
 const occurrences = computed(() => {
     if (!repeat.value || !f.starts_at || !f.repeat_until) return [];
@@ -165,6 +183,8 @@ const hasBookings = computed(() => (conflicts.value?.equipment_conflicts || []).
 const catItems = computed(() => (avail.value || []).filter(i => f.category_ids.includes(i.category_id) && i.status !== 'defect'));
 const chosen = computed(() => f.equipment_mode === 'all' ? catItems.value : (avail.value || []).filter(i => f.equipment_ids.includes(i.id)));
 const busyNames = computed(() => chosen.value.filter(i => i.holders.length).map(i => i.name));
+// Fold 'Flere indstillinger' ud, hvis udstyr er optaget eller der kommer en fejl, så man ser det
+watch(() => busyNames.value.length || error.value, (v) => { if (v) moreOpen.value = true; });
 let t = null;
 watch(() => [f.starts_at, f.ends_at], () => { clearTimeout(t); t = setTimeout(loadAvail, 300); });
 async function loadAvail() {
@@ -193,5 +213,12 @@ async function save(extra = {}) {
 <style scoped>
 .moves { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .equip { background: var(--surface-2); border-radius: 12px; padding: 12px; }
+.more { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.more > summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary strong::after { content: ' ▾'; color: var(--ink-3); font-size: .8em; }
+.more[open] > summary strong::after { content: ' ▴'; }
+/* Knappen bliver stående over bundmenuen på mobil, så man ikke skal rulle ned for at gemme */
+@media (max-width: 899.98px) { .submit { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); } }
 .repeat { background: var(--surface-2); border-radius: 12px; padding: 12px; }
 </style>

@@ -100,12 +100,27 @@
             <div v-else-if="!a.can_edit" class="small" style="margin-top:10px;columns:2">
                 <div v-for="p in a.participants" :key="p.id">{{ p.name }}</div>
             </div>
-            <div v-else class="table-wrap" style="margin-top:8px">
+            <!-- Mobil: kort med ring-knapper (træneren på stranden) -->
+            <ul v-if="a.can_edit && a.participants.length" class="mlist mobile-only noprint" style="margin-top:6px">
+                <li v-for="p in a.participants" :key="p.id">
+                    <div class="l1"><span><strong>{{ p.name }}</strong> <span class="small muted">{{ p.age }} år</span> <span v-if="p.guest" class="tag warn">Gæst</span></span>
+                        <a v-if="p.phone" :href="`tel:${p.phone.replace(/\s/g, '')}`" class="btn small call"><Icon name="phone" style="width:15px" /> Ring</a></div>
+                    <div v-if="p.emergency_phone || p.emergency_name" class="l2"><span>Nødkontakt: {{ p.emergency_name || '–' }}</span>
+                        <a v-if="p.emergency_phone" :href="`tel:${p.emergency_phone.replace(/\s/g, '')}`" class="btn ghost small call">{{ p.emergency_phone }}</a></div>
+                    <div v-else-if="p.parent" class="l2"><span>Forælder: {{ p.parent.name }}</span>
+                        <a :href="`tel:${p.parent.phone.replace(/\s/g, '')}`" class="btn ghost small call">{{ p.parent.phone }}</a></div>
+                    <div v-if="started" class="acts">
+                        <button :class="['btn small', p.attended === true && 'primary']" @click="p.attended = true; att = true">Mødt</button>
+                        <button :class="['btn small', p.attended === false && 'danger']" @click="p.attended = false; att = true">Udeblev</button>
+                    </div>
+                </li>
+            </ul>
+            <div v-if="a.can_edit && a.participants.length" class="table-wrap desktop-only" style="margin-top:8px">
                 <table>
                     <thead><tr><th>Navn</th><th>Alder</th><th>Telefon</th><th>Nødkontakt</th><th v-if="started" class="noprint">Fremmøde</th></tr></thead>
                     <tbody>
                         <tr v-for="p in a.participants" :key="p.id">
-                            <td>{{ p.name }} <span v-if="p.guest" class="tag warn">Gæst</span></td><td>{{ p.age }}</td><td>{{ p.phone || '–' }}</td><td class="small">{{ p.emergency || '–' }}</td>
+                            <td>{{ p.name }} <span v-if="p.guest" class="tag warn">Gæst</span></td><td>{{ p.age }}</td><td>{{ p.phone || '–' }}</td><td class="small">{{ p.emergency || (p.parent ? `${p.parent.name} ${p.parent.phone} (forælder)` : '–') }}</td>
                             <td v-if="started" class="noprint">
                                 <div class="row" style="gap:4px;flex-wrap:nowrap">
                                     <button :class="['btn small', p.attended === true && 'primary']" @click="p.attended = true; att = true">Mødt</button>

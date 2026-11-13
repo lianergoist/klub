@@ -30,9 +30,10 @@
         <div class="grid c2">
             <div class="card">
                 <h3>Kontakt</h3>
-                <p>{{ m.profile.email || '–' }}<br>{{ m.profile.phone || '–' }}<br>{{ m.profile.address }}, {{ m.profile.postal_code }} {{ m.profile.city }}</p>
+                <p><a v-if="m.profile.email" :href="`mailto:${m.profile.email}`">{{ m.profile.email }}</a><template v-else>–</template><br>
+                    <a v-if="m.profile.phone" :href="`tel:${m.profile.phone.replace(/\s/g, '')}`">{{ m.profile.phone }}</a><template v-else>–</template><br>{{ m.profile.address }}, {{ m.profile.postal_code }} {{ m.profile.city }}</p>
                 <p class="small">Født {{ dato(m.profile.birthdate) }} ({{ m.profile.age }} år)<br>Indmeldt {{ m.profile.joined_on ? dato(m.profile.joined_on) : '–' }}<br>Samtykke givet {{ m.profile.consent_at ? dato(m.profile.consent_at) : '–' }}</p>
-                <p class="small" v-if="m.profile.emergency_name">Nødkontakt: {{ m.profile.emergency_name }}, {{ m.profile.emergency_phone }}</p>
+                <p class="small" v-if="m.profile.emergency_name">Nødkontakt: {{ m.profile.emergency_name }}, <a v-if="m.profile.emergency_phone" :href="`tel:${m.profile.emergency_phone.replace(/\s/g, '')}`">{{ m.profile.emergency_phone }}</a></p>
             </div>
             <div class="card" v-if="m.household">
                 <h3>{{ m.household.name }}</h3>
@@ -93,7 +94,11 @@
 
         <div class="card">
             <h2>Ændringslog</h2>
-            <ul class="timeline"><li v-for="(l, i) in m.log" :key="i">{{ l.action }} · {{ tidspunkt(l.at) }} af {{ l.by || 'system' }}</li></ul>
+            <ul class="timeline">
+                <li v-for="(l, i) in m.log" :key="i"><strong>{{ auditLabels[l.action] || l.action }}</strong> · {{ tidspunkt(l.at) }} af {{ l.by || 'systemet' }}</li>
+                <li v-if="!m.log.length" class="muted">Ingen ændringer.</li>
+            </ul>
+            <p v-if="m.views" class="small" style="margin:10px 0 0">Set i kartoteket {{ m.views.count }} {{ m.views.count === 1 ? 'gang' : 'gange' }} af {{ m.views.people.join(', ') }} · seneste {{ tidspunkt(m.views.last) }}</p>
             <p class="small muted">Også opslag i kartoteket bliver logget (persondata).</p>
         </div>
 
@@ -136,6 +141,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import Modal from '../components/Modal.vue';
 import RegisterPayment from '../components/RegisterPayment.vue';
+import { auditLabels } from '../auditLabels';
 import { api, store, dato, tidspunkt, toast } from '../api';
 const props = defineProps({ id: String });
 const year = new Date().getFullYear(); const today = new Date().toISOString().slice(0, 10);

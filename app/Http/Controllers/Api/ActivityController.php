@@ -106,6 +106,10 @@ class ActivityController extends Controller
                 'guest' => $reg->user->status === 'guest',
                 'registration_id' => $reg->id, 'attended' => $reg->attended, 'age' => $reg->user->age(),
                 'phone' => $reg->user->phone, 'emergency' => trim($reg->user->emergency_name.' '.$reg->user->emergency_phone) ?: null,
+                'emergency_name' => $reg->user->emergency_name, 'emergency_phone' => $reg->user->emergency_phone,
+                // Børn uden eget nummer: husstandens betaler (typisk en forælder), hvis der ikke er en nødkontakt
+                'parent' => ! $reg->user->phone && ! $reg->user->emergency_phone && ($pay = $reg->user->household?->payer) && $pay->id !== $reg->user_id && $pay->phone
+                    ? ['name' => $pay->name, 'phone' => $pay->phone] : null,
             ] : []))->sortBy('name')->values(),
             'household' => $managed->map(function ($m) use ($regs) {
                 $reg = $regs->firstWhere('user_id', $m->id);

@@ -8,7 +8,7 @@
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
                 <RouterLink v-if="can.portal" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
                 <RouterLink v-if="can.equipment" to="/udstyr"><Icon name="board" /> Udstyr</RouterLink>
-                <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
+                <RouterLink :to="inboxLink" :class="{ 'router-link-active': route.path.startsWith('/indbakke') || route.path.startsWith('/beskeder') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
                 <template v-if="can.members_view || can.finance_read || can.settings">
                     <div class="sect">Administration</div>
@@ -31,7 +31,7 @@
         <nav class="tabbar">
             <RouterLink to="/aktiviteter"><Icon name="cal" />Aktiviteter</RouterLink>
             <RouterLink to="/opslag"><Icon name="chat" />Opslag</RouterLink>
-            <RouterLink to="/beskeder" :class="{ 'router-link-active': route.path.startsWith('/indbakke') }"><Icon name="inbox" />Indbakke<span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
+            <RouterLink :to="inboxLink" :class="{ 'router-link-active': route.path.startsWith('/indbakke') || route.path.startsWith('/beskeder') }"><Icon name="inbox" />Indbakke<span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
             <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
             <RouterLink v-if="hasMore" to="/mere"><Icon name="more" />Mere</RouterLink>
         </nav>
@@ -53,6 +53,12 @@ const router = useRouter();
 const can = computed(() => store.user?.can || {});
 // "Mere" i bundmenuen kun for dem, der har et værktøj dér (almindelige medlemmer har farvetema og Log ud under Profil)
 const hasMore = computed(() => !!(can.value.portal || can.value.equipment || can.value.members_view || can.value.finance_read || can.value.settings));
+// Indbakken åbner på den fane, der har ulæste (ellers Beskeder; dem uden beskeder får notifikationerne)
+const inboxLink = computed(() => {
+    const u = store.user || {};
+    if (!u.can_message) return '/indbakke';
+    return !u.unread_messages && u.unread ? '/indbakke' : '/beskeder';
+});
 const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
 // Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
 let poll;
