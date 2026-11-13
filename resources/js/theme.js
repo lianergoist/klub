@@ -8,10 +8,10 @@ const dark = window.matchMedia('(prefers-color-scheme: dark)');
 
 function read() {
     try {
-        const t = localStorage.getItem('tema');
-        // Før 13/11-2026 blev standardtemaet også gemt. Et gemt 'klub' uden markering var altså ikke et aktivt valg.
-        if (t === 'klub' && !localStorage.getItem('tema-valgt')) return null;
-        return t;
+        // Før 13/11-2026 blev standardtemaet (Blå på web, SurfHorsens i appen) gemt, som om man selv havde valgt det.
+        // Kun valg med markeringen 'tema-valgt' er aktive valg – alt andet giver Automatisk.
+        if (!localStorage.getItem('tema-valgt')) return null;
+        return localStorage.getItem('tema');
     } catch { return null; }
 }
 
