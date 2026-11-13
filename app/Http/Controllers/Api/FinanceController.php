@@ -139,6 +139,21 @@ class FinanceController extends Controller
         return Account::orderBy('number')->get(['id', 'number', 'name', 'type']);
     }
 
+    /** Status til Økonomi-menuen på mobil: saldo og det, der venter. */
+    public function menu(Request $r)
+    {
+        $this->read($r);
+        $overdue = Invoice::where('status', 'open')->whereDate('due_on', '<', now()->toDateString());
+
+        return [
+            'balance' => (int) Entry::where('entry_date', '<=', now()->toDateString())->sum('amount'),
+            'claims_pending' => \App\Models\ExpenseClaim::where('status', 'submitted')->count(),
+            'overdue_count' => (clone $overdue)->count(),
+            'overdue_amount' => (int) (clone $overdue)->sum('amount'),
+            'unmatched_payouts' => \App\Models\Payout::whereNull('bank_matched_at')->count(),
+        ];
+    }
+
     public function overview(Request $r)
     {
         $this->read($r);

@@ -1,7 +1,7 @@
 <template>
     <div v-if="!d" class="spinner"></div>
     <div v-else class="viz-root">
-        <div class="grid c4">
+        <div class="grid kpis c4">
             <div class="card kpi"><div class="l">Saldo</div><div class="v">{{ krRound(d.balance) }}</div><div class="s">bank og kasse</div></div>
             <div class="card kpi"><div class="l">Resultat {{ d.year }}</div><div class="v">{{ krRound(d.result) }}</div><div class="s">budget {{ krRound(d.budget_result) }}</div></div>
             <div class="card kpi"><div class="l">Indtægter</div><div class="v">{{ krRound(d.income) }}</div><div class="s">{{ pct(d.income, sum(d.rows, 'income', 'budget')) }} af budget</div></div>
@@ -37,7 +37,21 @@
 
         <div class="card">
             <h2>Budget og faktisk resultat</h2>
-            <div class="table-wrap">
+            <div class="mobile-only">
+                <template v-for="type in ['income', 'expense']" :key="type">
+                    <div class="mgroup" style="margin-left:0">{{ type === 'income' ? 'Indtægter' : 'Udgifter' }}</div>
+                    <ul class="mlist">
+                        <li v-for="r in d.rows.filter(r => r.type === type)" :key="r.id">
+                            <div class="l1"><span>{{ r.name }}</span><strong class="num">{{ krRound(r.actual) }}</strong></div>
+                            <div class="bud"><i :style="{ width: Math.min(100, r.budget ? r.actual / r.budget * 100 : 0) + '%', background: type === 'income' ? 'var(--series-1)' : 'var(--series-2)' }"></i></div>
+                            <div class="l2"><span>Budget {{ krRound(r.budget) }}</span><span :class="type === 'expense' && r.actual > r.budget ? 'neg' : ''">{{ r.budget ? Math.round(r.actual / r.budget * 100) + ' %' : '–' }}<span v-if="type === 'expense' && r.actual > r.budget"> · over budget</span></span></div>
+                        </li>
+                    </ul>
+                </template>
+                <div class="l1 row between" style="border-top:2px solid var(--line);padding-top:10px;margin-top:6px"><strong>Resultat</strong><strong class="num">{{ krRound(d.result) }}</strong></div>
+                <div class="small muted" style="text-align:right">budget {{ krRound(d.budget_result) }}</div>
+            </div>
+            <div class="table-wrap desktop-only">
                 <table>
                     <thead><tr><th>Konto</th><th class="num">Budget</th><th class="num">Faktisk</th><th style="width:34%">Forbrug af budget</th></tr></thead>
                     <tbody>
@@ -61,7 +75,13 @@
 
         <div class="card" v-if="d.activities.length">
             <h2>Økonomi pr. aktivitet</h2>
-            <div class="table-wrap"><table>
+            <ul class="mlist mobile-only">
+                <li v-for="a in topActs" :key="a.id">
+                    <div class="l1"><RouterLink :to="`/aktiviteter/${a.id}`">{{ a.title }}</RouterLink><strong class="num">{{ krRound(a.income - a.expense) }}</strong></div>
+                    <div class="l2"><span>Indtægter {{ krRound(a.income) }} · udgifter {{ krRound(a.expense) }}</span></div>
+                </li>
+            </ul>
+            <div class="table-wrap desktop-only"><table>
                 <thead><tr><th>Aktivitet</th><th class="num">Indtægter</th><th class="num">Udgifter</th><th class="num">Netto</th></tr></thead>
                 <tbody><tr v-for="a in topActs" :key="a.id"><td><RouterLink :to="`/aktiviteter/${a.id}`">{{ a.title }}</RouterLink></td><td class="num">{{ krRound(a.income) }}</td><td class="num">{{ krRound(a.expense) }}</td><td class="num">{{ krRound(a.income - a.expense) }}</td></tr></tbody>
             </table></div>

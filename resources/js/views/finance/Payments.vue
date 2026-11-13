@@ -1,19 +1,46 @@
 <template>
     <div>
-        <div v-if="d" class="grid c3">
+        <div v-if="d" class="grid kpis c3">
             <div class="card kpi"><div class="l">Opkrævet, ikke forfaldent</div><div class="v">{{ d.totals.open }}</div></div>
             <div class="card kpi"><div class="l">Forfaldent</div><div class="v neg">{{ d.totals.overdue }}</div><div class="s">{{ d.totals.overdue_count }} regninger</div></div>
             <div class="card kpi"><div class="l">Betalt i alt</div><div class="v">{{ d.totals.paid }}</div></div>
         </div>
         <div class="row between" style="margin-bottom:12px">
-            <div class="row" style="flex:1">
-                <input v-model="q" placeholder="Søg medlem eller tekst" style="max-width:240px" @input="debounced">
+            <div class="row filters" style="flex:1">
+                <div class="row" style="flex:1;flex-wrap:nowrap;gap:8px">
+                    <input v-model="q" placeholder="Søg medlem eller tekst" style="max-width:240px" @input="debounced">
+                    <button type="button" class="btn small mobile-only" :class="{ on: showFilters }" @click="showFilters = !showFilters">Filtre<template v-if="activeFilters"> ({{ activeFilters }})</template></button>
+                </div>
+                <template v-if="!isMobile || showFilters">
                 <select v-model="status" style="max-width:180px"><option value="">Alle statusser</option><option value="open">Opkrævet</option><option value="overdue">Forfalden</option><option value="paid">Betalt</option><option value="refunded">Refunderet</option><option value="cancelled">Annulleret</option></select>
                 <select v-model="kind" style="max-width:180px"><option value="">Alle typer</option><option value="membership">Kontingent</option><option value="activity">Aktiviteter</option><option value="product">Tilkøb</option></select>
+                </template>
             </div>
             <button v-if="canWrite" class="btn primary small" @click="showGen = true">Opkræv kontingent</button>
         </div>
-        <div class="card" style="padding:0 16px">
+        <!-- Mobil: kort med beløb, status og handlinger -->
+        <div class="mobile-only">
+            <p v-if="d && !d.rows.length" class="card empty">Ingen regninger.</p>
+            <div v-else-if="d" class="card" style="padding:0 14px">
+                <ul class="mlist">
+                    <li v-for="i in d.rows.slice(0, shown)" :key="i.id" class="tap" @click="open = open === i.id ? null : i.id">
+                        <div class="l1"><span>{{ i.description }}</span><strong class="num">{{ i.amount_fmt }}</strong></div>
+                        <div class="l2">
+                            <span>{{ i.payer }} · {{ i.paid_at ? 'betalt ' + dato(i.paid_at) + ' · ' + i.method : 'forfald ' + dato(i.due_on) }}<span v-if="i.refunded_fmt" class="neg"> · −{{ i.refunded_fmt }}</span></span>
+                            <span :class="['tag', { paid: 'ok', overdue: 'bad', open: 'info' }[i.status]]">{{ i.status_label }}</span>
+                        </div>
+                        <!-- Ubetalte: handlinger vises altid. Betalte: tryk for at refundere -->
+                        <div v-if="canWrite && (['open', 'overdue'].includes(i.status) || (i.status === 'paid' && open === i.id))" class="acts" @click.stop>
+                            <button v-if="['open', 'overdue'].includes(i.status)" class="btn small" @click="manual = i; mMethod = 'bank'">Registrér betaling</button>
+                            <button v-if="i.status === 'overdue'" class="btn ghost small" @click="remind(i)">Påmind</button>
+                            <button v-if="i.status === 'paid'" class="btn ghost small" @click="refund = i; rAmount = i.refundable / 100">Refundér</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <button v-if="d && d.rows.length > shown" class="btn block" style="margin-top:8px" @click="shown += 40">Vis flere ({{ d.rows.length - shown }} tilbage)</button>
+        </div>
+        <div class="card desktop-only" style="padding:0 16px">
             <div class="table-wrap">
                 <table>
                     <thead><tr><th>Regning</th><th>Betaler</th><th class="num">Beløb</th><th>Status</th><th>Forfald / betalt</th><th></th></tr></thead>
@@ -68,14 +95,17 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import Modal from '../../components/Modal.vue';
 import { api, store, dato, toast } from '../../api';
+import { isMobile } from '../../mobile';
 const canWrite = computed(() => store.user.can.finance_write);
 const d = ref(null); const q = ref(''); const status = ref(''); const kind = ref('');
 const manual = ref(null); const mMethod = ref('bank'); const mRef = ref('');
 const refund = ref(null); const rAmount = ref(0); const rReason = ref('');
 const showGen = ref(false);
+const showFilters = ref(false); const shown = ref(40); const open = ref(null);
+const activeFilters = computed(() => [status.value, kind.value].filter(Boolean).length);
 const seasonStartYear = new Date().getMonth() >= 4 ? new Date().getFullYear() : new Date().getFullYear() - 1;
 const seasons = [seasonStartYear, seasonStartYear + 1]; const gYear = ref(seasonStartYear + 1);
-async function load() { d.value = await api(`finance/invoices?q=${encodeURIComponent(q.value)}&status=${status.value}&kind=${kind.value}`); }
+async function load() { shown.value = 40; d.value = await api(`finance/invoices?q=${encodeURIComponent(q.value)}&status=${status.value}&kind=${kind.value}`); }
 let t; const debounced = () => { clearTimeout(t); t = setTimeout(load, 250); };
 watch([status, kind], load); onMounted(load);
 async function doManual() { try { await api(`finance/invoices/${manual.value.id}/manual`, { method: 'POST', body: { method: mMethod.value, reference: mRef.value } }); manual.value = null; mRef.value = ''; toast('Betaling registreret og bogført'); load(); } catch (e) { toast(e.message, 'error'); } }
@@ -91,3 +121,8 @@ async function generate() {
     } catch (e) { toast(e.message, 'error'); }
 }
 </script>
+<style scoped>
+@media (max-width: 899.98px) { .filters { flex: 1 1 100% !important; } .filters input, .filters select { max-width: none !important; } }
+.mlist .tap { cursor: pointer; }
+.btn.on { border-color: var(--accent); color: var(--accent); }
+</style>

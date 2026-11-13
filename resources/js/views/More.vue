@@ -6,8 +6,7 @@
                 <li v-if="can.portal"><RouterLink to="/traener" class="row"><Icon name="whistle" style="width:20px" /> Trænerportal</RouterLink></li>
                 <li v-if="can.equipment"><RouterLink to="/udstyr" class="row"><Icon name="board" style="width:20px" /> Udstyr</RouterLink></li>
                 <li v-if="can.members_view"><RouterLink to="/medlemmer" class="row"><Icon name="users" style="width:20px" /> Medlemmer</RouterLink></li>
-                <li v-if="can.finance_read && IS_APP"><a href="#" class="row" @click.prevent="openFinance"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(åbner i browseren)</span></a></li>
-                <li v-else-if="can.finance_read"><RouterLink to="/okonomi" class="row"><Icon name="money" style="width:20px" /> Økonomi <span class="small muted">(bedst på computer)</span></RouterLink></li>
+                <li v-if="can.finance_read"><RouterLink to="/okonomi" class="row"><Icon name="money" style="width:20px" /> Økonomi</RouterLink></li>
                 <li v-if="can.settings"><RouterLink to="/indstillinger" class="row"><Icon name="gear" style="width:20px" /> Indstillinger</RouterLink></li>
             </ul>
         </div>
@@ -23,8 +22,7 @@ import Icon from '../components/Icon.vue';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import AppVersion from '../components/AppVersion.vue';
 import { useRouter } from 'vue-router';
-import { store, roleLabel, IS_APP, logout as doLogout } from '../api';
-async function openFinance() { (await import('../native')).openWeb('/okonomi'); }
+import { store, roleLabel, logout as doLogout } from '../api';
 const can = computed(() => store.user.can);
 const router = useRouter();
 async function logout() { await doLogout(); router.push('/login'); }

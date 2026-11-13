@@ -2,7 +2,8 @@
     <div v-if="d">
         <div class="row between noprint" style="margin-bottom:12px">
             <p class="small muted" style="margin:0">Til generalforsamlingen. Brug <em>Udskriv</em> og vælg "Gem som PDF".</p>
-            <button class="btn primary small" @click="print">Udskriv / gem som PDF</button>
+            <button v-if="IS_APP" class="btn small" @click="openInBrowser">Udskriv / PDF (åbner i browseren)</button>
+            <button v-else class="btn primary small" @click="print">Udskriv / gem som PDF</button>
         </div>
         <div class="card report">
             <h1>Årsregnskab {{ d.year }}</h1>
@@ -38,11 +39,13 @@
 </template>
 <script setup>
 import { ref, inject, onMounted } from 'vue';
-import { api, kr, dato } from '../../api';
+import { api, kr, dato, IS_APP } from '../../api';
 const fy = inject('fy'); const d = ref(null);
 const sum = (t) => d.value.rows.filter(r => r.type === t).reduce((s, r) => s + r.budget, 0);
 onMounted(async () => { d.value = await api(`finance/overview?year=${fy.year}`); });
 function print() { window.print(); }
+// Appens WebView kan ikke udskrive – åbn siden i telefonens browser
+async function openInBrowser() { (await import('../../native')).openWeb('/okonomi/aarsregnskab'); }
 </script>
 <style scoped>
 .report { max-width: 760px; }

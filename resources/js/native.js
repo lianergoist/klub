@@ -77,3 +77,12 @@ export async function openWeb(path) {
     const { WEB_URL } = await import('./api');
     await Browser.open({ url: WEB_URL + path });
 }
+
+/** Filer i appen (CSV, bilag, dataudtræk): WebView'en kan ikke downloade, så filen gemmes midlertidigt og deles via telefonens Del-menu. */
+export async function shareFile(blob, filename) {
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    const { Share } = await import('@capacitor/share');
+    const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+    const { uri } = await Filesystem.writeFile({ path: filename.replace(/[\\/:*?"<>|]/g, '_'), data, directory: Directory.Cache });
+    try { await Share.share({ title: filename, files: [uri] }); } catch { /* brugeren lukkede Del-menuen */ }
+}

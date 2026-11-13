@@ -153,6 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('membership/generate', [FinanceController::class, 'generateMembership']);
         Route::get('accounts', [FinanceController::class, 'accounts']);
         Route::get('overview', [FinanceController::class, 'overview']);
+        Route::get('menu', [FinanceController::class, 'menu']);
         Route::put('budget', [FinanceController::class, 'saveBudget']);
         Route::get('entries', [FinanceController::class, 'entries']);
         Route::get('entries/export', [FinanceController::class, 'exportEntries']);

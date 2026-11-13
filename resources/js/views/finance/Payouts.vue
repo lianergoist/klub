@@ -1,6 +1,6 @@
 <template>
     <div v-if="d">
-        <div class="grid c4">
+        <div class="grid kpis c4">
             <div class="card kpi"><div class="l">Udbetalt {{ fy.year }}</div><div class="v">{{ krRound(d.totals.net) }}</div><div class="s">{{ d.payouts.length }} udbetalinger</div></div>
             <div class="card kpi"><div class="l">Gebyrer {{ fy.year }}</div><div class="v">{{ krRound(d.totals.fees) }}</div><div class="s">{{ d.totals.gross ? (d.totals.fees / d.totals.gross * 100).toFixed(2).replace('.', ',') : 0 }} % af {{ krRound(d.totals.gross) }}</div></div>
             <div class="card kpi"><div class="l">Ikke afstemt mod bank</div><div :class="['v', d.totals.unmatched ? 'neg' : 'pos']">{{ d.totals.unmatched }}</div><div class="s"><RouterLink to="/okonomi/bank">Gå til bankafstemning</RouterLink></div></div>

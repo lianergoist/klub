@@ -10,7 +10,7 @@
             <p class="small muted" style="margin-top:8px">Format: dato;tekst;beløb (som de fleste danske banker eksporterer).</p>
         </div>
         <template v-if="r">
-            <div class="grid c3">
+            <div class="grid kpis c3">
                 <div class="card kpi"><div class="l">Banklinjer</div><div class="v">{{ r.lines.length }}</div></div>
                 <div class="card kpi"><div class="l">Fundet i regnskabet</div><div class="v pos">{{ r.lines.filter(l => l.match).length }}</div></div>
                 <div class="card kpi"><div class="l">Mangler i regnskabet</div><div class="v neg">{{ r.lines.filter(l => !l.match).length }}</div></div>

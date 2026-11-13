@@ -201,7 +201,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { isMobile } from '../mobile';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
@@ -222,12 +223,6 @@ const tabs = [
     { id: 'tilkob', label: 'Tilkøb', title: 'Tilkøb', icon: 'bag', hint: 'Pladser, leje og andre tilkøb' },
     { id: 'data', label: 'Mine data', title: 'Mine data', icon: 'file', hint: 'Roller, udseende og hent dine data', group: 2 },
 ];
-// Samme grænse som sidemenu/bundmenu i app.css (900 px)
-const mq = window.matchMedia('(max-width: 899.98px)');
-const isMobile = ref(mq.matches);
-const onMq = (e) => { isMobile.value = e.matches; };
-mq.addEventListener('change', onMq);
-onUnmounted(() => mq.removeEventListener('change', onMq));
 // På mobil er /profil selve menuen; på computer åbner den første fane
 const cur = computed(() => props.tab || (isMobile.value ? null : 'oplysninger'));
 const curTab = computed(() => tabs.find(t => t.id === cur.value) || tabs[0]);

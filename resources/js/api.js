@@ -73,6 +73,8 @@ export async function download(path, filename) {
     const res = await fetch(`${API_BASE}/api/${path}`, { headers: { Authorization: `Bearer ${store.token}`, ...(IS_APP && siteAccess() ? { 'X-Site-Access': siteAccess() } : {}) } });
     if (!res.ok) { toast('Filen kunne ikke hentes', 'error'); return; }
     const blob = await res.blob();
+    // eslint-disable-next-line no-undef
+    if (__APP__) { (await import('./native')).shareFile(blob, filename).catch(() => toast('Filen kunne ikke deles', 'error')); return; }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();

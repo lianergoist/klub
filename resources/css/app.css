@@ -247,3 +247,27 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 /* Testudgave */
 .test-ribbon { position: sticky; top: 0; z-index: 30; background: #b42318; color: #fff; text-align: center; font-size: .75rem; font-weight: 600; padding: calc(env(safe-area-inset-top, 0px) + 4px) 12px 4px; }
 .test-ribbon a { color: #fff; text-decoration: underline; }
+
+/* Mobil (under 900 px, også appen): skjul det, der kun er til computer (fx brede tabeller, der vises som kort i stedet) */
+@media (max-width: 899.98px) { .desktop-only { display: none !important; } }
+/* Kortlister på mobil i stedet for tabeller */
+.mlist { list-style: none; margin: 0; padding: 0; }
+.mlist > li { padding: 11px 0; border-top: 1px solid var(--line); }
+.mlist > li:first-child { border-top: 0; }
+.mlist .l1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.mlist .l1 > :first-child { min-width: 0; }
+.mlist .l2 { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-top: 3px; font-size: .82rem; color: var(--ink-3); }
+.mlist .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.mgroup { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); margin: 16px 4px 6px; }
+/* Nøgletal: 2 × 2 på mobil */
+.grid.kpis { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.grid.kpis > .kpi { margin: 0; }
+@media (min-width: 700px) { .grid.kpis.c3 { grid-template-columns: repeat(3, 1fr); } .grid.kpis.c4 { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 699.98px) {
+    .grid.kpis .kpi { padding: 12px 14px; }
+    .grid.kpis.c3 > .kpi:nth-child(3):last-child { grid-column: span 2; }
+    .grid.kpis .kpi .v { font-size: 1.2rem; }
+    .grid.kpis .kpi .l { font-size: .68rem; }
+    .grid.kpis .kpi .s { font-size: .78rem; }
+}
+

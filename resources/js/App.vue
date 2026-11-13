@@ -13,8 +13,7 @@
                 <template v-if="can.members_view || can.finance_read || can.settings">
                     <div class="sect">Administration</div>
                     <RouterLink v-if="can.members_view" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
-                    <a v-if="can.finance_read && IS_APP" href="#" @click.prevent="openFinance"><Icon name="money" /> Økonomi ↗</a>
-                    <RouterLink v-else-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
+                    <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
                     <RouterLink v-if="can.settings" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
                 </template>
             </nav>
@@ -47,12 +46,11 @@ import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
 import AppVersion from './components/AppVersion.vue';
-import { store, api, roleLabel, IS_APP, logout as doLogout } from './api';
+import { store, api, roleLabel, logout as doLogout } from './api';
 
 const route = useRoute();
 const router = useRouter();
 const can = computed(() => store.user?.can || {});
-async function openFinance() { (await import('./native')).openWeb('/okonomi'); }
 const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
 // Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
 let poll;
