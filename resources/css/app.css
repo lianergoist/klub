@@ -136,7 +136,6 @@ html[data-tema=klub] .act .when { background: #ffe8cf; color: #4a2c0a; }
 html[data-tema=klub] .act .when .m { color: #9a5a12; }
 html[data-tema=klub] .capacity > i { background: var(--teal); }
 html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
-.sidebar .theme-switch > span:first-child { width: 100%; }
 /* Klubbens logo vises i alle temaer */
 .brand-default { display: none; }
 
