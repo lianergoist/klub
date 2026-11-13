@@ -289,7 +289,7 @@ async function order() {
 async function logout() { await doLogout(); router.push('/login'); }
 
 async function onTab(t) {
-    if (t === 'beskeder' && !cats.value.length) cats.value = await api('profile/categories');
+    if (t === 'beskeder' && !cats.value.length) cats.value = (await api('profile/categories')).sort((a, b) => b.mandatory - a.mandatory); // dem, der ikke kan fravælges, først
     if (t === 'regninger') invoices.value = await api('profile/invoices');
     if (t === 'familie' || t === 'tilkob') await loadShop();
 }
