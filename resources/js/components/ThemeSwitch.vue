@@ -17,5 +17,8 @@ button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid 
 button.on { opacity: 1; font-weight: 600; box-shadow: inset 0 0 0 1px currentColor; }
 .ts-sw { width: 14px; height: 14px; border-radius: 50%; }
 .ts-sw[data-for=standard] { background: linear-gradient(135deg, #0c4a5e 50%, #0f7c8c 50%); }
+.ts-sw[data-for=gron] { background: linear-gradient(135deg, #1d4d35 50%, #2a7a4f 50%); }
+.ts-sw[data-for=orange] { background: linear-gradient(135deg, #6b2f12 50%, #b84a12 50%); }
+.ts-sw[data-for=mork] { background: linear-gradient(135deg, #0d1716 50%, #4cc2cf 50%); }
 .ts-sw[data-for=klub] { background: conic-gradient(#7e5a8c 0 25%, #e665a1 0 50%, #ff9933 0 75%, #65a4a3 0); }
 </style>

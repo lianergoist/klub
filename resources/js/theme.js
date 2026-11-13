@@ -1,7 +1,8 @@
 import { store } from './api';
 
-export const THEMES = { standard: 'Standard', klub: 'SurfHorsens' };
-const COLORS = { standard: '#0c4a5e', klub: '#7e5a8c' };
+// Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå)
+export const THEMES = { standard: 'Blå', gron: 'Grøn', orange: 'Orange', klub: 'SurfHorsens', mork: 'Mørk' };
+const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', mork: '#0d1716' };
 
 function read() { try { return localStorage.getItem('tema'); } catch { return null; } }
 
@@ -13,8 +14,8 @@ export function setTheme(t) {
     try { localStorage.setItem('tema', t); } catch {}
 }
 
-/** ?tema=klub eller ?tema=standard i adressen vælger tema (praktisk til at dele et link). */
+/** Fx ?tema=klub, ?tema=mork eller ?tema=standard i adressen vælger tema (praktisk til at dele et link). */
 export function initTheme() {
     const fromUrl = new URLSearchParams(location.search).get('tema');
-    setTheme(THEMES[fromUrl] ? fromUrl : read() || (__APP__ ? 'klub' : 'standard')); // eslint-disable-line no-undef
+    setTheme(THEMES[fromUrl] ? fromUrl : read() || (__APP__ ? 'klub' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'mork' : 'standard')); // eslint-disable-line no-undef
 }

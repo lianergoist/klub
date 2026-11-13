@@ -28,8 +28,7 @@
         html[data-tema=klub] { --bg:#e3d8d3; --card:#fbf7f5; --ink:#33243a; --ink2:#5e4a66; --line:#d6c8c2; --accent:#7e5a8c; }
         @media (prefers-color-scheme: dark) { html[data-tema=klub] { --bg:#1d1520; --card:#291f2e; --ink:#f3ebef; --ink2:#cbbcd0; --line:#45364c; --accent:#a274c0; } }
         html[data-tema=klub] h1 { color: var(--accent); }
-        .logo-klub { display:none; width:200px; height:auto; border-radius:0; }
-        html[data-tema=klub] .logo-klub { display:inline-block; } html[data-tema=klub] .logo-std { display:none; }
+        .logo-klub { display:inline-block; width:200px; height:auto; border-radius:0; } .logo-std { display:none; }
     </style>
     <script>
         (function () {

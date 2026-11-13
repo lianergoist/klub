@@ -27,16 +27,32 @@
     --shadow: 0 1px 2px rgba(16,32,31,.06), 0 4px 16px rgba(16,32,31,.05);
     --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-    :root {
-        color-scheme: dark;
-        --bg: #0d1716; --surface: #15211f; --surface-2: #1c2a28; --line: #2a3a38;
-        --ink: #e9efee; --ink-2: #b3c0be; --ink-3: #8a9896;
-        --brand: #0c4a5e; --accent: #4cc2cf; --accent-soft: #143436; --sand: #2a2619;
-        --ok: #5fd08a; --ok-soft: #12301f; --warn: #f0b252; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
-        --series-1: #3987e5; --series-2: #d95926;
-        --shadow: 0 1px 2px rgba(0,0,0,.3);
-    }
+/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: Mørk, hvis telefonen/computeren står på mørk tilstand, ellers Blå (appen: SurfHorsens). */
+/* ===== Tema: Mørk ===== */
+html[data-tema=mork] {
+    color-scheme: dark;
+    --bg: #0d1716; --surface: #15211f; --surface-2: #1c2a28; --line: #2a3a38;
+    --ink: #e9efee; --ink-2: #b3c0be; --ink-3: #8a9896;
+    --brand: #0f2e36; --accent: #4cc2cf; --accent-soft: #143436; --sand: #2a2619;
+    --ok: #5fd08a; --ok-soft: #12301f; --warn: #f0b252; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
+    --series-1: #3987e5; --series-2: #d95926;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+html[data-tema=mork] .btn.primary { color: #062226; }
+html[data-tema=mork] .sidebar { border-right: 1px solid var(--line); }
+/* ===== Tema: Grøn ===== */
+html[data-tema=gron] {
+    --bg: #f2f5f1; --surface: #ffffff; --surface-2: #e8efe7; --line: #d8e2d6;
+    --ink: #142018; --ink-2: #47584b; --ink-3: #6f7f72;
+    --brand: #1d4d35; --accent: #2a7a4f; --accent-soft: #e1f0e6; --sand: #eef0d8;
+    --series-1: #2a7a4f; --series-2: #d4700c;
+}
+/* ===== Tema: Orange ===== */
+html[data-tema=orange] {
+    --bg: #f8f4f0; --surface: #ffffff; --surface-2: #f3ebe4; --line: #e7dcd2;
+    --ink: #2a1a10; --ink-2: #5e4a3c; --ink-3: #87725f;
+    --brand: #6b2f12; --accent: #b84a12; --accent-soft: #fbe7da; --sand: #fdecd4;
+    --series-1: #b84a12; --series-2: #2a78d6;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
@@ -106,14 +122,6 @@ html[data-tema=klub] {
     --series-2: #d4700c;
     --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-    html[data-tema=klub] {
-        --bg: #1d1520; --surface: #291f2e; --surface-2: #33283a; --line: #45364c;
-        --ink: #f3ebef; --ink-2: #cbbcd0; --ink-3: #a090a6;
-        --heading: #d9b8e6; --brand: #4f3559; --accent: #c49ad6; --accent-soft: #3a2a43; --sand: #3a2a18;
-        --series-1: #a274c0; --series-2: #d9781a;
-    }
-}
 html[data-tema=klub] body { letter-spacing: -.005em; }
 html[data-tema=klub] h1 { font-weight: 600; letter-spacing: -.015em; }
 html[data-tema=klub] h3 { color: var(--ink-3); }
@@ -128,15 +136,9 @@ html[data-tema=klub] .act .when { background: #ffe8cf; color: #4a2c0a; }
 html[data-tema=klub] .act .when .m { color: #9a5a12; }
 html[data-tema=klub] .capacity > i { background: var(--teal); }
 html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
-@media (prefers-color-scheme: dark) {
-    html[data-tema=klub] .act .when { background: #3a2a18; color: #ffd9ae; }
-    html[data-tema=klub] .act .when .m { color: #f0b46e; }
-    html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #3d2231; color: #f7cfe1; }
-}
 .sidebar .theme-switch > span:first-child { width: 100%; }
-.brand-logo { display: none; }
-html[data-tema=klub] .brand-logo { display: block; }
-html[data-tema=klub] .brand-default { display: none; }
+/* Klubbens logo vises i alle temaer */
+.brand-default { display: none; }
 
 /* Komponenter */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
