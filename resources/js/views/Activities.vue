@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="topbar">
-            <div><h1>Aktiviteter</h1><p class="muted small" style="margin:0">Hej {{ store.user.name.split(' ')[0] }} 👋</p></div>
+            <div><h1>Aktiviteter</h1><p class="muted small" style="margin:0">Hej {{ store.user.name.split(' ')[0] }} 🤙</p></div>
             <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
         </div>
 
