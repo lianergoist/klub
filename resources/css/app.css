@@ -195,7 +195,33 @@ html[data-tema=marie] .btn { border-radius: 6.4px; font-weight: 500; letter-spac
 html[data-tema=marie] .btn.primary, html[data-tema=marie] .btn.brand { background: var(--accent); border-color: var(--accent); color: var(--brand-ink); }
 html[data-tema=marie] .btn.primary:hover, html[data-tema=marie] .btn.brand:hover { filter: brightness(1.08); }
 html[data-tema=marie] .btn:not(.primary):not(.brand):not(.ghost):not(.mobilepay) { background: transparent; border-color: var(--heading); color: var(--heading); }
-html[data-tema=marie] input, html[data-tema=marie] select, html[data-tema=marie] textarea { border-radius: 6px; background: #f6f1ee; }
+/* Formularfelter som kontaktformularen på surfhorsens.dk: orange pilleformede felter uden kant, lilla tekst og labels.
+   (Siden har ingen synlig fokusmarkering – her får feltet en lilla ring, så man kan se, hvor man er.) */
+html[data-tema=marie] :where(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]), select, textarea) {
+    background: rgba(255,153,51,.8); border: 1px solid transparent; border-radius: 29px; color: var(--ink);
+    padding: 10px 20px; min-height: 46px; font-weight: 400;
+}
+html[data-tema=marie] textarea { border-radius: 22px; }
+html[data-tema=marie] select { padding-right: 40px; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%234a2f52' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 18px center; }
+html[data-tema=marie] :is(input, textarea)::placeholder { color: rgba(74,47,82,.6); opacity: 1; }
+html[data-tema=marie] :where(input:not([type=checkbox]):not([type=radio]), select, textarea):focus { outline: none; border-color: var(--heading); box-shadow: 0 0 0 2px var(--heading); }
+html[data-tema=marie] :where(input, select, textarea):disabled { background-color: rgba(255,153,51,.3); color: var(--ink-3); opacity: 1; }
+html[data-tema=marie] label.field > span { color: var(--heading); font-weight: 400; font-size: .9rem; margin-bottom: 6px; padding-left: 4px; }
+/* Temavælgeren har sin egen farveprik og pil */
+html[data-tema=marie] .ts-box select { padding: 7px 30px 7px 38px; min-height: 40px; background-image: none; }
+html[data-tema=marie] .lbl { color: var(--heading); font-weight: 400; }
+/* Afkrydsning og valg: runde orange prikker, lilla når de er valgt */
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio]) {
+    appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; margin: 0;
+    background: rgba(255,153,51,.8); border: 2px solid transparent; cursor: pointer; display: inline-grid; place-content: center; vertical-align: middle;
+}
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio])::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio]):checked { background: var(--heading); }
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio]):checked::before { background: var(--brand-ink); }
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio]):focus-visible { outline: 2px solid var(--heading); outline-offset: 2px; }
+html[data-tema=marie] :is(input[type=checkbox], input[type=radio]):disabled { opacity: .5; cursor: not-allowed; }
 html[data-tema=marie] .card { border-color: transparent; }
 html[data-tema=marie] .chip, html[data-tema=marie] .tabs a, html[data-tema=marie] .tabs button { font-weight: 500; }
 /* Datoen på aktiviteter som sidens orange flader */
