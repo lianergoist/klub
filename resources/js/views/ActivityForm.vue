@@ -5,7 +5,7 @@
         <form class="card stack" @submit.prevent="save()">
             <label class="field"><span>Titel</span><input v-model="f.title" required placeholder="Fx Onsdagstræning windsurf"></label>
             <div>
-                <span class="small" style="font-weight:600;color:var(--ink-2)">Kategorier</span>
+                <span class="group-label">Kategorier</span>
                 <div class="chips" style="margin-top:6px">
                     <button v-for="c in cats.filter(c => !c.archived || f.category_ids.includes(c.id))" :key="c.id" type="button" :class="['chip', { on: f.category_ids.includes(c.id) }]" @click="toggle(f.category_ids, c.id)"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</button>
                 </div>
@@ -30,7 +30,7 @@
             <label class="field"><span>Beskrivelse</span><textarea v-model="f.description" placeholder="Hvad skal deltagerne vide? Udstyr, niveau, vejrforbehold …"></textarea></label>
             <p v-if="repeat" class="small muted" style="margin:0"><strong>Trænere:</strong> en fast aktivitet oprettes uden træner. Trænerne melder sig selv på de enkelte gange bagefter (Trænerportalen → Mangler træner).</p>
             <div v-else>
-                <span class="small" style="font-weight:600;color:var(--ink-2)">Trænere / tovholdere</span>
+                <span class="group-label">Trænere / tovholdere</span>
                 <p class="small muted" style="margin:2px 0 6px">Trænere, der har meldt sig utilgængelige på dagen, er skjult. Du kan også oprette aktiviteten uden træner – så kan trænerne selv tage den bagefter.</p>
                 <div class="chips">
                     <button v-for="t in trainers.filter(t => !t.unavailable || f.trainer_ids.includes(t.id))" :key="t.id" type="button" :class="['chip', { on: f.trainer_ids.includes(t.id) }]" @click="toggle(f.trainer_ids, t.id)">
@@ -44,7 +44,7 @@
                 <summary><strong>Flere indstillinger</strong> <span class="small muted">{{ moreSummary }}</span></summary>
                 <div class="stack" style="margin-top:12px">
                 <div class="equip">
-                    <span class="small" style="font-weight:600;color:var(--ink-2)">Udstyr</span>
+                    <span class="group-label">Udstyr</span>
                     <label class="check" style="margin-top:6px"><input type="radio" value="all" v-model="f.equipment_mode"> Book alt udstyr i kategorien <span class="small muted" v-if="avail">({{ catItems.length }} stk.)</span></label>
                     <label class="check"><input type="radio" value="selected" v-model="f.equipment_mode"> Book kun bestemt udstyr – resten kan bookes af andre</label>
                     <div v-if="f.equipment_mode === 'selected'" style="margin-top:8px">

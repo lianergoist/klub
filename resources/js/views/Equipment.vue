@@ -69,7 +69,7 @@
                     <label class="field"><span>Til</span><input type="datetime-local" v-model="bf.ends_at"></label>
                 </div>
                 <div>
-                    <span class="small" style="font-weight:600;color:var(--ink-2)">Hvad skal du bruge?</span>
+                    <span class="group-label">Hvad skal du bruge?</span>
                     <div class="chips" style="margin-top:6px">
                         <button v-for="c in availCats" :key="c.id" type="button" :class="['chip', { on: bookCats.includes(c.id) }]" @click="toggle(bookCats, c.id)">{{ c.name }}</button>
                     </div>
