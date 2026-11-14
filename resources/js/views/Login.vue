@@ -45,7 +45,8 @@ const demo = ref([]); const links = ref([]);
 
 onMounted(async () => {
     api('login-links').then(r => (links.value = r)).catch(() => {});
-    try { demo.value = await api('demo-accounts'); } catch {}
+    // Hurtig-login findes kun i appen – webudgaven er offentlig
+    if (__APP__) { try { demo.value = await api('demo-accounts'); } catch {} }
 });
 // Prøvetræning/kurser findes kun på weben – i appen åbnes de i browseren
 async function openWeb(path) { (await import('../native')).openWeb(path); }

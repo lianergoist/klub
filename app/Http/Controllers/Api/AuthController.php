@@ -28,10 +28,18 @@ class AuthController extends Controller
         return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user)];
     }
 
-    /** Kun i demo-tilstand: hurtig-login til bestyrelsens afprøvning. */
-    public function demoAccounts()
+    /**
+     * Kun i demo-tilstand og kun i appen: hurtig-login til bestyrelsens afprøvning.
+     * Webudgaven er offentlig (hjemmesiden ligger på samme adresse), så her er hurtig-login slået fra.
+     */
+    private static function demoAllowed(Request $r): bool
     {
-        abort_unless(config('app.demo'), 404);
+        return config('app.demo') && in_array($r->header('Origin'), ['capacitor://localhost', 'https://localhost', 'http://localhost'], true);
+    }
+
+    public function demoAccounts(Request $r)
+    {
+        abort_unless(self::demoAllowed($r), 404);
 
         return collect(config('app.demo_accounts'))->map(function ($label, $email) {
             $u = User::where('email', $email)->first();
@@ -42,7 +50,7 @@ class AuthController extends Controller
 
     public function demoLogin(Request $r)
     {
-        abort_unless(config('app.demo'), 404);
+        abort_unless(self::demoAllowed($r), 404);
         abort_unless(array_key_exists($r->input('email'), config('app.demo_accounts')), 403);
         $user = User::where('email', $r->input('email'))->firstOrFail();
 

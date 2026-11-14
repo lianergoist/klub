@@ -16,7 +16,7 @@ Derfor kan en native app eller en anden frontend genbruge API'et uden ændringer
 
 ## Demo
 
-Kører i demo-tilstand (`APP_DEMO=true` i `.env`): login-siden viser hurtig-login for seks roller. Alle demo-brugere har adgangskoden `demo1234`.
+Kører i demo-tilstand (`APP_DEMO=true` i `.env`): login-siden **i appen** viser hurtig-login for roller (webudgaven er offentlig, så der er hurtig-login slået fra – API'et svarer kun, når Origin er appens). Alle demo-brugere har adgangskoden `demo1234`.
 
 Nulstil demodata:
 
