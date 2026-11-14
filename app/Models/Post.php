@@ -8,10 +8,11 @@ class Post extends Model
 {
     protected $guarded = ["id"];
 
-    protected $casts = ["hidden_at" => "datetime"];
+    protected $casts = ["hidden_at" => "datetime", "notified" => "boolean"];
     public function user() { return $this->belongsTo(User::class); }
     public function images() { return $this->hasMany(PostImage::class)->orderBy("position"); }
     public function comments() { return $this->hasMany(PostComment::class)->orderBy("created_at"); }
     public function likes() { return $this->hasMany(PostLike::class); }
+    public function categories() { return $this->belongsToMany(Category::class)->orderBy("name"); }
     public function reports() { return $this->hasMany(PostReport::class); }
 }

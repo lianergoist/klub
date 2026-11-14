@@ -43,6 +43,7 @@ class User extends Authenticatable
             'consent_at' => 'datetime',
             'notify_email' => 'boolean',
             'notify_push' => 'boolean',
+            'notify_posts' => 'boolean',
             'allow_messages' => 'boolean',
         ];
     }

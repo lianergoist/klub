@@ -125,8 +125,10 @@
             <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
             <p class="small muted" style="margin-top:4px">Slår du det fra, kan andre medlemmer ikke skrive til dig, og du kan selv kun skrive med trænere og bestyrelse. Trænere og bestyrelse kan altid skrive til dig om klubbens aktiviteter.</p>
-            <h2 style="margin-top:20px">Hvilke aktiviteter vil du høre om?</h2>
-            <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Du får stadig besked om aktiviteter, du er tilmeldt. Nedtonede kategorier får alle medlemmer besked om.</p>
+            <h2 style="margin-top:20px">Hvilke kategorier vil du høre om?</h2>
+            <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Det gælder både nye aktiviteter og opslag. Du får stadig besked om aktiviteter, du er tilmeldt. Nedtonede kategorier får alle medlemmer besked om.</p>
+            <label class="check" style="margin:8px 0"><input type="checkbox" v-model="f.notify_posts" @change="saveProfile"> Push-besked, når et medlem skriver et opslag om en kategori, jeg følger</label>
+            <p v-if="f.notify_posts && !f.notify_push" class="small muted" style="margin:-4px 0 8px 30px">Kræver, at push-besked på telefonen er slået til ovenfor.</p>
             <ul class="list">
                 <li v-for="c in cats" :key="c.id"><label :class="['check', { locked: c.mandatory }]" :title="c.mandatory ? 'Klubben sender altid besked om denne kategori' : null"><input type="checkbox" v-model="c.notify" :disabled="c.mandatory" @change="saveCats"><span class="tag"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</span><span v-if="c.mandatory" class="small muted">Kan ikke fravælges</span></label></li>
             </ul>

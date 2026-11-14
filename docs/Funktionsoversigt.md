@@ -212,6 +212,10 @@ Et socialt feed, hvor medlemmerne deler oplevelser, billeder og spørgsmål – 
 
 - **Kerne:** alle kan anmelde et opslag med en begrundelse. Trænere og bestyrelse får besked og kan skjule opslaget (forfatteren får besked med begrundelsen), vise det igen eller afvise anmeldelsen. Moderatorer kan også skjule enkelte kommentarer. Alt logges.
 
+- **Kerne (afprøves):** når man skriver et opslag, kan man vælge en eller flere kategorier (fx SUP eller windsurf). Opslaget ses stadig af alle på opslagstavlen, og kategorierne vises som labels på opslaget. Medlemmer, der følger mindst én af de valgte kategorier, får en **push-besked** (kun push, ikke mail eller indbakke), fx "Mads skrev om SUP: Nogen der vil med ud i morgen kl. 7?". Man følger de samme kategorier som for aktiviteter (Profil → Notifikationer), og der er en knap til at slå push om opslag helt fra. Kategorier, der ikke kan fravælges (fx Klubliv), kan ikke vælges på opslag. Hvert medlem kan højst sende **3 opslag med push-besked pr. døgn**. Derefter bliver opslaget delt uden besked. Vælger man ingen kategori, sender opslaget ingen besked.
+
+- **Afklares:** er 3 opslag med push-besked pr. døgn den rigtige grænse? Og skal man følge de samme kategorier for opslag og aktiviteter (som nu), eller skal de kunne vælges hver for sig?
+
 - **Senere:** opslag knyttet til en aktivitet (fx billeder fra kurset), fastgjorte opslag fra bestyrelsen, push-besked ved nye kommentarer.
 
 - **Kerne (afprøves):** et opslag kan have højst **10 billeder** og **3 videoer** (hver video: MP4, MOV eller WebM, højst 100 MB og 5 minutter). Videoer og billeder vises i samme galleri og i lysbilledvisningen, hvor man kan bladre og afspille videoerne. Videoen uploades med en statuslinje og komprimeres i baggrunden til højst 1280 px, 30 billeder/sek. og H.264 (typisk få MB pr. minut); metadata som GPS-position fjernes, og der laves et stillbillede. Indtil den er klar, står der "Videoen behandles …". Kan den ikke behandles, får forfatteren besked.

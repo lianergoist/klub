@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostComment;
 use App\Models\PostImage;
@@ -10,6 +11,7 @@ use App\Models\PostLike;
 use App\Models\PostReport;
 use App\Models\User;
 use App\Notifications\ClubMessage;
+use App\Notifications\PostPosted;
 use App\Support\Audit;
 use App\Support\Images;
 use Illuminate\Http\Request;
@@ -23,6 +25,9 @@ use Illuminate\Support\Facades\URL;
  */
 class FeedController extends Controller
 {
+    /** Højst så mange opslag med push-besked pr. medlem pr. døgn */
+    public const NOTIFY_PER_DAY = 3;
+
     private function member(Request $r): User
     {
         $u = $r->user();
@@ -46,7 +51,7 @@ class FeedController extends Controller
         $isMod = $u->may('feed.moderate');
         $filter = $isMod ? $r->query('filter', 'all') : 'all';
 
-        $q = Post::with(['user', 'images', 'comments.user:id,name'])
+        $q = Post::with(['user', 'images', 'categories:id,name,color', 'comments.user:id,name'])
             ->withCount(['likes', 'reports as open_reports_count' => fn ($q) => $q->whereNull('resolved_at')])
             ->latest('id');
         match ($filter) {
@@ -64,6 +69,9 @@ class FeedController extends Controller
             'posts' => $posts->map(fn ($p) => $this->row($p, $u, $isMod, isset($liked[$p->id]), isset($reported[$p->id]))),
             'more' => $posts->count() === 15,
             'is_mod' => $isMod,
+            // Kategorier, man kan give besked til (dem, der ikke kan fravælges, fx Klubliv, kan ikke bruges)
+            'categories' => Category::whereNull('archived_at')->where('mandatory', false)->orderBy('name')->get(['id', 'name', 'color']),
+            'notify_left' => max(0, self::NOTIFY_PER_DAY - $this->notifiedToday($u)),
             'open_reports' => $isMod ? Post::whereHas('reports', fn ($q) => $q->whereNull('resolved_at'))->count() : 0,
         ];
     }
@@ -76,6 +84,7 @@ class FeedController extends Controller
             'author_id' => $p->user_id,
             'can_message' => $p->user_id !== $u->id && $u->cannotMessage($p->user) === null,
             'body' => $p->body,
+            'categories' => $p->categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'color' => $c->color]),
             'created_at' => $p->created_at->toIso8601String(),
             'images' => $p->images->map(fn ($i) => [
                 'kind' => $i->kind, 'status' => $i->status,
@@ -106,6 +115,8 @@ class FeedController extends Controller
             'images' => 'array|max:10', // højst 10 billeder og 3 videoer pr. opslag
             'images.*' => 'file|mimes:jpg,jpeg,png,webp|max:15360',
             // Video: højst 100 MB og 5 minutter; komprimeres i baggrunden (App\Jobs\ProcessVideo)
+            'categories' => 'array|max:6',
+            'categories.*' => 'integer|exists:categories,id',
             'videos' => 'array|max:3',
             'videos.*' => 'file|max:102400|mimetypes:video/mp4,video/quicktime,video/webm,video/x-m4v,video/3gpp,video/x-matroska',
         ], [
@@ -116,10 +127,15 @@ class FeedController extends Controller
             'videos.*.mimetypes' => 'Videoer skal være MP4, MOV eller WebM.',
             'videos.*.uploaded' => 'En video kunne ikke uploades. Den må højst fylde 100 MB.',
         ]);
+        $catIds = collect($r->input('categories', []))->map(fn ($id) => (int) $id)->unique()->values();
+        abort_if($catIds->isNotEmpty() && Category::whereIn('id', $catIds)->where(fn ($q) => $q->where('mandatory', true)->orWhereNotNull('archived_at'))->exists(),
+            422, 'Du kan ikke give besked til den kategori.');
         abort_if(($r->hasFile('images') || $r->hasFile('videos')) && ! $r->boolean('consent'), 422, 'Bekræft, at personerne på billederne/videoen er okay med at blive vist.');
 
-        $post = DB::transaction(function () use ($r, $u) {
-            $post = Post::create(['user_id' => $u->id, 'body' => trim((string) $r->input('body')) ?: null]);
+        $notify = $catIds->isNotEmpty() && $this->notifiedToday($u) < self::NOTIFY_PER_DAY;
+        $post = DB::transaction(function () use ($r, $u, $catIds, $notify) {
+            $post = Post::create(['user_id' => $u->id, 'body' => trim((string) $r->input('body')) ?: null, 'notified' => $notify]);
+            $post->categories()->sync($catIds);
             foreach (array_values($r->file('images', [])) as $i => $file) {
                 $post->images()->create(Images::store($file) + ['position' => $i]);
             }
@@ -132,9 +148,34 @@ class FeedController extends Controller
             return $post;
         });
         foreach ($post->images()->where('status', 'processing')->pluck('id') as $id) \App\Jobs\ProcessVideo::dispatch($id);
-        Audit::log('post.created', $post, ['images' => $post->images()->where('kind', 'image')->count(), 'videos' => count($r->file('videos', []))]);
+        $sent = $notify ? $this->notifyFollowers($post, $u, $catIds->all()) : 0;
+        Audit::log('post.created', $post, ['images' => $post->images()->where('kind', 'image')->count(), 'videos' => count($r->file('videos', [])),
+            'categories' => $catIds->all(), 'notified' => $sent]);
 
-        return ['id' => $post->id];
+        return ['id' => $post->id, 'notified' => $notify, 'recipients' => $sent, 'limit_reached' => $catIds->isNotEmpty() && ! $notify];
+    }
+
+    private function notifiedToday(User $u): int
+    {
+        return Post::where('user_id', $u->id)->where('notified', true)->where('created_at', '>=', now()->subDay())->count();
+    }
+
+    /**
+     * Push-besked til medlemmer, der følger mindst én af opslagets kategorier (ingen indstilling = følger),
+     * har push og "besked om opslag" slået til og har appen.
+     */
+    private function notifyFollowers(Post $post, User $author, array $catIds): int
+    {
+        $users = User::whereIn('status', ['active', 'passive'])->where('id', '!=', $author->id)
+            ->where('notify_push', true)->where('notify_posts', true)
+            ->whereExists(fn ($q) => $q->from('device_tokens')->whereColumn('device_tokens.user_id', 'users.id'))
+            ->whereHas('categorySettings', fn ($q) => $q->whereIn('categories.id', $catIds)->where('category_user.notify', false), '<', count($catIds))
+            ->get();
+        $names = Category::whereIn('id', $catIds)->orderBy('name')->pluck('name')->join(', ', ' og ');
+        $text = $post->body ? mb_strimwidth(preg_replace('/\s+/', ' ', $post->body), 0, 120, '…') : 'Nyt opslag med billeder eller video.';
+        \Illuminate\Support\Facades\Notification::send($users, new PostPosted($author->name.' skrev om '.$names, $text, '/opslag'));
+
+        return $users->count();
     }
 
     public function destroy(Request $r, Post $post)

@@ -12,6 +12,13 @@
             </div>
             <div v-if="videos.length" class="thumbs"><div v-for="(v, i) in videos" :key="v.url" class="thumb vid"><video :src="v.url + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(v.file.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo(i)"><Icon name="x" /></button></div></div>
             <label v-if="files.length || videos.length" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ mediaWord }} er okay med, at de bliver vist for klubbens medlemmer.</label>
+            <div v-if="(open || files.length || videos.length) && cats.length" class="notify">
+                <span class="small muted">Push-besked til dem, der følger:</span>
+                <div class="chips">
+                    <button v-for="c in cats" :key="c.id" type="button" :class="['chip', { on: picked.includes(c.id) }]" :aria-pressed="picked.includes(c.id)" @click="toggleCat(c.id)"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</button>
+                </div>
+                <div v-if="picked.length && !notifyLeft" class="small" style="color:var(--warn)">Du har sendt {{ NOTIFY_PER_DAY }} opslag med besked det seneste døgn. Opslaget bliver delt, men uden push-besked.</div>
+            </div>
             <div v-if="busy && progress !== null" class="prog" :aria-label="`Uploader ${progress} %`"><i :style="{ width: progress + '%' }"></i></div>
             <div v-if="open || files.length || videos.length" class="row between" style="margin-top:10px">
                 <div class="row" style="gap:4px">
@@ -53,6 +60,7 @@
                 </div>
             </header>
 
+            <div v-if="p.categories.length" class="cats"><span v-for="c in p.categories" :key="c.id" class="tag"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</span></div>
             <p v-if="p.body" class="body">{{ p.body }}</p>
             <div v-for="(v, i) in p.images.filter(x => x.kind === 'video' && x.status !== 'ready')" :key="'v' + i" class="gallery">
                 <div class="vwait small">{{ v.status === 'failed' ? 'En video kunne ikke behandles.' : 'Videoen behandles … Det tager typisk et minut eller to.' }}</div>
@@ -128,6 +136,8 @@ async function messageTo(id) { try { const r = await api('messages/start', { met
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);
+const cats = ref([]); const picked = ref([]); const notifyLeft = ref(3); const NOTIFY_PER_DAY = 3;
+const toggleCat = (id) => { picked.value = picked.value.includes(id) ? picked.value.filter(x => x !== id) : [...picked.value, id]; };
 const videos = ref([]); const progress = ref(null); // videos: [{ file, url }]
 const MAX_VIDEO = 100 * 1024 * 1024; const MAX_IMAGES = 10; const MAX_VIDEOS = 3;
 // Galleri: færdige videoer først, så billederne
@@ -175,7 +185,7 @@ async function load(older = false) {
     const r = await api(`feed?filter=${filter.value}${before}`);
     const list = r.posts.map(p => ({ ...p, showComments: false, draft: '' }));
     posts.value = older ? [...posts.value, ...list] : list;
-    more.value = r.more; isMod.value = r.is_mod; openReports.value = r.open_reports;
+    more.value = r.more; isMod.value = r.is_mod; cats.value = r.categories; notifyLeft.value = r.notify_left; openReports.value = r.open_reports;
 }
 function setFilter(f) { filter.value = f; posts.value = null; load(); }
 
@@ -210,14 +220,16 @@ async function post() {
     files.value.forEach(f => fd.append('images[]', f));
     videos.value.forEach(v => fd.append('videos[]', v.file));
     if (consent.value) fd.append('consent', '1');
+    picked.value.forEach(id => fd.append('categories[]', id));
     const nVid = videos.value.length; const hadVideo = nVid > 0;
     try {
-        if (hadVideo) await upload('feed', fd, (p) => (progress.value = p));
-        else await api('feed', { method: 'POST', form: fd });
+        const res = hadVideo ? await upload('feed', fd, (p) => (progress.value = p)) : await api('feed', { method: 'POST', form: fd });
+        picked.value = [];
         body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; clearVideos(); consent.value = false; open.value = false;
         if (filter.value !== 'all') filter.value = 'all';
         await load(); schedulePoll();
-        toast(hadVideo ? `Dit opslag er delt. ${nVid > 1 ? 'Videoerne' : 'Videoen'} vises, når ${nVid > 1 ? 'de' : 'den'} er behandlet (typisk et minut eller to).` : 'Dit opslag er delt');
+        const pushed = res?.notified ? ` ${res.recipients === 1 ? '1 medlem' : res.recipients + ' medlemmer'} fik en push-besked.` : res?.limit_reached ? ' Der blev ikke sendt push-besked (højst 3 om dagen).' : '';
+        toast((hadVideo ? `Dit opslag er delt. ${nVid > 1 ? 'Videoerne' : 'Videoen'} vises, når ${nVid > 1 ? 'de' : 'den'} er behandlet (typisk et minut eller to).` : 'Dit opslag er delt.') + pushed);
     } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; progress.value = null; }
 }
 async function like(p) { const r = await api(`feed/${p.id}/like`, { method: 'POST' }); p.likes = r.likes; p.liked = r.liked; }
@@ -250,6 +262,9 @@ onUnmounted(() => { clearTimeout(poll); document.removeEventListener('keydown', 
 .thumb button svg { width: 14px; height: 14px; }
 label.btn.disabled { opacity: .45; pointer-events: none; }
 .post.hidden { opacity: .8; border-style: dashed; }
+.notify { margin-top: 10px; padding-left: 48px; display: grid; gap: 6px; }
+.notify .chips { margin: 0; }
+.cats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .post .body { white-space: pre-line; margin: 12px 0 0; overflow-wrap: anywhere; }
 .gallery { display: grid; gap: 4px; margin: 12px -16px 0; }
 .gallery button { padding: 0; border: 0; background: var(--surface-2); cursor: zoom-in; display: block; overflow: hidden; }
