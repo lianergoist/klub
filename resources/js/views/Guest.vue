@@ -62,7 +62,12 @@ const only = computed(() => Number(route.query.tilbud) || null);
 const shown = computed(() => (offers.value || []).filter(o => !only.value || o.code === only.value)); const error = ref(''); const busy = ref(false);
 const f = reactive({ name: '', email: '', phone: '', birthdate: '', guardian_name: '', guardian_phone: '', consent: false });
 const minor = computed(() => { if (!f.birthdate) return false; const b = new Date(f.birthdate), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a < 18; });
-onMounted(async () => { offers.value = await api('guest/offers'); });
+onMounted(async () => {
+    offers.value = await api('guest/offers');
+    // ?aktivitet=ID (fx fra kalenderen på hjemmesiden) vælger holdet med det samme
+    const id = Number(route.query.aktivitet);
+    for (const o of id ? offers.value : []) { const a = o.activities.find(x => x.id === id); if (a && !a.full) { pick(o, a); break; } }
+});
 // Fx "Book en prøvetræning eller et SUP-kursus." – ud fra klubbens tilbud
 const lc = (x) => /^\p{Lu}\p{Lu}/u.test(x) ? x : x.charAt(0).toLowerCase() + x.slice(1);
 const intro = computed(() => {

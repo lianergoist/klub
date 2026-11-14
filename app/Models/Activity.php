@@ -15,6 +15,7 @@ class Activity extends Model
         'cancelled_at' => 'datetime',
         'archived_at' => 'datetime',
         'members_only' => 'boolean',
+        'on_website' => 'boolean',
         'punchcard' => 'boolean',
     ];
 

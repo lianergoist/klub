@@ -48,9 +48,19 @@ Valget huskes pr. enhed. Et link med `?tema=klub` eller `?tema=standard` vælger
 Temaet er defineret som CSS-variabler i `resources/css/app.css` (`html[data-tema=klub]`). Poppins er installeret lokalt (`@fontsource/poppins`), så der ikke hentes noget fra Google.
 Diagramfarverne i klubtemaet er justeret en smule (mættere lilla, mørkere orange), så de kan skelnes af farveblinde.
 
+## Hjemmesiden
+
+Klubbens hjemmeside (kopi af Squarespace-siden surfhorsens.dk) ligger på forsiden og `/priser-og-medlemskab`, `/kalender`, `/kontakt`, `/read-me` (`SiteController`). Den er **ikke** en del af appen.
+
+- Siderne (`resources/site/`) og filerne (`public/hjemmeside/`, kun det siderne bruger, billeder som WebP) bygges af `python3 -I tools/hjemmeside/import.py /var/www/surfhorsens /var/www/klub` ud fra HTTrack-kopien i `/var/www/surfhorsens`. Scriptet gør alle adresser lokale, sætter "Log ind" i menuen, lader "Meld mig ind!" gå til `/bliv-medlem` og erstatter kalenderen og prislisten med pladser til widgetten. Filer, som Squarespaces scripts henter undervejs, står i `tools/hjemmeside/extra-files.txt`.
+- `public/hjemmeside/klub-widget.js` henter `GET /api/public/calendar` (kommende aktiviteter med "Vis i kalenderen på hjemmesiden") og `GET /api/public/prices` (pakker). Den kan bruges uændret på Squarespace-siden: `<script src="https://klub.rpix.dk/hjemmeside/klub-widget.js" defer></script>` + `<div data-klub="kalender"></div>` / `<div data-klub="priser"></div>`. CORS tillader surfhorsens.dk.
+- Kendte rester fra Squarespace: nyhedsbrevsformularen på forsiden (virker ikke, henter Google reCAPTCHA), kortet på kontaktsiden (Google Maps) og kald til `/api/census/…` (Squarespace-statistik, giver 404).
+
 ## Adgangskode til sitet
 
-Hele sitet (webapp og API) ligger bag en fælles adgangskode (`app/Http/Middleware/SiteGate.php`). Koden huskes i en cookie i 90 dage pr. enhed.
+**Slået fra 2026-11-14**, så hjemmesiden er offentlig (den gamle hash står som kommentar i `.env`). Den kan slås til igen med `php artisan site:code`.
+
+Hele sitet (webapp og API) kan ligge bag en fælles adgangskode (`app/Http/Middleware/SiteGate.php`). Koden huskes i en cookie i 90 dage pr. enhed.
 Kun en bcrypt-hash ligger i `.env` (`SITE_ACCESS_HASH`).
 
     php artisan site:code              # generér og sæt ny kode (alle skal indtaste den igen)
@@ -66,7 +76,7 @@ Appen er den samme Vue-app pakket med Capacitor (`android/`, `ios/`, `capacitor.
 - API-adresse: `KLUB_API=https://klub.rpix.dk npm run build:app` (standard: klub.rpix.dk).
 - Version: vises under "Log ud" (appen: version + buildnummer fra telefonen, web: version + byggedato). Ny version (fx 0.2) skal skrives tre steder: `version` i `package.json` (0.2.0), `versionName` i `android/app/build.gradle` og `MARKETING_VERSION` i `ios/App/App.xcodeproj/project.pbxproj`. Buildnummeret tæller Codemagic op af sig selv (`BUILD_NUMBER`; Android bruger mindst 2).
 - Afprøvning på serveren: JDK 21 og Android SDK ligger i `/opt/android-sdk` med en emulator (`klub`). Byg en debug-APK i en kopi af repoet (`/root/klub-app`), fx `KLUB_API=https://klub.rpix.dk npm run build:app && npx cap sync android && cd android && ./gradlew assembleDebug`. Den seneste APK lægges i `public/app/` (ikke i git), så den kan hentes på https://klub.rpix.dk/app/.
-- Sitets adgangskode (proof of concept) sendes som headeren `X-Site-Access` (hentes via `POST /api/site-access`), da appen ikke kan bruge sitets cookie. CORS tillader kun appens adresser (`config/cors.php`).
+- Sitets adgangskode (proof of concept) sendes som headeren `X-Site-Access` (hentes via `POST /api/site-access`), da appen ikke kan bruge sitets cookie. CORS tillader appens adresser og hjemmesidens domæne (`config/cors.php`).
 - `npm run app:sync` = byg + kopiér til de indbyggede projekter. Ikoner og opstartsskærm er lavet ud fra `assets/` (klubbens logo).
 - Codemagic: `codemagic.yaml` har en Android-testudgave (debug-APK) og en iOS-testudgave (TestFlight).
 - **Push-beskeder** (Firebase Cloud Messaging, `@capacitor-firebase/messaging`): appen registrerer telefonen efter login (`POST /api/devices`), og alle notifikationer (`ClubMessage`, nye beskeder) sendes også som push via `PushChannel` → `App\Support\Push\Fcm`, hvis medlemmet har push slået til. Tryk på en besked åbner det rigtige sted. Kræver:

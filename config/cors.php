@@ -20,7 +20,8 @@ return [
     'allowed_methods' => ['*'],
 
     // Mobilappen (Capacitor): iOS = capacitor://localhost, Android = https://localhost. Weben kalder fra samme adresse og behøver ikke CORS.
-    'allowed_origins' => ['capacitor://localhost', 'https://localhost', 'http://localhost'],
+    // Appen (Capacitor) og klubbens hjemmeside, så den kan hente kalender og priser fra /api/public/*
+    'allowed_origins' => ['capacitor://localhost', 'https://localhost', 'http://localhost', 'https://surfhorsens.dk', 'https://www.surfhorsens.dk'],
 
     'allowed_origins_patterns' => [],
 

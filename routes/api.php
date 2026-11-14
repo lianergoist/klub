@@ -17,6 +17,9 @@ Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
+// Offentlige data til hjemmesiden (kalender og priser)
+Route::get('public/calendar', [\App\Http\Controllers\Api\PublicController::class, 'calendar'])->middleware('throttle:120,1');
+Route::get('public/prices', [\App\Http\Controllers\Api\PublicController::class, 'prices'])->middleware('throttle:120,1');
 Route::get('packages/offer', [\App\Http\Controllers\Api\PackageController::class, 'offer']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
 Route::get('login-links', [GuestController::class, 'loginLinks']);

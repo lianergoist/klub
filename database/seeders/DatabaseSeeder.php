@@ -410,6 +410,9 @@ class DatabaseSeeder extends Seeder
         Activity::where('title', 'Teoriaften: vejr, vind og strøm')->first()?->categories()->sync($catIds(['Klubliv', 'Teori']));
         Activity::where('title', 'Sæsonstart: standerhejsning')->first()?->categories()->sync($catIds(['Klubliv']));
 
+        // Offentlig kalender på hjemmesiden: åbne tilbud og klubbens større begivenheder
+        Activity::whereNotNull('guest_package_id')->orWhereIn('title', ['Sæsonstart: standerhejsning', 'Nytårs-SUP', 'Vinterbad og SUP-hygge', 'Begynderkursus windsurf (forår)'])->update(['on_website' => true]);
+
         // Medlemskaber og tilkøb
         $pkg = fn ($name) => \App\Models\Package::where('name', $name);
         \App\Models\Package::where(fn ($q) => $q->where('name', 'like', 'Udstyrsleje%')->orWhere('name', 'like', 'Dagsleje%'))->update(['equipment_booking' => true]);

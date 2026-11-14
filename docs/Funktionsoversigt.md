@@ -561,6 +561,18 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 - **Afklares:** bestyrelsen bør ikke gemme CPR-numre i systemet; kommuner og forbund kan dog kræve alder eller fødselsdato i forbindelse med tilskud.
 
 
+## Offentlig hjemmeside
+
+Klubbens hjemmeside henter kalender og priser fra klubsystemet, så de kun skal vedligeholdes ét sted. I proof of concept ligger en kopi af den nuværende Squarespace-side på klubsystemets forside; samme lille script kan sættes ind på Squarespace-siden.
+
+- **Kerne:** "Log ind" i menuen (bliver til "Klubsystem", når man er logget ind) og "Meld mig ind!" går til indmeldelsen.
+- **Kerne:** kalenderen viser kommende aktiviteter, som er markeret "Vis i kalenderen på hjemmesiden" (fluebenet sættes, når aktiviteten oprettes eller rettes; standard er nej). Åbne tilbud til ikke-medlemmer får knappen "Book plads", aktiviteter med klippekort "Tilmeld med klippekort" og øvrige "Log ind og tilmeld dig".
+- **Kerne:** prislisten (kontingenter, udstyrsleje og tilkøb, tilbud til ikke-medlemmer) dannes ud fra pakkerne under Indstillinger → Pakker. Kursuspriser i teksten kan følge en pakke med samme navn.
+- **Senere:** kalender som abonnement (iCal/CalDAV, fx via en Radicale-server).
+- **Afklares:** skal hjemmesiden blive på Squarespace (designeren kan redigere, klubsystemet leverer kalender og priser via et script), eller flyttes helt ind i klubsystemet?
+- **Afklares:** Windsurf introkursus (499 kr.) og begynderkursus (1.199 kr.) findes kun som tekst på hjemmesiden. Skal de oprettes som tilbud i systemet, så de kan bookes og betales? SUP-kurset koster 499 kr. på siden, men 500 kr. i systemet.
+- **Afklares:** nyhedsbrevsformularen på forsiden virker ikke i dag. Skal den fjernes, eller skal tilmeldinger gemmes i klubsystemet (fx som interesseliste)?
+
 ## Forslag til faseopdeling
 
 Et system med alt på én gang er stort at bygge og svagt at teste. Forslaget er at tage det i tre træk, så klubben kan bruge det efter første fase:

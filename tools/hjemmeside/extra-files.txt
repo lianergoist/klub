@@ -1,0 +1,29 @@
+# Filer som Squarespaces scripts henter ved kørsel, men som ikke kom med i HTTrack-kopien.
+# Hentes én gang af import.py (gemmes også i kopien). Find nye ved at teste siderne med eksterne kald blokeret.
+assets.squarespace.com/universal/scripts-compressed/12347-0da9339b0662a195-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/16854-1615305a0e040098-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/18816-f7234700f4fd82a4-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/2249-88b54102dc70dc74-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/2249-e50e3236f119402f-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/24758-4d1b7e6e350c4240-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/3141-eb260ec11bb4e5f7-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/46946-fb5ea486cc7c43d3-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/49997-c2b80fe7db3674d2-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/60059-01260e65e6913ab4-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/80488-b63e565450ee6891-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/84210-7547dd762f221a59-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/async-commerce-cart-utils-6dd3989d962c9537-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/async-commerce-cart-utils-765e65e3ad4f5484-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/async-editor-render-form-f2922f81b613fa15-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/async-reserved-cart-bootstrap-7c36a4c3421eabc1-min.da-DK.js
+assets.squarespace.com/universal/scripts-compressed/calendar-block-renderer-63a1bb4cbc0ebc10-min.da-DK.js
+assets.squarespace.com/universal/styles-compressed/calendar-block-renderer-e9e61fa1880a1136-min.da-DK.css
+static1.squarespace.com/static/vta/5c5a519771c10ba3470d8101/scripts/events-image-loader.ae53be3f6b51bb21926a.js
+static1.squarespace.com/static/vta/5c5a519771c10ba3470d8101/scripts/floating-cart.7a42160a86f0c10b740c.js
+assets.squarespace.com/universal/scripts-compressed/76085-bce2163d277d851b-min.da-DK.js
+assets.squarespace.com/universal/styles-compressed/d92bd0f161fc0505-min.da-DK.css
+assets.squarespace.com/universal/styles-compressed/5b8f4cabb3fb1481-min.da-DK.css
+assets.squarespace.com/universal/fonts/squarespace-ui-font.woff
+assets.squarespace.com/universal/fonts/squarespace-ui-font.ttf
+assets.squarespace.com/universal/fonts/squarespace-ui-font.eot
+assets.squarespace.com/universal/fonts/squarespace-ui-font.svg
