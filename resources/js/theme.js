@@ -2,8 +2,8 @@ import { store } from './api';
 
 // Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå).
 // 'auto' = SurfHorsens, lys eller mørk efter telefonens/computerens indstilling.
-export const THEMES = { auto: 'Automatisk', klub: 'SurfHorsens', standard: 'Blå', gron: 'Grøn', orange: 'Orange', mork: 'Mørk' };
-const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', 'klub-mork': '#1d1520', mork: '#0d1716' };
+export const THEMES = { auto: 'Automatisk', klub: 'SurfHorsens', marie: 'Marie', standard: 'Blå', gron: 'Grøn', orange: 'Orange', mork: 'Mørk' };
+const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', marie: '#e3d8d3', 'klub-mork': '#1d1520', mork: '#0d1716' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);

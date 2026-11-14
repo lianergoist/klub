@@ -22,6 +22,7 @@ const SWATCH = {
     gron: 'linear-gradient(135deg, #1d4d35 50%, #2a7a4f 50%)',
     orange: 'linear-gradient(135deg, #6b2f12 50%, #b84a12 50%)',
     klub: 'conic-gradient(#7e5a8c 0 25%, #e665a1 0 50%, #ff9933 0 75%, #65a4a3 0)',
+    marie: 'conic-gradient(#e3d8d3 0 40%, #83598c 0 70%, #ff9933 0 85%, #e665a1 0)',
     mork: 'linear-gradient(135deg, #0d1716 50%, #4cc2cf 50%)',
 };
 </script>

@@ -150,6 +150,61 @@ html[data-tema=klub] .act .when { background: #ffe8cf; color: #4a2c0a; }
 html[data-tema=klub] .act .when .m { color: #9a5a12; }
 html[data-tema=klub] .capacity > i { background: var(--teal); }
 html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
+/* ===== Tema: Marie (tæt på designet på surfhorsens.dk / Squarespace) =====
+   Fladt og luftigt: sandfarvet baggrund, lilla tekst og knapper, orange og pink flader, små runde hjørner, ingen skygger.
+   sand #e3d8d3 · lilla #83598c · orange #ff9933 · pink #e665a1 · petrol #65a4a3 · Poppins (overskrifter 500) */
+html[data-tema=marie] {
+    --bg: #e3d8d3;
+    --surface: #efe8e4;
+    --surface-2: #e8ddd8;
+    --line: #d2c1ba;
+    --ink: #4a2f52;
+    --ink-2: #694a71;
+    --ink-3: #7c6482;
+    --heading: #83598c;
+    --brand: #83598c;
+    --brand-ink: #f3ece8;
+    --accent: #83598c;
+    --accent-soft: #e6d9ea;
+    --sand: #ffd9b0;
+    --pink: #e665a1;
+    --orange: #ff9933;
+    --teal: #65a4a3;
+    --series-1: #83598c;
+    --series-2: #ff9933;
+    --radius: 6px;
+    --shadow: none;
+    --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+html[data-tema=marie] body { letter-spacing: .01em; }
+html[data-tema=marie] h1 { font-weight: 500; letter-spacing: 0; font-size: 1.75rem; }
+html[data-tema=marie] h2 { font-weight: 500; }
+html[data-tema=marie] h3 { text-transform: none; letter-spacing: .01em; font-weight: 500; font-size: 1rem; color: var(--heading); }
+/* Menuen som sidens top: på sandfarven med lilla links, aktiv side understreget i orange */
+html[data-tema=marie] .sidebar { background: var(--bg); color: var(--ink); border-right: 1px solid var(--line); }
+html[data-tema=marie] .sidebar .brandmark { color: var(--heading); }
+html[data-tema=marie] .sidebar nav a { color: var(--ink-2); border-radius: 6px; }
+html[data-tema=marie] .sidebar nav a:hover { background: rgba(131,89,140,.08); }
+html[data-tema=marie] .sidebar nav a.router-link-active { background: rgba(131,89,140,.12); color: var(--heading); font-weight: 500; box-shadow: inset 3px 0 0 var(--orange); }
+html[data-tema=marie] .sidebar .sect { color: var(--ink-3); }
+html[data-tema=marie] .sidebar .who { border-top-color: var(--line); }
+html[data-tema=marie] .tabbar { background: var(--bg); }
+html[data-tema=marie] .tabbar a.router-link-active { color: var(--heading); }
+/* Knapper som "Meld mig ind!": lilla flade, lys tekst, 6,4 px hjørner, vægt 500 */
+html[data-tema=marie] .btn { border-radius: 6.4px; font-weight: 500; letter-spacing: .02em; }
+html[data-tema=marie] .btn.primary, html[data-tema=marie] .btn.brand { background: var(--accent); border-color: var(--accent); color: var(--brand-ink); }
+html[data-tema=marie] .btn.primary:hover, html[data-tema=marie] .btn.brand:hover { filter: brightness(1.08); }
+html[data-tema=marie] .btn:not(.primary):not(.brand):not(.ghost):not(.mobilepay) { background: transparent; border-color: var(--heading); color: var(--heading); }
+html[data-tema=marie] input, html[data-tema=marie] select, html[data-tema=marie] textarea { border-radius: 6px; background: #f6f1ee; }
+html[data-tema=marie] .card { border-color: transparent; }
+html[data-tema=marie] .chip, html[data-tema=marie] .tabs a, html[data-tema=marie] .tabs button { font-weight: 500; }
+/* Datoen på aktiviteter som sidens orange flader */
+html[data-tema=marie] .act .when { background: var(--orange); color: var(--ink); border-radius: 6px; }
+html[data-tema=marie] .act .when .m { color: var(--ink); }
+html[data-tema=marie] .capacity > i { background: var(--teal); }
+html[data-tema=marie] .demo-ribbon, html[data-tema=marie] .banner.info { background: var(--pink); color: #fff; }
+html[data-tema=marie] .demo-ribbon a, html[data-tema=marie] .banner.info a { color: #fff; }
+
 /* Klubbens logo vises i alle temaer */
 .brand-default { display: none; }
 
