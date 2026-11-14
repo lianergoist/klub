@@ -12,7 +12,7 @@
             </div>
             <div v-if="videos.length" class="thumbs"><div v-for="(v, i) in videos" :key="v.url" class="thumb vid"><video :src="v.url + '#t=0.1'" muted playsinline preload="metadata"></video><span class="vsize">{{ mb(v.file.size) }}</span><button type="button" aria-label="Fjern video" @click="removeVideo(i)"><Icon name="x" /></button></div></div>
             <label v-if="files.length || videos.length" class="check small" style="margin-top:10px"><input type="checkbox" v-model="consent"> Personerne på {{ mediaWord }} er okay med, at de bliver vist for klubbens medlemmer.</label>
-            <div v-if="(open || files.length || videos.length) && cats.length" class="notify">
+            <div v-if="invite && cats.length" id="invite" class="notify">
                 <span class="small muted">Push-besked til dem, der følger:</span>
                 <div class="chips">
                     <button v-for="c in cats" :key="c.id" type="button" :class="['chip', { on: picked.includes(c.id) }]" :aria-pressed="picked.includes(c.id)" @click="toggleCat(c.id)"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</button>
@@ -20,10 +20,11 @@
                 <div v-if="picked.length && !notifyLeft" class="small" style="color:var(--warn)">Du har sendt {{ NOTIFY_PER_DAY }} opslag med besked det seneste døgn. Opslaget bliver delt, men uden push-besked.</div>
             </div>
             <div v-if="busy && progress !== null" class="prog" :aria-label="`Uploader ${progress} %`"><i :style="{ width: progress + '%' }"></i></div>
-            <div v-if="open || files.length || videos.length" class="row between" style="margin-top:10px">
-                <div class="row" style="gap:4px">
-                    <label class="btn ghost small" :class="{ disabled: files.length >= MAX_IMAGES }"><Icon name="image" style="width:18px" /> Billeder<input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="files.length >= MAX_IMAGES" @change="addImages"></label>
-                    <label class="btn ghost small" :class="{ disabled: videos.length >= MAX_VIDEOS }"><Icon name="play" style="width:18px" /> Video<input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" multiple hidden :disabled="videos.length >= MAX_VIDEOS" @change="addVideo"></label>
+            <div v-if="open || files.length || videos.length" class="row between actions" style="margin-top:10px">
+                <div class="row" style="gap:0">
+                    <label class="btn ghost small" aria-label="Tilføj billeder" :class="{ disabled: files.length >= MAX_IMAGES }"><Icon name="image" style="width:18px" /><span class="lbl"> Billeder</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden :disabled="files.length >= MAX_IMAGES" @change="addImages"></label>
+                    <label class="btn ghost small" aria-label="Tilføj video" :class="{ disabled: videos.length >= MAX_VIDEOS }"><Icon name="play" style="width:18px" /><span class="lbl"> Video</span><input type="file" accept="video/mp4,video/quicktime,video/webm,video/*" multiple hidden :disabled="videos.length >= MAX_VIDEOS" @change="addVideo"></label>
+                    <button v-if="cats.length" type="button" :class="['btn ghost small', { on: invite || picked.length }]" :aria-expanded="invite" aria-controls="invite" @click="invite = !invite"><Icon name="bell" style="width:18px" /> Inviter<span v-if="picked.length" class="cnt">{{ picked.length }}</span></button>
                 </div>
                 <button class="btn primary small" :disabled="busy || (!body.trim() && !files.length && !videos.length)">{{ busy ? (progress !== null && progress < 100 ? `Uploader ${progress} %` : 'Deler …') : 'Del' }}</button>
             </div>
@@ -136,7 +137,7 @@ async function messageTo(id) { try { const r = await api('messages/start', { met
 const posts = ref(null); const more = ref(false); const isMod = ref(false); const openReports = ref(0);
 const filter = ref(route.query.filter || 'all');
 const body = ref(''); const files = ref([]); const previews = ref([]); const consent = ref(false); const busy = ref(false); const open = ref(false);
-const cats = ref([]); const picked = ref([]); const notifyLeft = ref(3); const NOTIFY_PER_DAY = 3;
+const cats = ref([]); const picked = ref([]); const invite = ref(false); const notifyLeft = ref(3); const NOTIFY_PER_DAY = 3;
 const toggleCat = (id) => { picked.value = picked.value.includes(id) ? picked.value.filter(x => x !== id) : [...picked.value, id]; };
 const videos = ref([]); const progress = ref(null); // videos: [{ file, url }]
 const MAX_VIDEO = 100 * 1024 * 1024; const MAX_IMAGES = 10; const MAX_VIDEOS = 3;
@@ -224,7 +225,7 @@ async function post() {
     const nVid = videos.value.length; const hadVideo = nVid > 0;
     try {
         const res = hadVideo ? await upload('feed', fd, (p) => (progress.value = p)) : await api('feed', { method: 'POST', form: fd });
-        picked.value = [];
+        picked.value = []; invite.value = false;
         body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; clearVideos(); consent.value = false; open.value = false;
         if (filter.value !== 'all') filter.value = 'all';
         await load(); schedulePoll();
@@ -264,6 +265,12 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .post.hidden { opacity: .8; border-style: dashed; }
 .notify { margin-top: 10px; padding-left: 48px; display: grid; gap: 6px; }
 .notify .chips { margin: 0; }
+.actions { flex-wrap: nowrap; gap: 6px; }
+.actions .row { flex-wrap: nowrap; }
+.actions .btn.ghost.small { padding-left: 8px; padding-right: 8px; white-space: nowrap; }
+@media (max-width: 400px) { .actions .lbl { display: none; } }
+.composer .btn.on { color: var(--accent); }
+.cnt { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; margin-left: 2px; border-radius: 999px; background: var(--accent); color: var(--bg); font-size: .7rem; line-height: 1; }
 .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .post .body { white-space: pre-line; margin: 12px 0 0; overflow-wrap: anywhere; }
 .gallery { display: grid; gap: 4px; margin: 12px -16px 0; }
