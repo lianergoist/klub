@@ -48,7 +48,7 @@
             <div v-if="d.can_edit" class="row" style="gap:8px;margin-top:12px">
                 <template v-if="tab === 'guests'">
                     <button class="btn primary small" @click="openNew('offer')">+ Nyt tilbud</button>
-                    <button class="btn small" @click="openNew('punch')">+ Nyt klippekort</button>
+                    <button class="btn primary small" @click="openNew('punch')">+ Nyt klippekort</button>
                 </template>
                 <button v-else class="btn primary small" @click="openNew()">+ {{ tab === 'membership' ? 'Nyt medlemskab' : 'Nyt tilkøb' }}</button>
             </div>
