@@ -402,7 +402,7 @@ class FinanceController extends Controller
     {
         $this->write($r);
 
-        return \App\Support\MobilePay\Settlements::fetchAndImport($r->user()->id, (bool) config('app.demo'));
+        return \App\Support\MobilePay\Settlements::fetchAndImport($r->user()->id);
     }
 
     public function auditLog(Request $r)

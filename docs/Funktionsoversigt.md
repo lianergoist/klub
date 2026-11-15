@@ -430,7 +430,7 @@ Betaling sker via en ekstern betalingsudbyder. Systemet gemmer ikke kortnumre; d
 
 - **Kerne:** oversigt for kassereren over åbne, betalte og forfaldne betalinger, pr. medlem og pr. produkt.
 
-- **Kerne (i proof of concept, med simuleret afregningsrapport):** automatisk afstemning af MobilePay-udbetalinger: klubsystemet henter Vipps MobilePays afregningsrapport, kobler hver samlet udbetaling i banken til de enkelte betalinger og bogfører gebyrerne. (Hver betaling kobles allerede til sin regning via betalingens id – det er kun den samlede udbetaling til banken, der skal afstemmes.) I demo-tilstand udbetaler knappen "Hent afregningsrapport nu" straks alle ventende betalinger, og venter der ingen, opretter den først 3 demobetalinger (dagsleje med MobilePay), så man altid kan se resultatet.
+- **Kerne (i proof of concept, med simuleret afregningsrapport):** automatisk afstemning af MobilePay-udbetalinger: klubsystemet henter Vipps MobilePays afregningsrapport, kobler hver samlet udbetaling i banken til de enkelte betalinger og bogfører gebyrerne. (Hver betaling kobles allerede til sin regning via betalingens id – det er kun den samlede udbetaling til banken, der skal afstemmes.)
 
 - **Kerne:** kassereren kan registrere en betaling manuelt (kontant eller bankoverførsel), så de, der ikke bruger MobilePay, også kan betale.
 

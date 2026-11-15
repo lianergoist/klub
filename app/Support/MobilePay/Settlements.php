@@ -65,11 +65,9 @@ class Settlements
     }
 
     /** Hent rapport og indlæs. I drift: kald Vipps MobilePays rapport-API i stedet for simulatoren. */
-    public static function fetchAndImport(?int $userId = null, bool $demoNow = false): array
+    public static function fetchAndImport(?int $userId = null): array
     {
-        // Demo (knappen i demo-tilstand): udbetal straks, og lav et par betalinger, hvis intet venter
-        $demo = $demoNow ? (Payment::whereNull('payout_id')->whereIn('method', self::METHODS)->exists() ? 0 : SimulatedReport::createDemoPayments()) : 0;
-        $r = self::import(SimulatedReport::settlements($demoNow), $userId) + ['demo_payments' => $demo];
+        $r = self::import(SimulatedReport::settlements(), $userId);
         // Næste udbetaling for de betalinger, der stadig venter (så "ingen nye" kan forklares)
         $wait = \App\Models\Payment::whereNull('payout_id')->whereIn('method', self::METHODS)->orderBy('created_at')->first();
 
