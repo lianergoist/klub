@@ -9,6 +9,21 @@ function readToken() { try { return localStorage.getItem('token'); } catch { ret
 // Appen kan ikke bruge sitets adgangskode-cookie, så den sender et token i en header i stedet (kun i proof of concept)
 export function siteAccess(v) { try { if (v === undefined) return localStorage.getItem('site_access'); v ? localStorage.setItem('site_access', v) : localStorage.removeItem('site_access'); } catch { return null; } }
 
+// Tilfældigt id pr. fane/app-start til brugsloggen (usage.js). Ikke knyttet til brugeren.
+let usageSessionId = null;
+export function usageSession() {
+    if (usageSessionId) return usageSessionId;
+    try { usageSessionId = sessionStorage.getItem('usage_session'); } catch {}
+    if (!usageSessionId) {
+        usageSessionId = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => (b % 36).toString(36)).join('');
+        try { sessionStorage.setItem('usage_session', usageSessionId); } catch {}
+    }
+    return usageSessionId;
+}
+export function usageHeaders() {
+    return { 'X-Usage-Session': usageSession(), 'X-Platform': IS_APP ? 'app' : 'web' };
+}
+
 export const store = reactive({ user: null, token: readToken(), toast: null, tema: 'standard' });
 
 export function setSession(token, user) {
@@ -21,7 +36,7 @@ export class ApiError extends Error {
 }
 
 export async function api(path, { method = 'GET', body, form } = {}) {
-    const headers = { Accept: 'application/json' };
+    const headers = { Accept: 'application/json', ...usageHeaders() };
     if (store.token) headers.Authorization = `Bearer ${store.token}`;
     if (IS_APP && siteAccess()) headers['X-Site-Access'] = siteAccess();
     let payload;
@@ -50,6 +65,7 @@ export function upload(path, form, onProgress) {
         const x = new XMLHttpRequest();
         x.open('POST', `${API_BASE}/api/${path}`);
         x.setRequestHeader('Accept', 'application/json');
+        for (const [k, val] of Object.entries(usageHeaders())) x.setRequestHeader(k, val);
         if (store.token) x.setRequestHeader('Authorization', `Bearer ${store.token}`);
         if (IS_APP && siteAccess()) x.setRequestHeader('X-Site-Access', siteAccess());
         x.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100)); };

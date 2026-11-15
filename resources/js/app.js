@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
 import { store, refreshMe, IS_APP, siteAccess } from './api';
 import { initTheme } from './theme';
+import { initUsage } from './usage';
 
 initTheme();
 
@@ -74,7 +75,9 @@ router.beforeEach(async (to, from) => {
     return true;
 });
 
-createApp(App).use(router).mount('#app');
+const app = createApp(App).use(router);
+initUsage(router, app);
+app.mount('#app');
 
 if (__APP__) {
     import('./native').then((m) => m.initNative(router));

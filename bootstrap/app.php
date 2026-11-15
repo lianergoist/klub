@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(\App\Http\Middleware\SiteGate::class);
+        $middleware->api(append: [\App\Http\Middleware\LogUsageErrors::class]);
         $middleware->encryptCookies(except: [\App\Http\Middleware\SiteGate::COOKIE]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

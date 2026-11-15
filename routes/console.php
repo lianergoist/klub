@@ -17,3 +17,7 @@ Artisan::command('inspire', function () {
 
 // Videoer i opslag komprimeres i baggrunden (App\Jobs\ProcessVideo) af systemd-tjenesten klub-video-worker
 // (testsiden: klub-test-video-worker), som kører `queue:work --queue=video`. Efter kodeændringer: php artisan queue:restart
+
+// Brugsloggen (usage_events) gemmes kun i 90 dage
+\Illuminate\Support\Facades\Schedule::call(fn () => \App\Models\UsageEvent::where('created_at', '<', now()->subDays(90))->delete())
+    ->dailyAt('04:10')->name('brugslog-oprydning');

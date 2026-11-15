@@ -564,6 +564,12 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 - **Afklares:** bestyrelsen bør ikke gemme CPR-numre i systemet; kommuner og forbund kan dog kræve alder eller fødselsdato i forbindelse med tilskud.
 
+**Brugslog (forbedring af systemet).** Systemet logger pseudonymt, hvordan det bruges: sideskift, fejl (valideringsfejl, "ingen adgang", serverfejl) og senere udvalgte forløb (fx tilmelding startet/gennemført). Der gemmes ingen navne, bruger-id'er eller det, brugeren har skrevet – kun ruteskabelon, rolle, platform (web/app), feltnavne og systemets fejltekst. Pseudonymet skifter hver måned, og loggen slettes efter 90 dage. Formålet er at finde steder, hvor medlemmer går i stå, evt. med hjælp fra en AI, der læser en ugentlig sammenfatning.
+- **Afklares:** skal brugsloggen nævnes i privatlivspolitikken (anbefales), og skal medlemmer kunne fravælge den?
+- **Afklares:** er 90 dage passende opbevaringstid?
+- **Afklares:** må den sammenfattede (pseudonyme) log sendes til en AI-tjeneste uden for EU, fx Anthropic eller Google?
+- **Afklares:** skal der være en "Noget driller?"-knap og en søg/spørg-funktion, hvor en AI svarer ud fra en hjælpetekst om systemet? Hvem skriver og vedligeholder hjælpeteksten, og må medlemmernes spørgsmål sendes til en AI-tjeneste?
+
 
 ## Offentlig hjemmeside
 
