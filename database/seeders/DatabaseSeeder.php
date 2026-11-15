@@ -396,6 +396,9 @@ class DatabaseSeeder extends Seeder
         \App\Models\Package::where('kind', 'offer')->where('name', 'like', 'Prøvetræning%')->update(['login_text' => 'Prøv en træning']);
         \App\Models\Package::where('kind', 'offer')->where('name', 'like', '%SUP-kursus%')->update(['login_text' => 'Tag et SUP-kursus']);
         $this->adminDefaults();
+
+        // Demo: gem økonomien som udgangspunkt for "php artisan demo:nulstil-okonomi"
+        if (config('app.demo')) \App\Console\Commands\DemoFinanceReset::save(\App\Console\Commands\DemoFinanceReset::baselinePath());
     }
 
     /**
