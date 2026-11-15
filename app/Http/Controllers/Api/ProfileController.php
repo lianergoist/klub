@@ -132,4 +132,29 @@ class ProfileController extends Controller
             'samtykke_givet' => $u->consent_at,
         ], 200, ['Content-Disposition' => 'attachment; filename="mine-data.json"'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
+
+    /** Skift adgangskode (kræver den nuværende). Andre enheder logges ud; denne forbliver logget ind. */
+    public function password(Request $r)
+    {
+        $u = $r->user();
+        abort_if(\App\Http\Controllers\Api\AuthController::isDemoAccount($u), 403, 'Demokontoens adgangskode kan ikke ændres, så andre stadig kan prøve systemet.');
+        $data = $r->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|max:200|confirmed|different:current_password',
+        ], [
+            'password.min' => 'Den nye adgangskode skal være på mindst 8 tegn.',
+            'password.confirmed' => 'De to nye adgangskoder er ikke ens.',
+            'password.different' => 'Den nye adgangskode skal være en anden end den nuværende.',
+        ]);
+        if (! $u->password || ! \Illuminate\Support\Facades\Hash::check($data['current_password'], $u->password)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => 'Den nuværende adgangskode er forkert.']);
+        }
+
+        $u->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($data['password'])])->save();
+        $current = $u->currentAccessToken();
+        $u->tokens()->when($current && isset($current->id), fn ($q) => $q->where('id', '!=', $current->id))->delete();
+        Audit::log('member.password_changed', $u);
+
+        return ['message' => 'Din adgangskode er skiftet. Andre enheder, du var logget ind på, er logget ud.'];
+    }
 }

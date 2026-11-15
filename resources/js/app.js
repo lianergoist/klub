@@ -17,6 +17,8 @@ const v = (name) => views[`./views/${name}.vue`];
 const routes = [
     { path: '/', redirect: '/aktiviteter' },
     { path: '/login', component: v('Login'), meta: { public: true } },
+    { path: '/glemt-adgangskode', component: v('PasswordForgot'), meta: { public: true } },
+    { path: '/nulstil-adgangskode', component: v('PasswordReset'), meta: { public: true } },
     { path: '/bliv-medlem', component: v('Register'), meta: { public: true } },
     { path: '/klippekort', component: v('Punchcard'), meta: { public: true } },
     { path: '/klip', component: v('GuestKlip'), meta: { guest: true } },

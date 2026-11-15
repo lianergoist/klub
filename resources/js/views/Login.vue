@@ -10,6 +10,7 @@
             <form @submit.prevent="login" class="stack">
                 <label class="field"><span>E-mail</span><input v-model="email" name="email" id="email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
                 <label class="field"><span>Adgangskode</span><input v-model="password" name="password" id="password" type="password" autocomplete="current-password" required></label>
+                <RouterLink :to="{ path: '/glemt-adgangskode', query: email ? { email } : {} }" class="small forgot">Glemt adgangskode?</RouterLink>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink></p>
@@ -65,6 +66,7 @@ async function demoLogin(e) { await done(await api('demo-login', { method: 'POST
 .login-hero { text-align: center; margin-bottom: 20px; }
 .login-hero img { border-radius: 16px; }
 .login-hero p { color: var(--ink-2); }
+.forgot { align-self: flex-end; margin-top: -6px; }
 .offer-link { text-align: center; margin: 4px 0 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .demo-btn { flex-direction: column; align-items: flex-start; text-align: left; gap: 0; padding: 10px 12px; }
 </style>

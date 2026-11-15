@@ -37,6 +37,53 @@ class AuthController extends Controller
         return config('app.demo') && in_array($r->header('Origin'), ['capacitor://localhost', 'https://localhost', 'http://localhost'], true);
     }
 
+    /** Demokontoernes adgangskode (demo1234) må ikke ændres, ellers kan andre ikke prøve systemet. */
+    public static function isDemoAccount(?User $u): bool
+    {
+        return $u && config('app.demo') && array_key_exists($u->email, config('app.demo_accounts') ?? []);
+    }
+
+    /**
+     * Glemt adgangskode: sender et link på mail. Svaret er det samme, uanset om e-mailen findes,
+     * så man ikke kan bruge siden til at finde ud af, hvem der er medlem.
+     */
+    public function forgot(Request $r)
+    {
+        $data = $r->validate(['email' => 'required|email|max:255']);
+        $user = User::where('email', $data['email'])->first();
+        if ($user && $user->status !== 'resigned' && ! self::isDemoAccount($user)) {
+            \Illuminate\Support\Facades\Password::broker()->sendResetLink(['email' => $user->email]);
+        }
+
+        return ['message' => 'Hvis der findes en konto med den e-mail, har vi sendt et link til at vælge en ny adgangskode. Linket virker i '
+            .config('auth.passwords.users.expire', 60).' minutter. Kig også i spam-mappen.'];
+    }
+
+    /** Ny adgangskode via linket fra mailen. Logger ind bagefter og logger alle andre enheder ud. */
+    public function reset(Request $r)
+    {
+        $data = $r->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:8|max:200|confirmed',
+        ], ['password.min' => 'Adgangskoden skal være på mindst 8 tegn.', 'password.confirmed' => 'De to adgangskoder er ikke ens.']);
+
+        $done = null;
+        $status = \Illuminate\Support\Facades\Password::broker()->reset($data, function (User $user, string $password) use (&$done) {
+            abort_if(self::isDemoAccount($user), 403, 'Demokontoens adgangskode kan ikke ændres.');
+            $user->forceFill(['password' => Hash::make($password)])->save();
+            $user->tokens()->delete();
+            Audit::log('member.password_reset', $user);
+            $done = $user;
+        });
+
+        if ($status !== \Illuminate\Support\Facades\Password::PASSWORD_RESET || ! $done) {
+            throw ValidationException::withMessages(['token' => 'Linket er ugyldigt eller udløbet. Bed om et nyt link på login-siden.']);
+        }
+
+        return ['token' => $done->createToken('web')->plainTextToken, 'user' => self::me($done->fresh())];
+    }
+
     public function demoAccounts(Request $r)
     {
         abort_unless(self::demoAllowed($r), 404);

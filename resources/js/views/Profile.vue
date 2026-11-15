@@ -60,6 +60,18 @@
             </div>
             <button class="btn primary block save-btn">Gem</button>
         </form>
+        <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="changePassword">
+            <div class="row between"><h3 style="margin:0">Skift adgangskode</h3><HelpButton topic="adgangskode" /></div>
+            <input type="email" :value="f.email" autocomplete="username" hidden readonly>
+            <label class="field"><span>Nuværende adgangskode</span><input v-model="pw.current_password" type="password" autocomplete="current-password" required></label>
+            <div class="grid c2">
+                <label class="field"><span>Ny adgangskode</span><input v-model="pw.password" type="password" autocomplete="new-password" minlength="8" required></label>
+                <label class="field"><span>Gentag ny adgangskode</span><input v-model="pw.password_confirmation" type="password" autocomplete="new-password" minlength="8" required></label>
+            </div>
+            <p class="small muted" style="margin:0">Mindst 8 tegn. Andre enheder, du er logget ind på, bliver logget ud.</p>
+            <p v-if="pwError" class="banner bad" style="margin:0">{{ pwError }}</p>
+            <button class="btn block" :disabled="pwBusy">Skift adgangskode</button>
+        </form>
 
         <div v-if="cur === 'familie'">
             <div v-if="!shop" class="spinner"></div>
@@ -213,6 +225,7 @@
 
 <script setup>
 import { openHelp } from '../help';
+import HelpButton from '../components/HelpButton.vue';
 import { track } from '../usage';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { isMobile } from '../mobile';
@@ -297,6 +310,19 @@ async function order() {
     catch (e) { toast(e.message, 'error'); track('tilkob', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function logout() { await doLogout(); router.push('/login'); }
+
+const pw = reactive({ current_password: '', password: '', password_confirmation: '' });
+const pwError = ref(''); const pwBusy = ref(false);
+async function changePassword() {
+    pwError.value = '';
+    if (pw.password !== pw.password_confirmation) { pwError.value = 'De to nye adgangskoder er ikke ens.'; track('adgangskode', 'skift_mangler', { felt: 'confirmed' }); return; }
+    pwBusy.value = true;
+    try {
+        toast((await api('profile/password', { method: 'PUT', body: pw })).message);
+        Object.assign(pw, { current_password: '', password: '', password_confirmation: '' });
+        track('adgangskode', 'skift_ok');
+    } catch (e) { pwError.value = e.message; track('adgangskode', 'skift_fejl', { status: e.status }); } finally { pwBusy.value = false; }
+}
 
 async function onTab(t) {
     if (t === 'beskeder' && !cats.value.length) cats.value = (await api('profile/categories')).sort((a, b) => b.mandatory - a.mandatory); // dem, der ikke kan fravælges, først

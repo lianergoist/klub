@@ -17,8 +17,10 @@ Menuen har fire faste punkter: **Aktiviteter** (træninger, kurser og arrangemen
 
 Har du en rolle i klubben, fx træner eller kasserer, får du også adgang til værktøjer som **Trænerportal**, **Udstyr**, **Medlemmer**, **Økonomi** og **Indstillinger**. På mobil ligger de under **Mere**, på computer i menuen til venstre.
 
-## Login og adgangskode {#login side:/login}
-Du logger ind med din e-mail og adgangskode. Har du glemt adgangskoden, så kontakt bestyrelsen. Du kan endnu ikke selv nulstille den.
+## Login og adgangskode {#login side:/login,/glemt-adgangskode,/nulstil-adgangskode}
+Du logger ind med din e-mail og adgangskode.
+
+Har du glemt adgangskoden, trykker du **Glemt adgangskode?** på login-siden og skriver din e-mail. Du får en mail med et link, hvor du vælger en ny adgangskode. Linket virker i 60 minutter og kun én gang. Kommer mailen ikke, så kig i spam-mappen, eller kontakt bestyrelsen.
 
 Er du ikke medlem endnu, trykker du **Meld dig ind** på login-siden.
 
@@ -97,6 +99,9 @@ Vil du ikke have beskeder fra andre medlemmer, slår du **Andre medlemmer må sk
 
 ## Ret mine oplysninger {#profil side:/profil/:tab?}
 Under **Profil → Oplysninger** retter du navn, kontaktoplysninger og nødkontakt.
+
+## Skift adgangskode {#adgangskode side:/profil/:tab?}
+Under **Profil → Oplysninger** kan du skifte adgangskode nederst under **Skift adgangskode**. Skriv din nuværende adgangskode og den nye to gange. Den nye skal være på mindst 8 tegn. Andre telefoner og computere, du er logget ind på, bliver logget ud.
 
 ## Mine data {#mine-data side:/profil/:tab?}
 Under **Profil → Mine data** ser du dine roller i klubben og kan hente alle dine data med **Hent mine data**.

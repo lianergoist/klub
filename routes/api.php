@@ -16,7 +16,9 @@ Route::post('site-access', [\App\Http\Controllers\GateController::class, 'appTok
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 // Brugslog (sideskift, fejl og forløb) – pseudonymt, også uden login
-Route::post('usage', [\App\Http\Controllers\Api\UsageController::class, 'store'])->middleware('throttle:60,1');
+Route::post('usage', [\App\Http\Controllers\Api\UsageController::class, 'store'])->middleware('throttle:usage');
+Route::post('forgot-password', [AuthController::class, 'forgot'])->middleware('throttle:password-forgot');
+Route::post('reset-password', [AuthController::class, 'reset'])->middleware('throttle:password-reset');
 Route::get('demo-accounts', [AuthController::class, 'demoAccounts']);
 Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('throttle:30,1');
 // Offentlige data til hjemmesiden (kalender og priser)
@@ -52,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
+    Route::put('profile/password', [ProfileController::class, 'password'])->middleware('throttle:password-change');
     Route::get('profile/packages', [\App\Http\Controllers\Api\PackageController::class, 'mine']);
     Route::post('profile/purchases', [\App\Http\Controllers\Api\PackageController::class, 'buy']);
     Route::post('profile/purchases/{purchase}/cancel', [\App\Http\Controllers\Api\PackageController::class, 'cancel']);
