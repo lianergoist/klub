@@ -30,12 +30,14 @@ class SimulatedReport
         return $d;
     }
 
-    public static function settlements(): array
+    /** @param string|null $until Kun udbetalinger til og med denne dato (standard: i dag). */
+    public static function settlements(?string $until = null): array
     {
+        $until ??= now()->toDateString();
         $open = Payment::whereNull('payout_id')->whereIn('method', Settlements::METHODS)->orderBy('created_at')->get();
         $out = [];
         foreach ($open->groupBy(fn ($p) => self::payoutDate($p->created_at)->toDateString()) as $date => $items) {
-            if ($date > now()->toDateString()) continue; // ikke udbetalt endnu
+            if ($date > $until) continue; // ikke udbetalt endnu
             $out[] = [
                 'payout_id' => 'MP-PO-'.str_replace('-', '', $date),
                 'date' => $date,

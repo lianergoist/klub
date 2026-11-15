@@ -9,7 +9,8 @@ Artisan::command('inspire', function () {
 
 // Hent MobilePays afregningsrapport hver morgen og afstem udbetalinger (kræver cron: * * * * * php artisan schedule:run)
 \Illuminate\Support\Facades\Schedule::call(fn () => \App\Support\MobilePay\Settlements::fetchAndImport())
-    ->dailyAt('06:30')->name('mobilepay-afregning')->withoutOverlapping();
+    ->dailyAt('06:30')->name('mobilepay-afregning')->withoutOverlapping()
+    ->skip(fn () => config('app.demo')); // demo: udbetalinger hentes kun med knappen, så man kan vise afstemningen
 
 // Påmindelser om anmodninger om at flytte bookinger og aktiviteter, der afventer (se App\Support\Reminders)
 \Illuminate\Support\Facades\Schedule::call(fn () => \App\Support\Reminders::run())

@@ -367,8 +367,9 @@ class DatabaseSeeder extends Seeder
 
         $this->seedMessages(compact('sofie', 'lars', 'mette', 'rasmus') + ['ida' => $trainers[4]]);
 
-        // MobilePay: indlæs afregninger for alle historiske betalinger. Udbetalinger ældre end en uge er afstemt mod banken.
-        \App\Support\MobilePay\Settlements::import(\App\Support\MobilePay\SimulatedReport::settlements(), $henrik->id);
+        // MobilePay: indlæs afregninger til og med for en uge siden. Udbetalingerne fra den seneste uge er endnu ikke hentet,
+        // så "Hent afregningsrapport nu" i demoen kobler dem til deres betalinger. Udbetalinger ældre end en uge er afstemt mod banken.
+        \App\Support\MobilePay\Settlements::import(\App\Support\MobilePay\SimulatedReport::settlements($this->now->copy()->subWeek()->toDateString()), $henrik->id);
         \App\Models\Payout::where('payout_date', '<', $this->now->copy()->subWeek())
             ->update(['bank_matched_at' => $this->now->copy()->subDays(3), 'bank_text' => \Illuminate\Support\Facades\DB::raw("CONCAT('MobilePay ', provider_payout_id)")]);
 
