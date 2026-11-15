@@ -43,7 +43,8 @@ export function initUsage(router, app) {
     });
 
     const jsError = (msg) => push('js_error', currentPath(), null, { message: String(msg).slice(0, 200) });
-    app.config.errorHandler = (err, vm, info) => { jsError(`${err?.message || err} (${info})`); console.error(err); };
+    // API-fejl (ApiError) logges allerede på serveren og er ikke fejl i appen, fx "Log ind igen" lige efter log ud
+    app.config.errorHandler = (err, vm, info) => { if (!(err instanceof ApiError)) jsError(`${err?.message || err} (${info})`); console.error(err); };
     window.addEventListener('error', (e) => jsError(e.message));
     window.addEventListener('unhandledrejection', (e) => {
         if (e.reason instanceof ApiError) return; // allerede logget på serveren
