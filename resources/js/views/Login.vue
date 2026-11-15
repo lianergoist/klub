@@ -14,7 +14,7 @@
                 <RouterLink :to="{ path: '/glemt-adgangskode', query: email ? { email } : {} }" class="small forgot">Glemt adgangskode?</RouterLink>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
-                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink to="/bliv-medlem">Meld dig ind</RouterLink></p>
+                <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink :to="{ path: '/bliv-medlem', query: til ? { til } : {} }">Meld dig ind</RouterLink></p>
                 <!-- Tilbud og klippekort til ikke-medlemmer: tekst sættes under Indstillinger → Medlemskaber og tilkøb, vises kun når der er noget at købe -->
                 <p v-for="l in links" :key="l.to" class="small offer-link">
                     <a v-if="l.web && IS_APP" href="#" @click.prevent="openWeb(l.to)">{{ l.text }}</a>
@@ -38,12 +38,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { api, setSession, store, IS_APP } from '../api';
+import { api, setSession, store, IS_APP, returnTarget } from '../api';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 
 const router = useRouter(); const route = useRoute();
-// ?til=/aktiviteter/42: hvor man skal hen efter login (kun stier i systemet)
-const target = typeof route.query.til === 'string' && /^\/(?!\/)/.test(route.query.til) ? route.query.til : '/aktiviteter';
+// ?til=/aktiviteter/42: hvor man skal hen efter login – og efter indmeldelse via "Meld dig ind"
+const til = returnTarget(route.query);
+const target = til || '/aktiviteter';
 const activityTarget = /^\/aktiviteter\/\d+/.test(target);
 const email = ref(''); const password = ref(''); const error = ref(''); const busy = ref(false);
 const demo = ref([]); const links = ref([]);

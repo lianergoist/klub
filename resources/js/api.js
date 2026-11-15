@@ -98,6 +98,12 @@ export async function download(path, filename) {
 }
 
 let t;
+// ?til=/aktiviteter/42 (fx fra hjemmesidens kalender): hvor man skal hen efter login/indmeldelse. Kun stier i systemet.
+export function returnTarget(query) {
+    const t = query?.til;
+    return typeof t === 'string' && /^\/(?!\/)/.test(t) ? t : null;
+}
+
 export function toast(text, kind = 'ok') {
     store.toast = { text, kind };
     clearTimeout(t); t = setTimeout(() => (store.toast = null), 3500);

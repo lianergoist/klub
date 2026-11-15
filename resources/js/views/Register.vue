@@ -1,6 +1,6 @@
 <template>
     <div style="max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top, 0px) + 24px) 16px 40px">
-        <RouterLink to="/login" class="small">‹ Tilbage</RouterLink>
+        <RouterLink :to="{ path: '/login', query: til ? { til } : {} }" class="small">‹ Tilbage</RouterLink>
         <h1 style="margin-top:8px">Meld dig ind</h1>
         <p class="muted">Udfyld dine oplysninger, vælg medlemskab og betal, så er du medlem med det samme.</p>
         <div v-if="guest?.credit" class="banner ok">Du har betalt <strong>{{ guest.credit_fmt }}</strong> for {{ guest.bookings.length ? 'prøvetræning/kursus' : 'et tilbud' }} som gæst. Beløbet trækkes fra kontingentet.</div>
@@ -63,12 +63,14 @@
 </template>
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import PackageList from '../components/PackageList.vue';
-import { api, setSession, kr, dato, store, toast } from '../api';
+import { api, setSession, kr, dato, store, toast, returnTarget } from '../api';
 import { compositionError, priceFor } from '../packages';
 import { track } from '../usage';
 const router = useRouter();
+// Kom man fra en aktivitet (hjemmesidens kalender → log ind → meld dig ind), sendes man tilbage dertil bagefter
+const til = returnTarget(useRoute().query);
 const f = reactive({ name: '', email: '', password: '', phone: '', birthdate: '', address: '', postal_code: '', city: '', package_id: null, consent: false });
 const error = ref(''); const busy = ref(false); const offer = ref(null); const others = ref([]);
 const guest = ref(null);
@@ -103,8 +105,8 @@ async function submit() {
     try {
         const r = await api('register', { method: 'POST', body: { ...f, new_members: others.value } }); setSession(r.token, r.user);
         track('indmeldelse', 'ok', { betaling: !r.paid, personer: 1 + others.value.length });
-        if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push('/aktiviteter'); }
-        else router.push(`/betal/${r.invoice_id}`);
+        if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push(til || '/aktiviteter'); }
+        else router.push({ path: `/betal/${r.invoice_id}`, query: til ? { til } : {} });
     }
     catch (e) { error.value = e.message; track('indmeldelse', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }

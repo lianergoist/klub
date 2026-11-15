@@ -8,7 +8,7 @@
                 <p class="muted">{{ kr(total) }} er betalt. Du har fået en kvittering i din indbakke<span v-if="store.user.email"> og på mail</span>.</p>
                 <p v-if="store.user.status !== 'guest'" class="small muted">Regningen er automatisk markeret som betalt og bogført i klubbens regnskab.</p>
                 <p v-if="isSignup" class="small">Du er nu aktivt medlem og kan tilmelde dig aktiviteter med det samme.</p>
-                <RouterLink :to="store.user.status === 'guest' ? '/prov/tak' : activityId ? `/aktiviteter/${activityId}` : isSignup ? '/aktiviteter' : isUpgrade ? '/profil/familie' : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
+                <RouterLink :to="store.user.status === 'guest' ? '/prov/tak' : activityId ? `/aktiviteter/${activityId}` : isSignup ? (til || '/aktiviteter') : isUpgrade ? '/profil/familie' : '/profil/regninger'" class="btn primary block">Fortsæt</RouterLink>
             </div>
         </template>
         <template v-else>
@@ -34,9 +34,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
-import { api, store, kr, toast, refreshMe } from '../api';
+import { api, store, kr, toast, refreshMe, returnTarget } from '../api';
+import { useRoute } from 'vue-router';
 import { track } from '../usage';
 const props = defineProps({ id: String });
+const til = returnTarget(useRoute().query); // fx tilbage til aktiviteten efter indmeldelse
 const invs = ref(null); const busy = ref(false); const done = ref(false); const activityId = ref(null);
 const isSignup = computed(() => invs.value?.some(i => i.kind === 'membership' && i.member_id_pending));
 const isUpgrade = computed(() => invs.value?.some(i => i.is_upgrade));
