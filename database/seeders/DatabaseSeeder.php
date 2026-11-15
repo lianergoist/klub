@@ -415,7 +415,8 @@ class DatabaseSeeder extends Seeder
 
         // Medlemskaber og tilkøb
         $pkg = fn ($name) => \App\Models\Package::where('name', $name);
-        \App\Models\Package::where(fn ($q) => $q->where('name', 'like', 'Udstyrsleje%')->orWhere('name', 'like', 'Dagsleje%'))->update(['equipment_booking' => true]);
+        // Udstyrsleje/dagsleje giver ikke ret til at booke udstyr, så længe medlemmer ikke må booke (se Rettigheder nedenfor)
+        \App\Models\Package::query()->update(['equipment_booking' => false]);
         \App\Models\Package::whereIn('name', ['Husstand med 2 personer – hel sæson', 'Husstand med 2 personer – halv sæson', 'Familie: 2 voksne og 1–3 børn',
             'Opbevaring: skab i container', 'Udstyrsleje i sæsonen, 2 personer', 'Adgang til motionsrum, 30 dage'])->update(['archived_at' => $this->now]);
         foreach ([3, 4, 5] as $n) $pkg("Udstyrsleje i sæsonen, $n personer")->update(['name' => "Udstyrsleje i sæsonen, familie - $n personer"]);
@@ -425,6 +426,7 @@ class DatabaseSeeder extends Seeder
 
         // Rettigheder
         \App\Support\Permissions::setRoles('prices.edit', ['board', 'treasurer']);
+        \App\Support\Permissions::setRoles('members.edit', ['admin']);
         \App\Support\Permissions::setMembersRule('equipment.book', 'none');
     }
 
