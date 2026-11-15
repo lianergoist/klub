@@ -1,7 +1,7 @@
 <template>
     <div>
         <div class="topbar">
-            <h1>Trænerportal</h1>
+            <h1>Trænerportal<HelpButton topic="traenerportal" /></h1>
             <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
         </div>
         <div class="tabs">
@@ -100,6 +100,7 @@
 </template>
 
 <script setup>
+import HelpButton from '../components/HelpButton.vue';
 import { ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import CatTags from '../components/CatTags.vue';

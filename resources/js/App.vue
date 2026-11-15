@@ -16,6 +16,7 @@
                     <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
                     <RouterLink v-if="can.settings" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
                 </template>
+                <button class="navbtn" @click="openHelp()"><Icon name="help" /> Hjælp og spørgsmål</button>
             </nav>
             <div class="who">
                 <div><strong>{{ store.user.name }}</strong></div>
@@ -37,6 +38,7 @@
         </nav>
     </div>
     <RouterView v-else />
+    <HelpPanel v-if="help.open" />
     <div v-if="store.toast" :class="['toast', store.toast.kind]" role="status">{{ store.toast.text }}</div>
 </template>
 
@@ -46,6 +48,8 @@ import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
 import AppVersion from './components/AppVersion.vue';
+import HelpPanel from './components/HelpPanel.vue';
+import { help, openHelp } from './help';
 import { store, api, roleLabel, logout as doLogout } from './api';
 
 const route = useRoute();

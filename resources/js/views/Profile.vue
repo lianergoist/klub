@@ -30,6 +30,11 @@
                     </RouterLink></li>
                 </ul>
             </div>
+            <div class="card menu"><ul class="list"><li><button type="button" class="mrow" @click="openHelp()">
+                <Icon name="help" class="mi" />
+                <span class="mtext"><strong>Hjælp og spørgsmål</strong><span class="small muted">Sådan bruger du systemet</span></span>
+                <span class="chev" aria-hidden="true">›</span>
+            </button></li></ul></div>
             <div class="card"><ThemeSwitch /></div>
             <button class="btn danger block" @click="logout">Log ud</button>
             <p class="small muted" style="margin:12px 4px 0">Logget ind som {{ store.user.name }} ({{ store.user.roles.map(r => roleLabel[r]).join(', ') }})</p>
@@ -207,6 +212,7 @@
 </template>
 
 <script setup>
+import { openHelp } from '../help';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { isMobile } from '../mobile';
 import { useRouter } from 'vue-router';
@@ -310,6 +316,7 @@ onMounted(async () => { await load(); onTab(cur.value); });
 .menu { padding: 2px 16px; }
 .menu .list > li { padding: 0; }
 .mrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--ink); min-height: 56px; }
+button.mrow { width: 100%; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; }
 .mi { width: 22px; height: 22px; color: var(--accent); flex-shrink: 0; }
 .mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .mtext .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

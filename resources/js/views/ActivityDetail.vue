@@ -3,7 +3,7 @@
     <div v-else>
         <a href="#" class="small" @click.prevent="$router.back()">‹ Tilbage</a>
         <div class="row between" style="margin:8px 0 6px;align-items:flex-start">
-            <h1 :style="a.cancelled ? 'text-decoration:line-through' : ''">{{ a.title }}</h1>
+            <h1 :style="a.cancelled ? 'text-decoration:line-through' : ''">{{ a.title }}<HelpButton topic="tilmelding" /></h1>
             <div v-if="a.can_edit && !a.cancelled" class="row noprint">
                 <RouterLink :to="`/aktiviteter/${a.id}/rediger`" class="btn small">Rediger</RouterLink>
                 <button v-if="!a.is_past" class="btn small danger" @click="showCancel = true">Aflys</button>
@@ -214,6 +214,7 @@
 </template>
 
 <script setup>
+import HelpButton from '../components/HelpButton.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';

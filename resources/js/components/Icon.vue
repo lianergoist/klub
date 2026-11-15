@@ -36,6 +36,7 @@ const paths = {
     receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
     file: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
     download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
     logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
 };
 </script>

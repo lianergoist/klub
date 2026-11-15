@@ -370,3 +370,10 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 
 /* Appen tegner siden bag telefonens statuslinje (Android 15+ / iOS). Dæk området, så indholdet ikke ruller ind under klokkeslæt og ikoner. */
 html.native body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 40; pointer-events: none; }
+
+/* Hjælp: lille "?" ved overskrifter (HelpButton) */
+.help-btn { appearance: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--accent); background: transparent; color: var(--accent); font: inherit; font-size: .8rem; font-weight: 700; line-height: 1; cursor: pointer; vertical-align: middle; margin-left: 8px; padding: 0; flex-shrink: 0; }
+.help-btn:hover { background: var(--accent-soft); }
+.sidebar nav button.navbtn { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #cfe5e8; background: none; border: 0; font: inherit; width: 100%; cursor: pointer; text-align: left; }
+.sidebar nav button.navbtn:hover { background: rgba(255,255,255,.07); }
+html[data-tema=marie] .sidebar nav button.navbtn { color: var(--ink-2); border-radius: 6px; }

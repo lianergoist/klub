@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="topbar"><h1>Udstyr</h1></div>
+        <div class="topbar"><h1>Udstyr<HelpButton topic="udstyr-booking" /></h1></div>
         <div v-if="d?.unpaid_rental?.length" class="banner warn row between" style="margin-bottom:12px">
             <span>Din udstyrsleje er ikke betalt endnu. Når regningen er betalt, kan du booke udstyr.</span>
             <RouterLink :to="`/betal/${d.unpaid_rental.join(',')}`" class="btn small primary">Betal nu</RouterLink>
@@ -207,6 +207,7 @@
 </template>
 
 <script setup>
+import HelpButton from '../components/HelpButton.vue';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from '../components/Modal.vue';
