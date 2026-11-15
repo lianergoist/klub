@@ -165,6 +165,8 @@ class PackageController extends Controller
 
         return [
             'can_edit' => $r->user()->may('packages.manage'),
+            // Må almindelige medlemmer booke udstyr? Ellers giver "ret til at booke udstyr" på et tilkøb ingen mening
+            'members_can_book' => \App\Support\Permissions::membersRule('equipment.book') !== 'none',
             'can_price' => $r->user()->may('prices.edit'),
             'today' => $today,
             'categories' => PersonCategory::orderBy('min_age')->get()->map(fn ($c) => $c->only('id', 'name', 'plural', 'min_age', 'max_age') + ['archived' => (bool) $c->archived_at]),
