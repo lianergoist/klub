@@ -525,6 +525,8 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foreningen er omfattet af databeskyttelsesreglerne (GDPR). Det bør bestyrelsen have med fra start, ikke bygge på bagefter.
 
 - **Kerne:** login med e-mail og adgangskode, med mulighed for at nulstille selv. For kasserer og bestyrelse anbefales to-trins-login.
+- **Kerne:** **Glemt adgangskode?** på login-siden sender et link på mail, hvor man vælger en ny adgangskode (mindst 8 tegn). Linket virker i 60 minutter og kun én gang. Svaret er det samme, uanset om e-mailen findes, så siden ikke afslører, hvem der er medlem. Under **Profil → Oplysninger** kan man skifte adgangskode med den nuværende. I begge tilfælde logges andre enheder ud, og ændringen skrives i ændringsloggen (uden selve adgangskoden). Demokontoernes adgangskode kan ikke ændres.
+- **Afklares:** hvilken mailudbyder skal klubsystemet sende mails gennem (fx Simply, Brevo, Mailgun eller klubbens eget domæne), og fra hvilken afsenderadresse? I proof of concept sendes mails ikke ud, men skrives kun i serverens log, så "Glemt adgangskode" og beskeder på mail virker først, når det er sat op. Udbyderen skal med i databehandleraftalen.
 
 - **Kerne:** rettigheder efter rolle (se rolleafsnittet). Medlemmer ser kun egne oplysninger og andres navne på deltagerlister.
 
