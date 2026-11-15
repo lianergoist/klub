@@ -1,7 +1,7 @@
 <template>
     <div class="guest">
         <div class="row between" style="margin-bottom:12px">
-            <h1 style="margin:0">Hej {{ d ? d.name.split(' ')[0] : '' }}</h1>
+            <h1 style="margin:0">ALÅHA {{ d ? d.name.split(' ')[0] : '' }}</h1>
             <button class="btn small" @click="logout">Log ud</button>
         </div>
         <div v-if="!d" class="spinner"></div>
