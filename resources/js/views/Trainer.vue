@@ -153,8 +153,10 @@ function shortName(t) {
 function fitHeight() {
     if (!scroller.value) return;
     const top = scroller.value.getBoundingClientRect().top + window.scrollY;
-    const bottomBar = window.matchMedia('(max-width: 899.98px)').matches ? 84 : 24;
-    calHeight.value = Math.max(260, window.innerHeight - top - bottomBar) + 'px';
+    // Mål bundmenuens faktiske kant (dens højde varierer med telefonens navigationslinje / safe area)
+    const bar = document.querySelector('.tabbar');
+    const barTop = bar && bar.getClientRects().length ? bar.getBoundingClientRect().top : window.innerHeight;
+    calHeight.value = Math.max(260, barTop - top - 12) + 'px';
 }
 function toToday() {
     const el = scroller.value; if (!el) return;
