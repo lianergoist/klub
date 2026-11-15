@@ -65,26 +65,13 @@
     }
 
     // ---------- Kalender ----------
+    // "Tilmeld" fører til klub-systemet (direkte til tilmelding/booking for aktiviteten, hvis den er åben)
     function signupButton(a) {
-        if (!a.signup_url) return a.full ? '<span class="klub-status">Holdet er fuldt</span>' : '';
-        var text = a.signup === 'guest' ? 'Book plads' : a.signup === 'punchcard' ? 'Tilmeld med klippekort' : 'Log ind og tilmeld dig';
-        return '<a href="' + esc(link(a.signup_url)) + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">' + esc(text) + ' &#8594;</a>';
+        if (a.full) return '<span class="klub-status">Holdet er fuldt</span>';
+        return '<a href="' + esc(link(a.signup_url || '/')) + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">Tilmeld &#8594;</a>';
     }
     var eventHash = function (a) { return '#aktivitet-' + a.id; };
     function imageFor(a, images) { return images.length ? images[a.id % images.length] : null; }
-    // Uddrag til listen (som Squarespaces "excerpt"): første afsnit, højst ca. 220 tegn
-    function excerpt(text) {
-        var t = String(text).split(/\n\s*\n/)[0].replace(/\s+/g, ' ').trim();
-        if (t.length > 220) t = t.slice(0, 220).replace(/\s+\S*$/, '') + ' …';
-        return t;
-    }
-    function statusText(a) {
-        var status = [];
-        if (a.price_fmt) status.push(kr(a.price) + (a.members_only ? ' · kun for medlemmer' : ''));
-        else if (a.members_only) status.push('For medlemmer');
-        if (a.free !== null && a.free !== undefined && !a.full && a.free <= 5) status.push(a.free === 1 ? '1 ledig plads' : a.free + ' ledige pladser');
-        return status.length ? '<span class="klub-status">' + esc(status.join(' · ')) + '</span>' : '';
-    }
     function tagsHtml(a) {
         return a.categories && a.categories.length ? '<div class="klub-tags">' + a.categories.map(function (c) { return '<span class="klub-tag">' + esc(c) + '</span>'; }).join('') + '</div>' : '';
     }
@@ -109,8 +96,6 @@
             (a.location ? '<li class="eventlist-meta-item eventlist-meta-address event-meta-item">' + esc(a.location) + '</li>' : '') +
             '</ul>' +
             tagsHtml(a) +
-            (a.description ? '<div class="eventlist-description"><p>' + esc(excerpt(a.description)) + '</p></div>' : '') +
-            statusText(a) +
             '<a href="' + href + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">Se begivenhed &#8594;</a>' +
             '</div><div class="clear"></div></article>';
     }
@@ -120,7 +105,7 @@
         return 'https://www.google.com/calendar/event?action=TEMPLATE&text=' + encodeURIComponent(a.title) +
             '&dates=' + z(a.starts_at) + '/' + z(a.ends_at) +
             (a.location ? '&location=' + encodeURIComponent(a.location) : '') +
-            (a.description ? '&details=' + encodeURIComponent(excerpt(a.description)) : '');
+            (a.description ? '&details=' + encodeURIComponent(a.description.slice(0, 1000)) : '');
     }
     function detailHtml(a, images) {
         var s = new Date(a.starts_at), e = new Date(a.ends_at), multi = !sameDay(s, e);
@@ -144,7 +129,6 @@
             (img ? '<img class="klub-event-img" src="' + esc(img) + '" alt="">' : '') +
             tagsHtml(a) +
             (a.description ? '<p>' + esc(a.description) + '</p>' : '') +
-            statusText(a) +
             '<div class="klub-event-actions">' + signupButton(a) + '</div>' +
             '</div><div class="clear"></div></article></div>';
     }
