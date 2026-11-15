@@ -148,13 +148,13 @@
                                 <tr v-for="s in ed.slotRows" :key="s.person_category_id">
                                     <td>{{ s.label }}</td>
                                     <td><input type="checkbox" v-model="s.on"></td>
-                                    <td><input v-model.number="s.min" type="number" min="0" max="50" :disabled="!s.on" @input="fixMax(s, 'min', 'max')"></td>
-                                    <td><input v-model.number="s.max" type="number" :min="s.min || 0" max="50" :disabled="!s.on" placeholder="Ingen grænse" @change="fixMin(s, 'min', 'max')"></td>
+                                    <td><input v-model.number="s.min" type="number" min="0" :max="catCap(ed, s, 'min')" :disabled="!s.on" @input="fixMax(s, 'min', 'max')" @change="limitCat(ed, s)"></td>
+                                    <td><input v-model.number="s.max" type="number" :min="s.min || 0" :max="catCap(ed, s, 'max')" :disabled="!s.on" placeholder="Ingen grænse" @change="fixMin(s, 'min', 'max'); limitCat(ed, s)"></td>
                                 </tr>
                                 <tr class="total">
                                     <td>I alt <span class="small muted">(valgfrit)</span></td><td></td>
-                                    <td><input v-model.number="ed.total_min" type="number" min="1" max="50" :placeholder="String(famMin(ed))" @input="fixMax(ed, 'total_min', 'total_max')"></td>
-                                    <td><input v-model.number="ed.total_max" type="number" :min="ed.total_min || 1" max="50" placeholder="Ingen grænse" @change="fixMin(ed, 'total_min', 'total_max')"></td>
+                                    <td><input :value="effMin(ed)" type="number" :min="famMin(ed)" :max="effMax(ed) ?? NO_LIMIT" @change="setTotal(ed, 'min', $event)"></td>
+                                    <td><input :value="effMax(ed) ?? ''" type="number" :min="effMin(ed)" :max="sumOf(ed, 'max') ?? NO_LIMIT" placeholder="Ingen grænse" @change="setTotal(ed, 'max', $event)"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -177,7 +177,7 @@
                         <label class="check"><input type="checkbox" v-model="ed.guest_only" @change="ed.guest_only && (ed.requires_membership = false)"> Kun for ikke-medlemmer <span class="small muted">(købes på siden /klippekort)</span></label>
                         <label v-if="!ed.guest_only" class="check"><input type="checkbox" v-model="ed.requires_membership"> Kræver gyldigt medlemskab</label>
                     </template>
-                    <label class="check"><input type="checkbox" v-model="ed.self_service"> Kan købes af medlemmerne selv <span class="small muted">(slå fra for {{ ed.kind === 'membership' ? 'medlemskaber, som kun bestyrelsen tildeler, fx æresmedlem eller trænerkontingent' : 'tilkøb, som kun bestyrelsen tildeler' }})</span></label>
+                    <label class="check"><input type="checkbox" v-model="ed.self_service"> Kan købes af medlemmerne selv</label>
                     <label v-if="ed.kind === 'membership' && ed.period_type === 'dates'" class="field"><span>Ved ny sæson fornyes den som</span>
                         <select v-model="ed.renews_to_id"><option :value="null">Samme medlemskab</option><option v-for="x in d.packages.filter(x => x.kind === 'membership' && x.id !== ed.id && !x.archived && x.period_type === 'dates')" :key="x.id" :value="x.id">{{ x.name }}</option></select>
                     </label>
@@ -261,17 +261,54 @@ function blank(over = {}) {
 const NO_LIMIT = 50; // højeste antal, API'et tillader
 const blankNum = (v) => v === '' || v === null || v === undefined;
 /** Mindste antal i en familie: summen af kategoriernes "mindst", dog mindst 2. */
-const famMin = (e) => Math.max(2, e.slotRows.filter(s => s.on).reduce((a, s) => a + (s.min || 0), 0));
+const famMin = (e) => Math.max(2, sumOf(e, 'min'));
+/** Summen af kategoriernes mindst/højst. Højst: null, hvis en kategori er uden grænse. */
+function sumOf(e, k) {
+    const on = e.slotRows.filter(s => s.on);
+    if (k === 'max' && on.some(s => blankNum(s.max))) return null;
+    return on.reduce((a, s) => a + (s[k] || 0), 0);
+}
+/** I alt, mindst: det indtastede, men aldrig under summen af kategoriernes mindst (og aldrig over det mulige højst). */
+function effMin(e) {
+    const m = Math.max(blankNum(e.total_min) ? 0 : e.total_min, famMin(e));
+    const cap = effMax(e, false);
+    return cap === null ? m : Math.min(m, cap);
+}
+/** I alt, højst: null = ingen grænse. Har alle kategorier et højst, kan i alt ikke være mere end summen. */
+function effMax(e, floor = true) {
+    const sum = sumOf(e, 'max'); const own = blankNum(e.total_max) ? null : e.total_max;
+    const m = own === null ? sum : sum === null ? own : Math.min(own, sum);
+    return m === null || !floor ? m : Math.max(m, famMin(e));
+}
+function setTotal(e, k, ev) {
+    const v = ev.target.value === '' ? '' : Math.max(1, Math.min(NO_LIMIT, parseInt(ev.target.value, 10) || 1));
+    if (k === 'min') {
+        e.total_min = v;
+        if (v !== '' && !blankNum(e.total_max) && e.total_max < v) e.total_max = v;
+    } else {
+        e.total_max = v === '' ? '' : Math.max(v, effMin(e));
+        if (e.total_max !== '') e.slotRows.forEach(s => limitCat(e, s));
+    }
+    ev.target.value = k === 'min' ? effMin(e) : (effMax(e) ?? ''); // vis det tal, der faktisk gælder
+}
+/** Hvor højt en kategoris felt kan sættes, når i alt har et højst: mindst-felterne må tilsammen ikke overstige det. */
+function catCap(e, s, k) {
+    const t = blankNum(e.total_max) ? null : e.total_max;
+    if (t === null) return NO_LIMIT;
+    return k === 'max' ? t : t - (sumOf(e, 'min') - (s.min || 0));
+}
+function limitCat(e, s) {
+    if (!blankNum(s.min) && s.min > catCap(e, s, 'min')) s.min = Math.max(0, catCap(e, s, 'min'));
+    if (!blankNum(s.max) && s.max > catCap(e, s, 'max')) s.max = catCap(e, s, 'max');
+    if (!blankNum(s.max) && s.max < (s.min || 0)) s.max = s.min;
+}
 /** Det, der gemmes: én person → valgte kategorier 0–1; familie → kategoriernes mindst/højst (tom = ingen grænse) + evt. i alt. */
 function who(e) {
     const on = e.slotRows.filter(s => s.on);
     if (e.mode === 'single') return { total_min: 1, total_max: 1, slots: on.map(s => ({ person_category_id: s.person_category_id, min: 0, max: 1 })) };
-    const total_min = Math.max(blankNum(e.total_min) ? 0 : e.total_min, famMin(e));
-    let total_max = blankNum(e.total_max) ? null : e.total_max;
+    const total_min = effMin(e); const total_max = effMax(e);
     // Tom "højst" på en kategori = op til det samlede loft (eller ingen grænse)
     const slots = on.map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: blankNum(s.max) ? (total_max ?? NO_LIMIT) : s.max }));
-    const sumMax = slots.reduce((a, s) => a + s.max, 0);
-    if (sumMax < NO_LIMIT && (total_max === null || sumMax < total_max)) total_max = sumMax; // alle kategorier har et loft
     return { total_min, total_max, slots };
 }
 // Højst er aldrig mindre end mindst: øges mindst, følger højst med (tomt højst = ingen grænse røres ikke).
@@ -306,7 +343,7 @@ const preview = computed(() => {
     const cap = Math.min(w.total_max ?? NO_LIMIT, NO_LIMIT); // kategoriens højst = det samlede loft → ingen ekstra grænse
     const r = (s) => s.max >= cap ? (s.min ? `mindst ${s.min} ` : '') : s.min === s.max ? `${s.min} ` : `${s.min}–${s.max} `;
     const cats = w.slots.filter(s => s.max > 0).sort((a, b) => cat(b.person_category_id).min_age - cat(a.person_category_id).min_age)
-        .map(s => { const c = cat(s.person_category_id); return `${r(s)}${(s.max === 1 && s.min === 1 ? c.name : c.plural).toLowerCase()}`; });
+        .map(s => { const c = cat(s.person_category_id); return `${r(s)}${((s.max === 1 && s.min === 1) || (s.max >= cap && s.min === 1) ? c.name : c.plural).toLowerCase()}`; });
     return `${totalText(w)} – ${cats.join(' og ')}`;
 });
 
