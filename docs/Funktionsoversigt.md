@@ -460,7 +460,7 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 
 - **Kerne:** **udlæg**: alle medlemmer kan under Min profil → fanen "Kvitteringer" sende et billede eller en PDF af en kvittering til kassereren med en beskrivelse og beløbet. Medlemmet vælger, om pengene skal udbetales via MobilePay (telefonnummeret fra profilen foreslås, men kan rettes) eller til en bankkonto (reg. nr. og kontonummer). Store billeder skaleres ned før upload, så teksten stadig kan læses. Medlemmet kan følge status (afventer, udbetalt, afvist).
 
-  - Økonomi findes kun på web. Trykker man i appen på en besked med link til Økonomi (fx et nyt udlæg), åbnes siden i browseren.
+  - Økonomi findes både på web og i appen (siden 13. nov. 2026). I appen åbnes årsregnskabet i browseren, når det skal udskrives eller gemmes som PDF.
 
   - Kassereren ser udlæggene under Økonomi → Udlæg, overfører pengene manuelt (MobilePay/netbank) og bogfører derefter udlægget på en udgiftskonto. Kvitteringen bliver bilag på posteringen. Kassereren kan også afvise med en begrundelse. Medlemmet får besked i begge tilfælde, og kassereren får besked, når der kommer et nyt udlæg.
 

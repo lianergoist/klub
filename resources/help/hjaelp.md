@@ -149,7 +149,7 @@ Trænere og bestyrelse kan rette udstyrets stand med **Ret stand**: **OK**, **Sk
 Under **Medlemmer** kan du søge og filtrere i kartoteket, fx alle aktive voksne eller alle med ubetalt kontingent. På medlemmets side ser du oplysninger, husstand, medlemskab og historik. Administrator kan her tildele roller og personlige rettigheder.
 
 ## Økonomi {#okonomi kræver:finance_read side:/okonomi,/okonomi/overblik,/okonomi/posteringer,/okonomi/betalinger,/okonomi/udlaeg,/okonomi/budget,/okonomi/bank}
-Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer, betalinger, udlæg, budget, bankafstemning og årsregnskab. Betalinger fra MobilePay bogføres automatisk. Rettelser sker med en ny postering, aldrig ved at slette. Økonomi findes kun på web, ikke i appen.
+Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer, betalinger, udlæg, budget, bankafstemning og årsregnskab. Betalinger fra MobilePay bogføres automatisk. Rettelser sker med en ny postering, aldrig ved at slette. Økonomi findes både på web og i appen. I appen åbnes årsregnskabet i browseren, når det skal udskrives eller gemmes som PDF.
 
 ## Indstillinger {#indstillinger kræver:settings side:/indstillinger,/indstillinger/rettigheder,/indstillinger/aendringslog}
 Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlemskaber, tilkøb og tilbud til ikke-medlemmer og retter priser med virkning fra en valgt dato. Under **Rettigheder** vælger administrator, hvilke roller der må hvad. **Ændringslog** viser, hvem der har gjort hvad og hvornår.
