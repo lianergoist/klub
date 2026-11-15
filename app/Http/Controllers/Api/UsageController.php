@@ -26,7 +26,7 @@ class UsageController extends Controller
             $meta = isset($e['meta']) ? array_slice($e['meta'], 0, 10) : null;
             $json = $meta ? json_encode($meta) : null;
             // Klientens tidspunkt bruges, hvis det er plausibelt (bundter sendes med forsinkelse)
-            $at = isset($e['at']) ? \Illuminate\Support\Carbon::createFromTimestampMs($e['at']) : $now;
+            $at = isset($e['at']) ? \Illuminate\Support\Carbon::createFromTimestampMs($e['at'])->setTimezone(config('app.timezone')) : $now;
             if ($at->gt($now) || $at->lt($now->copy()->subHour())) $at = $now;
 
             Usage::log($ctx + [
