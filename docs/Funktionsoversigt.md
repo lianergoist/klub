@@ -570,7 +570,8 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 - **Afklares:** skal brugsloggen nævnes i privatlivspolitikken (anbefales), og skal medlemmer kunne fravælge den?
 - **Afklares:** er 90 dage passende opbevaringstid?
 - **Afklares:** må den sammenfattede (pseudonyme) log sendes til en AI-tjeneste uden for EU, fx Anthropic eller Google?
-- **Afklares:** skal der være en "Noget driller?"-knap og en søg/spørg-funktion, hvor en AI svarer ud fra en hjælpetekst om systemet? Hvem skriver og vedligeholder hjælpeteksten, og må medlemmernes spørgsmål sendes til en AI-tjeneste?
+- **Kerne (afprøves):** **Hjælp** findes i menuen (computer), under Profil (mobil) og som **?** ved overskrifterne. Hjælpen viser hjælpeteksten (`resources/help/hjaelp.md`) til den side, man står på, og kan søges i. I feltet **Spørg** svarer en AI (Claude Opus 5.5 fra Anthropic) ud fra hjælpeteksten og brugerens rettigheder, med links til de relevante afsnit. Navn, e-mail og andre medlemsdata sendes ikke med, kun spørgsmålet. Spørgsmålets tekst gemmes ikke. Brugsloggen registrerer kun, om der kunne svares, hvilke emner svaret byggede på, og hvilken side spørgsmålet blev stillet fra. Hver bruger kan stille 20 spørgsmål pr. døgn. Funktionen er slået fra, indtil der er lagt en API-nøgle på serveren (`ANTHROPIC_API_KEY`). Prisen er cirka 8 øre pr. spørgsmål med Opus eller under 1 øre med Claude Haiku (`CLAUDE_HELP_MODEL`), og den betales med forudbetalt kredit på platform.claude.com.
+- **Afklares:** må medlemmernes spørgsmål sendes til en AI-tjeneste uden for EU (Anthropic, USA), og skal det nævnes i privatlivspolitikken? Må selve spørgsmålene gemmes, så bestyrelsen kan se, hvad medlemmerne har svært ved? Hvem skriver og vedligeholder hjælpeteksten? Skal den endelige løsning bruge Opus eller den billigere Haiku?
 
 
 ## Offentlig hjemmeside

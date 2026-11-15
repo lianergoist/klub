@@ -3,14 +3,22 @@
         <form class="ask" @submit.prevent="ask">
             <label class="field"><span>Spørg om noget i systemet</span>
                 <div class="askrow">
-                    <input v-model="question" placeholder="Fx: Hvordan tilmelder jeg mit barn?" maxlength="300" enterkeyhint="send">
-                    <button class="btn primary" :disabled="!question.trim()">Spørg</button>
+                    <input v-model="question" placeholder="Fx: Hvordan tilmelder jeg mit barn?" maxlength="300" enterkeyhint="send" :disabled="asking">
+                    <button class="btn primary" :disabled="!question.trim() || asking">{{ asking ? 'Tænker …' : 'Spørg' }}</button>
                 </div>
             </label>
+            <p class="small muted" style="margin:4px 0 0">Svaret laves af AI (Claude) ud fra hjælpeteksten og kan tage fejl. Dit navn sendes ikke med, så skriv ikke personoplysninger i spørgsmålet.</p>
         </form>
-        <div v-if="asked" class="banner info answer" role="status">
-            <strong>Her kommer et AI-svar</strong>
-            <p class="small" style="margin:4px 0 0">Funktionen er under udvikling. Snart svarer en AI på dit spørgsmål ud fra hjælpeteksten nedenfor. Indtil da kan du kigge i emnerne eller spørge bestyrelsen.</p>
+        <div v-if="asking" class="answer muted small" role="status"><span class="spinner-inline"></span> Claude læser hjælpeteksten …</div>
+        <div v-else-if="reply" :class="['banner', reply.error ? 'warn' : 'info', 'answer']" role="status" aria-live="polite">
+            <div v-if="reply.error">{{ reply.error }}</div>
+            <template v-else>
+                <div class="help-text ai" v-html="answerHtml(reply.answer)"></div>
+                <div v-if="replyTopics.length" class="small" style="margin-top:6px">Læs mere:
+                    <template v-for="(t, i) in replyTopics" :key="t.id"><a href="#" @click.prevent="openTopic(t.id)">{{ t.title }}</a><span v-if="i < replyTopics.length - 1"> · </span></template>
+                </div>
+                <div v-if="!reply.answered" class="small" style="margin-top:6px">Kan du ikke finde svaret, så kontakt bestyrelsen.</div>
+            </template>
         </div>
 
         <template v-if="topicSection">
@@ -43,12 +51,17 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import Modal from './Modal.vue';
-import { help, visibleSections } from '../help';
+import { help, visibleSections, answerHtml } from '../help';
+import { api } from '../api';
 import { track } from '../usage';
 
 const route = useRoute();
 const question = ref('');
-const asked = ref(false);
+const asking = ref(false);
+const reply = ref(null);
+// Emner fra svaret, som brugeren har adgang til (Læs mere-links)
+const replyTopics = computed(() => (reply.value?.topics || []).map((id) => all.value.find((s) => s.id === id)).filter(Boolean));
+function openTopic(id) { help.topic = id; track('spoerg', 'laes_mere', { topic: id }); }
 const search = ref('');
 
 const all = computed(() => visibleSections());
@@ -69,11 +82,15 @@ const groups = computed(() => {
     return by;
 });
 
-function ask() {
-    if (!question.value.trim()) return;
-    asked.value = true;
-    // Selve spørgsmålet gemmes ikke, før bestyrelsen har taget stilling (se Funktionsoversigt.md)
-    track('spoerg', 'sendt', { len: question.value.trim().length });
+async function ask() {
+    const q = question.value.trim();
+    if (!q || asking.value) return;
+    asking.value = true; reply.value = null;
+    // Selve spørgsmålet gemmes ikke, før bestyrelsen har taget stilling (se Funktionsoversigt.md). Svaret logges på serveren.
+    track('spoerg', 'sendt', { len: q.length });
+    try { reply.value = await api('help/ask', { method: 'POST', body: { question: q, page: pagePath.value } }); }
+    catch (e) { reply.value = { error: e.message }; }
+    finally { asking.value = false; }
 }
 </script>
 
@@ -88,4 +105,9 @@ function ask() {
 .askrow input { flex: 1; min-width: 0; }
 .askrow .btn { flex-shrink: 0; }
 .answer { margin: 10px 0 4px; display: block; }
+.help-text.ai :deep(p:first-child) { margin-top: 0; }
+.help-text.ai :deep(p:last-child), .help-text.ai :deep(ol:last-child), .help-text.ai :deep(ul:last-child) { margin-bottom: 0; }
+.help-text :deep(ol) { margin: 8px 0; padding-left: 22px; }
+.spinner-inline { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -1px; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

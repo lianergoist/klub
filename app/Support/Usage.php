@@ -74,7 +74,8 @@ class Usage
     public static function log(array $row): void
     {
         try {
-            UsageEvent::create($row);
+            // Appens tidszone, ikke databasens CURRENT_TIMESTAMP (UTC), så server- og browserhændelser passer sammen
+            UsageEvent::create($row + ['created_at' => now()]);
         } catch (\Throwable $e) {
             report($e);
         }
