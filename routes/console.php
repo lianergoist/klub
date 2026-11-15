@@ -21,3 +21,6 @@ Artisan::command('inspire', function () {
 // Brugsloggen (usage_events) gemmes kun i 90 dage
 \Illuminate\Support\Facades\Schedule::call(fn () => \App\Models\UsageEvent::where('created_at', '<', now()->subDays(90))->delete())
     ->dailyAt('04:10')->name('brugslog-oprydning');
+
+// Ugentlig sammenfatning af brugsloggen til storage/app/private/usage/ (kan læses af en AI)
+\Illuminate\Support\Facades\Schedule::command('usage:summary')->weeklyOn(1, '05:00')->name('brugslog-sammenfatning');

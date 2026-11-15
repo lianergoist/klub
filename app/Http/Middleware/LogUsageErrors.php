@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Logger API-svar, hvor brugeren løb ind i noget: valideringsfejl (422), ingen adgang (403),
  * ikke fundet (404), for mange forsøg (429) og serverfejl (5xx).
- * Kun feltnavne og systemets fejltekst gemmes – aldrig de indtastede værdier.
+ * Kun feltnavne og systemets fejltekst gemmes – aldrig de indtastede værdier. Navne, e-mails og
+ * telefonnumre fjernes fra fejlteksten (Usage::redact).
  */
 class LogUsageErrors
 {
@@ -30,7 +31,7 @@ class LogUsageErrors
             $meta['fields'] = array_slice(array_keys($data['errors']), 0, 20);
         }
         if (! empty($data['message']) && is_string($data['message'])) {
-            $meta['message'] = mb_substr($data['message'], 0, 200);
+            $meta['message'] = mb_substr(Usage::redact($data['message'], $request), 0, 200);
         }
 
         Usage::log(Usage::context($request) + [

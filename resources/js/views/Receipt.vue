@@ -4,7 +4,7 @@
         <h2 v-else style="margin:0 4px 4px">Indsend kvittering</h2>
         <p class="muted small" style="margin:0 4px 14px">Har du lagt ud for klubben? Send kvitteringen til kassereren, så får du pengene tilbage.</p>
 
-        <form class="card stack" @submit.prevent="submit">
+        <form class="card stack" @submit.prevent="submit" @focusin="startClaim" @click="startClaim">
             <div>
                 <span class="lbl">Kvittering</span>
                 <FilePicker v-model="file" hint="Et billede af kvitteringen eller en PDF" />
@@ -69,6 +69,7 @@ import FilePicker from '../components/FilePicker.vue';
 
 defineProps({ embedded: Boolean });
 import { api, toast, dato, parseKr } from '../api';
+import { track } from '../usage';
 
 const f = reactive({ description: '', payout_method: 'mobilepay', mobilepay_phone: '', bank_reg: '', bank_account: '' });
 const amountText = ref(''); const file = ref(null);
@@ -87,13 +88,16 @@ async function load() {
     if (lastBank && !f.bank_reg) { f.bank_reg = lastBank.bank_reg; f.bank_account = lastBank.bank_account; }
 }
 onMounted(load);
+// Forløbet starter, første gang man rører formularen (ikke bare ved at se sine udlæg)
+let started = false;
+const startClaim = () => { if (!started) { started = true; track('udlaeg', 'start'); } };
 
 function clearFile() { file.value = null; }
 
 async function submit() {
     error.value = '';
-    if (!file.value) return (error.value = 'Vedhæft et billede af kvitteringen.');
-    if (!amountOre.value) return (error.value = 'Skriv beløbet, fx 249,50.');
+    if (!file.value) { track('udlaeg', 'mangler', { felt: 'file' }); return (error.value = 'Vedhæft et billede af kvitteringen.'); }
+    if (!amountOre.value) { track('udlaeg', 'mangler', { felt: 'amount' }); return (error.value = 'Skriv beløbet, fx 249,50.'); }
     const fd = new FormData();
     fd.append('file', file.value);
     fd.append('description', f.description);
@@ -104,10 +108,10 @@ async function submit() {
     busy.value = true;
     try {
         await api('expense-claims', { method: 'POST', form: fd });
-        toast('Kvitteringen er sendt til kassereren');
+        toast('Kvitteringen er sendt til kassereren'); track('udlaeg', 'ok', { udbetaling: f.payout_method });
         f.description = ''; amountText.value = ''; clearFile();
         await load();
-    } catch (e) { error.value = e.message; } finally { busy.value = false; }
+    } catch (e) { error.value = e.message; track('udlaeg', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 </script>
 

@@ -29,6 +29,48 @@ class Usage
         ];
     }
 
+    /**
+     * Fjerner personoplysninger fra en fejltekst, før den gemmes: e-mails, telefonnumre, alt hvad brugeren
+     * har indtastet i forespørgslen, og medlemmers navne (fx "Sofie Jensen har allerede Enkelt medlem").
+     */
+    public static function redact(string $text, ?Request $request = null): string
+    {
+        $text = preg_replace('/[^\s@]+@[^\s@]+\.[a-z]{2,}/iu', '[e-mail]', $text);
+        $text = preg_replace('/\+?\d[\d \-]{6,}\d/u', '[nummer]', $text);
+
+        if ($request) {
+            $typed = collect(\Illuminate\Support\Arr::flatten($request->except(['password', 'password_confirmation'])))
+                ->filter(fn ($v) => is_string($v) && mb_strlen(trim($v)) >= 2)
+                ->map(fn ($v) => trim($v))->sortByDesc(fn ($v) => mb_strlen($v));
+            foreach ($typed as $v) $text = str_ireplace($v, '[indtastet]', $text);
+        }
+
+        foreach (array_chunk(self::names(), 200) as $chunk) {
+            $re = implode('|', array_map(fn ($n) => preg_quote($n, '/'), $chunk));
+            $text = preg_replace('/(?<![\p{L}])('.$re.')(?![\p{L}])/u', '[navn]', $text);
+        }
+
+        return $text;
+    }
+
+    /** Fulde navne og fornavne (mindst 3 bogstaver) på alle brugere, længste først. Caches en time. */
+    private static function names(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('usage-redact-names', 3600, function () {
+            $names = [];
+            foreach (\App\Models\User::query()->whereNotNull('name')->pluck('name') as $full) {
+                $full = trim($full);
+                if (mb_strlen($full) >= 3) $names[] = $full;
+                $first = explode(' ', $full)[0];
+                if (mb_strlen($first) >= 3) $names[] = $first;
+            }
+            $names = array_values(array_unique($names));
+            usort($names, fn ($a, $b) => mb_strlen($b) <=> mb_strlen($a));
+
+            return $names;
+        });
+    }
+
     public static function log(array $row): void
     {
         try {

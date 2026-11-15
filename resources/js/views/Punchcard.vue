@@ -45,20 +45,21 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, setSession, toast } from '../api';
+import { track } from '../usage';
 const router = useRouter();
 const offers = ref(null); const busy = ref(false); const error = ref('');
 const f = reactive({ package_id: null, name: '', email: '', phone: '', birthdate: '', password: '', consent: false });
 const chosen = computed(() => offers.value?.find(o => o.id === f.package_id) || null);
-onMounted(async () => { offers.value = await api('punchcards'); if (offers.value.length === 1) f.package_id = offers.value[0].id; });
+onMounted(async () => { track('klippekort', 'start'); offers.value = await api('punchcards'); if (offers.value.length === 1) f.package_id = offers.value[0].id; });
 async function submit() {
     busy.value = true; error.value = '';
     try {
         const r = await api('punchcards/signup', { method: 'POST', body: f });
-        setSession(r.token, r.user);
+        setSession(r.token, r.user); track('klippekort', 'ok');
         if (r.invoice_id) return router.push(`/betal/${r.invoice_id}`);
         toast('Klippekortet er klar');
         router.push('/klip');
-    } catch (e) { error.value = e.message; } finally { busy.value = false; }
+    } catch (e) { error.value = e.message; track('klippekort', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 </script>
 

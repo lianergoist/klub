@@ -54,6 +54,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { api, setSession, datoLang, klok } from '../api';
+import { track } from '../usage';
 const router = useRouter();
 const offers = ref(null); const picked = ref(null);
 // ?tilbud=ID (fx fra linket på login-siden) viser kun det ene tilbud
@@ -63,6 +64,7 @@ const shown = computed(() => (offers.value || []).filter(o => !only.value || o.c
 const f = reactive({ name: '', email: '', phone: '', birthdate: '', guardian_name: '', guardian_phone: '', consent: false });
 const minor = computed(() => { if (!f.birthdate) return false; const b = new Date(f.birthdate), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a < 18; });
 onMounted(async () => {
+    track('proevetraening', 'start');
     offers.value = await api('guest/offers');
     // ?aktivitet=ID (fx fra kalenderen på hjemmesiden) vælger holdet med det samme
     const id = Number(route.query.aktivitet);
@@ -77,13 +79,13 @@ const intro = computed(() => {
     const credit = o.every(x => x.creditable) ? ' Melder du dig ind bagefter, trækkes beløbet fra kontingentet.' : o.some(x => x.creditable) ? ' Melder du dig ind bagefter, trækkes beløbet for nogle af tilbuddene fra kontingentet.' : '';
     return `Book ${list}.${credit}`;
 });
-function pick(offer, activity) { picked.value = { offer, activity }; error.value = ''; window.scrollTo(0, 0); }
+function pick(offer, activity) { track('proevetraening', 'valgt_dato'); picked.value = { offer, activity }; error.value = ''; window.scrollTo(0, 0); }
 async function book() {
     busy.value = true; error.value = '';
     try {
         const r = await api('guest/book', { method: 'POST', body: { ...f, activity_id: picked.value.activity.id } });
-        setSession(r.token, r.user); router.push(`/betal/${r.invoice_id}`);
-    } catch (e) { error.value = e.message; } finally { busy.value = false; }
+        setSession(r.token, r.user); track('proevetraening', 'ok'); router.push(`/betal/${r.invoice_id}`);
+    } catch (e) { error.value = e.message; track('proevetraening', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 </script>
 <style scoped>

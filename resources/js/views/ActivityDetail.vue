@@ -215,6 +215,7 @@
 
 <script setup>
 import HelpButton from '../components/HelpButton.vue';
+import { track } from '../usage';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
@@ -270,15 +271,17 @@ watch(() => props.id, load);
 
 async function signup() {
     busy.value = true;
+    track('tilmelding', 'start', { personer: picked.value.length, pris: !!a.value.price });
     try {
         const r = await api(`activities/${a.value.id}/signup`, { method: 'POST', body: { member_ids: picked.value } });
-        if (r.invoice_ids.length) return router.push(`/betal/${r.invoice_ids.join(',')}`);
+        if (r.invoice_ids.length) { track('tilmelding', 'til_betaling'); return router.push(`/betal/${r.invoice_ids.join(',')}`); }
+        track('tilmelding', 'ok');
         toast('Du er tilmeldt'); await load(); refreshMe();
-    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+    } catch (e) { toast(e.message, 'error'); track('tilmelding', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function unsign(m) {
-    try { await api(`activities/${a.value.id}/unsignup`, { method: 'POST', body: { member_id: m.id } }); toast(`${m.name} er afmeldt`); await load(); refreshMe(); }
-    catch (e) { toast(e.message, 'error'); }
+    try { await api(`activities/${a.value.id}/unsignup`, { method: 'POST', body: { member_id: m.id } }); toast(`${m.name} er afmeldt`); track('afmelding', 'ok'); await load(); refreshMe(); }
+    catch (e) { toast(e.message, 'error'); track('afmelding', 'fejl', { status: e.status }); }
 }
 async function saveAttendance() {
     a.value = await api(`activities/${a.value.id}/attendance`, { method: 'PUT', body: { items: a.value.participants.map(p => ({ registration_id: p.registration_id, attended: p.attended })) } });

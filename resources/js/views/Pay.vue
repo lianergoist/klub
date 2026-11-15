@@ -35,6 +35,7 @@
 import { ref, computed, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
 import { api, store, kr, toast, refreshMe } from '../api';
+import { track } from '../usage';
 const props = defineProps({ id: String });
 const invs = ref(null); const busy = ref(false); const done = ref(false); const activityId = ref(null);
 const isSignup = computed(() => invs.value?.some(i => i.kind === 'membership' && i.member_id_pending));
@@ -42,13 +43,16 @@ const isUpgrade = computed(() => invs.value?.some(i => i.is_upgrade));
 const payable = computed(() => invs.value.filter(i => ['open', 'overdue'].includes(i.status)));
 const frozen = ref(null);
 const total = computed(() => frozen.value ?? (payable.value.length ? payable.value : invs.value).reduce((s, i) => s + i.amount, 0));
-onMounted(async () => { invs.value = await Promise.all(props.id.split(',').map(id => api(`invoices/${id}`))); });
+onMounted(async () => {
+    invs.value = await Promise.all(props.id.split(',').map(id => api(`invoices/${id}`)));
+    track('betaling', 'start', { slags: [...new Set(invs.value.map(i => i.kind))].join(','), antal: invs.value.length });
+});
 async function pay(method) {
     busy.value = true; frozen.value = total.value;
     await new Promise(r => setTimeout(r, method === 'mobilepay' ? 1600 : 900));
     try {
         for (const i of payable.value) { const r = await api(`invoices/${i.id}/pay`, { method: 'POST', body: { method } }); activityId.value = r.activity_id; }
-        done.value = true; refreshMe();
-    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+        done.value = true; refreshMe(); track('betaling', 'ok', { metode: method });
+    } catch (e) { toast(e.message, 'error'); track('betaling', 'fejl', { metode: method, status: e.status }); } finally { busy.value = false; }
 }
 </script>

@@ -3,6 +3,9 @@
 import { API_BASE, IS_APP, store, siteAccess, usageHeaders, ApiError } from './api';
 
 const queue = [];
+let routerRef = null;
+// Ruteskabelonen (fx /aktiviteter/:id) i stedet for den konkrete adresse, så mønstre kan tælles sammen
+const currentPath = () => routerRef?.currentRoute.value.matched.at(-1)?.path || location.pathname.replace(/\/[\d,]+(?=\/|$)/g, '/:id');
 let timer = null;
 
 function push(type, path, target = null, meta = null) {
@@ -24,14 +27,14 @@ export function flush() {
 
 /** Forløb, fx track('tilmelding', 'start') og track('tilmelding', 'ok'). meta må aldrig indeholde personoplysninger. */
 export function track(flow, step, meta = null) {
-    push('track', location.pathname.replace(/\/\d+(?=\/|$)/g, '/:id'), `${flow}.${step}`, meta);
+    push('track', currentPath(), `${flow}.${step}`, meta);
 }
 
 export function initUsage(router, app) {
+    routerRef = router;
     let last = null;
     router.afterEach((to, from, failure) => {
         if (failure) return;
-        // Ruteskabelonen (fx /aktiviteter/:id) i stedet for den konkrete adresse, så mønstre kan tælles sammen
         const path = to.matched.at(-1)?.path || to.path;
         const now = Date.now();
         const meta = last ? { from: last.path, ms: now - last.at } : null;
@@ -39,7 +42,7 @@ export function initUsage(router, app) {
         push('view', path, null, meta);
     });
 
-    const jsError = (msg) => push('js_error', router.currentRoute.value.matched.at(-1)?.path || location.pathname, null, { message: String(msg).slice(0, 200) });
+    const jsError = (msg) => push('js_error', currentPath(), null, { message: String(msg).slice(0, 200) });
     app.config.errorHandler = (err, vm, info) => { jsError(`${err?.message || err} (${info})`); console.error(err); };
     window.addEventListener('error', (e) => jsError(e.message));
     window.addEventListener('unhandledrejection', (e) => {

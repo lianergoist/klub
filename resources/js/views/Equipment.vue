@@ -208,6 +208,7 @@
 
 <script setup>
 import HelpButton from '../components/HelpButton.vue';
+import { track } from '../usage';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Modal from '../components/Modal.vue';
@@ -272,15 +273,18 @@ async function loadAvail() {
     if (bf.replaces && !bookCats.value.length) bookCats.value = [...new Set(avail.value.filter(i => bf.equipment_ids.includes(i.id)).map(i => i.category_id))];
 }
 watch(() => [bf.starts_at, bf.ends_at, bf.replaces, tab.value], () => { if (tab.value === 'book') loadAvail(); });
+watch(tab, (t) => { if (t === 'book') track('booking', 'start', { flyt: !!bf.replaces }); }, { immediate: true });
 async function book(request = false) {
     busy.value = true;
     try {
         const r = await api('equipment-bookings', { method: 'POST', body: { ...bf, request } });
+        track('booking', r.status === 'confirmed' ? 'ok' : 'oenske', { stk: bf.equipment_ids.length, flyt: !!bf.replaces });
         conflict.value = null;
         toast(bf.replaces ? (r.status === 'confirmed' ? 'Bookingen er flyttet' : 'Ønsket er sendt til træneren – den gamle booking er annulleret')
             : r.status === 'confirmed' ? 'Udstyret er booket' : 'Ønsket er sendt til træneren. Du får besked, når der er svaret.');
         Object.assign(bf, { equipment_ids: [], note: '', replaces: null }); tab.value = 'bookings'; loadBookings();
     } catch (e) {
+        track('booking', e.status === 409 ? 'konflikt' : 'fejl', { status: e.status });
         if (e.status === 409) conflict.value = e.data.conflicts; else toast(e.message, 'error');
     } finally { busy.value = false; }
 }

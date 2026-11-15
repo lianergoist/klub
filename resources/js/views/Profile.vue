@@ -107,7 +107,7 @@
                             <div class="row between"><label class="check small"><input type="checkbox" v-model="n.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
                                 <button type="button" class="btn small ghost danger" @click="ms.new_members.splice(i, 1)">Fjern</button></div>
                         </div>
-                        <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', consent: false })">+ Tilføj ny person</button>
+                        <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', consent: false }); track('familie', 'tilfoej_person')">+ Tilføj ny person</button>
                     </div>
                     <div v-if="msPeople.length">
                         <span class="lbl">Vælg medlemskab</span>
@@ -213,6 +213,7 @@
 
 <script setup>
 import { openHelp } from '../help';
+import { track } from '../usage';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { isMobile } from '../mobile';
 import { useRouter } from 'vue-router';
@@ -279,20 +280,21 @@ async function buyMembership() {
     busy.value = true;
     try {
         const r = await api('profile/purchases', { method: 'POST', body: { package_id: ms.package_id, member_ids: ms.member_ids, new_members: ms.new_members.map(n => ({ ...n, email: n.email || null })) } });
+        track('medlemskab', 'ok', { personer: ms.member_ids.length + ms.new_members.length, nye: ms.new_members.length, betaling: !r.paid });
         Object.assign(ms, { member_ids: [], new_members: [], package_id: null });
         if (!r.paid) return router.push(`/betal/${r.invoice_id}`);
         toast('Medlemskabet er oprettet'); loadShop(); load();
-    } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+    } catch (e) { toast(e.message, 'error'); track('medlemskab', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function cancelPurchase(x) {
     if (!confirm(`Fortryd ${x.name}? Regningen annulleres.`)) return;
     try { await api(`profile/purchases/${x.id}/cancel`, { method: 'POST' }); toast('Købet er fortrudt'); loadShop(); } catch (e) { toast(e.message, 'error'); }
 }
-function openBuy(x) { buy.value = x; buyMembers.value = x.total_max === 1 ? [p.value.profile.id] : []; buyRes.value = x.free_resources?.[0]?.id; }
+function openBuy(x) { track('tilkob', 'start', { slags: x.kind }); buy.value = x; buyMembers.value = x.total_max === 1 ? [p.value.profile.id] : []; buyRes.value = x.free_resources?.[0]?.id; }
 async function order() {
     busy.value = true;
-    try { const r = await api('profile/purchases', { method: 'POST', body: { package_id: buy.value.id, member_ids: buyMembers.value, resource_id: buyRes.value } }); router.push(`/betal/${r.invoice_id}`); }
-    catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
+    try { const r = await api('profile/purchases', { method: 'POST', body: { package_id: buy.value.id, member_ids: buyMembers.value, resource_id: buyRes.value } }); track('tilkob', 'ok'); router.push(`/betal/${r.invoice_id}`); }
+    catch (e) { toast(e.message, 'error'); track('tilkob', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function logout() { await doLogout(); router.push('/login'); }
 

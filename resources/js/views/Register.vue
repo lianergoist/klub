@@ -67,11 +67,13 @@ import { useRouter } from 'vue-router';
 import PackageList from '../components/PackageList.vue';
 import { api, setSession, kr, dato, store, toast } from '../api';
 import { compositionError, priceFor } from '../packages';
+import { track } from '../usage';
 const router = useRouter();
 const f = reactive({ name: '', email: '', password: '', phone: '', birthdate: '', address: '', postal_code: '', city: '', package_id: null, consent: false });
 const error = ref(''); const busy = ref(false); const offer = ref(null); const others = ref([]);
 const guest = ref(null);
 onMounted(async () => {
+    track('indmeldelse', 'start');
     offer.value = await api('packages/offer?kind=membership');
     if (store.user?.status === 'guest') {
         guest.value = await api('guest/status');
@@ -100,10 +102,11 @@ async function submit() {
     busy.value = true; error.value = '';
     try {
         const r = await api('register', { method: 'POST', body: { ...f, new_members: others.value } }); setSession(r.token, r.user);
+        track('indmeldelse', 'ok', { betaling: !r.paid, personer: 1 + others.value.length });
         if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push('/aktiviteter'); }
         else router.push(`/betal/${r.invoice_id}`);
     }
-    catch (e) { error.value = e.message; } finally { busy.value = false; }
+    catch (e) { error.value = e.message; track('indmeldelse', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 </script>
 <style scoped>
