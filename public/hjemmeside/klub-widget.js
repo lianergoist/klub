@@ -5,7 +5,8 @@
  * (Kode-blok eller Code Injection) uden ændringer:
  *
  *   <script src="https://klub.rpix.dk/hjemmeside/klub-widget.js" defer></script>
- *   <div data-klub="kalender"></div>        kommende aktiviteter med "Vis i kalenderen på hjemmesiden"
+ *   <div data-klub="kalender"></div>        kommende aktiviteter med "Vis i kalenderen på hjemmesiden";
+ *                                           "Se begivenhed" viser hele aktiviteten i samme felt (#aktivitet-ID)
  *   <div data-klub="priser"></div>          medlemskaber, tilkøb og tilbud
  *   <span data-klub-pris="SUP-kursus"></span> prisen på én pakke (pakkens navn)
  *   <a data-klub="login" href="…/login">     bliver til "Klubsystem", hvis man er logget ind (samme domæne)
@@ -50,7 +51,12 @@
             '[data-klub="kalender"] .klub-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 .6em}',
             '[data-klub="kalender"] .klub-tag{font-size:.8em;padding:.15em .6em;border-radius:999px;border:1px solid currentColor;opacity:.75}',
             '[data-klub="kalender"] .klub-status{display:block;margin-top:.5em;font-size:.9em;opacity:.8}',
-            '[data-klub="kalender"] .eventlist-description p{white-space:pre-line}',
+            '[data-klub="kalender"] .eventlist-description p,[data-klub="kalender"] .eventitem-column-content p{white-space:pre-line}',
+            '[data-klub="kalender"] .eventitem-backlink{display:inline-block;margin-bottom:1.5em}',
+            '[data-klub="kalender"] .eventitem-title{margin-top:0}',
+            '[data-klub="kalender"] .eventitem-meta{list-style:none;padding:0;margin:0 0 1em}',
+            '[data-klub="kalender"] .klub-event-actions{margin-top:1.5em}',
+            '[data-klub="kalender"] .klub-event-img{width:100%;aspect-ratio:16/9;height:auto;max-height:420px;object-fit:cover;margin:0 0 1.5em;display:block}',
             '.klub-empty,.klub-loading,.klub-error{padding:2em 0;text-align:center}',
             '[data-klub="priser"] .klub-pris-sub{opacity:.8;font-size:.9em}',
             '[data-klub="priser"] .klub-cta{margin-top:1.5em}',
@@ -64,22 +70,36 @@
         var text = a.signup === 'guest' ? 'Book plads' : a.signup === 'punchcard' ? 'Tilmeld med klippekort' : 'Log ind og tilmeld dig';
         return '<a href="' + esc(link(a.signup_url)) + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">' + esc(text) + ' &#8594;</a>';
     }
-    function eventHtml(a, images, i) {
-        var s = new Date(a.starts_at), e = new Date(a.ends_at), multi = !sameDay(s, e);
-        var img = images.length ? images[a.id % images.length] : null;
+    var eventHash = function (a) { return '#aktivitet-' + a.id; };
+    function imageFor(a, images) { return images.length ? images[a.id % images.length] : null; }
+    // Uddrag til listen (som Squarespaces "excerpt"): første afsnit, højst ca. 220 tegn
+    function excerpt(text) {
+        var t = String(text).split(/\n\s*\n/)[0].replace(/\s+/g, ' ').trim();
+        if (t.length > 220) t = t.slice(0, 220).replace(/\s+\S*$/, '') + ' …';
+        return t;
+    }
+    function statusText(a) {
         var status = [];
         if (a.price_fmt) status.push(kr(a.price) + (a.members_only ? ' · kun for medlemmer' : ''));
         else if (a.members_only) status.push('For medlemmer');
         if (a.free !== null && a.free !== undefined && !a.full && a.free <= 5) status.push(a.free === 1 ? '1 ledig plads' : a.free + ' ledige pladser');
+        return status.length ? '<span class="klub-status">' + esc(status.join(' · ')) + '</span>' : '';
+    }
+    function tagsHtml(a) {
+        return a.categories && a.categories.length ? '<div class="klub-tags">' + a.categories.map(function (c) { return '<span class="klub-tag">' + esc(c) + '</span>'; }).join('') + '</div>' : '';
+    }
+    function eventHtml(a, images) {
+        var s = new Date(a.starts_at), e = new Date(a.ends_at), multi = !sameDay(s, e);
+        var img = imageFor(a, images), href = esc(eventHash(a));
         return '<article class="eventlist-event eventlist-event--upcoming' + (img ? ' eventlist-event--hasimg eventlist-hasimg' : '') + (multi ? ' eventlist-event--multiday' : '') + '">' +
-            (img ? '<div class="eventlist-column-thumbnail content-fill"><img src="' + esc(img) + '" alt="" loading="lazy"></div>' : '') +
+            (img ? '<a href="' + href + '" class="eventlist-column-thumbnail content-fill"><img src="' + esc(img) + '" alt="" loading="lazy"></a>' : '') +
             '<div class="eventlist-column-date"><div class="eventlist-datetag"><div class="eventlist-datetag-inner">' +
             '<div class="eventlist-datetag-startdate eventlist-datetag-startdate--month">' + esc(fMonth.format(s)) + '</div>' +
             '<div class="eventlist-datetag-startdate eventlist-datetag-startdate--day">' + esc(fDay.format(s)) + '</div>' +
             (multi ? '<div class="eventlist-datetag-enddate">til ' + esc(fDay.format(e) + ' ' + fMonth.format(e)) + '</div>' : '') +
             '<div class="eventlist-datetag-status"></div></div></div></div>' +
             '<div class="eventlist-column-info">' +
-            '<h1 class="eventlist-title"><span class="eventlist-title-link">' + esc(a.title) + '</span></h1>' +
+            '<h1 class="eventlist-title"><a href="' + href + '" class="eventlist-title-link">' + esc(a.title) + '</a></h1>' +
             '<ul class="eventlist-meta event-meta">' +
             (multi
                 ? '<li class="eventlist-meta-item eventlist-meta-date event-meta-item"><time class="event-date">' + esc(longDate(s)) + '</time> <span class="event-time-localized-start">' + esc(fTime.format(s)) + '</span></li>' +
@@ -88,20 +108,95 @@
                   '<li class="eventlist-meta-item eventlist-meta-time event-meta-item"><span class="event-time-localized"><time class="event-time-localized-start">' + esc(fTime.format(s)) + '</time><span class="event-datetime-divider"></span><time class="event-time-localized-end">' + esc(fTime.format(e)) + '</time></span></li>') +
             (a.location ? '<li class="eventlist-meta-item eventlist-meta-address event-meta-item">' + esc(a.location) + '</li>' : '') +
             '</ul>' +
-            (a.categories && a.categories.length ? '<div class="klub-tags">' + a.categories.map(function (c) { return '<span class="klub-tag">' + esc(c) + '</span>'; }).join('') + '</div>' : '') +
-            (a.description ? '<div class="eventlist-description"><p>' + esc(a.description) + '</p></div>' : '') +
-            (status.length ? '<span class="klub-status">' + esc(status.join(' · ')) + '</span>' : '') +
-            signupButton(a) +
+            tagsHtml(a) +
+            (a.description ? '<div class="eventlist-description"><p>' + esc(excerpt(a.description)) + '</p></div>' : '') +
+            statusText(a) +
+            '<a href="' + href + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">Se begivenhed &#8594;</a>' +
             '</div><div class="clear"></div></article>';
+    }
+    // Google Kalender-link som på den gamle begivenhedsside
+    function googleLink(a) {
+        var z = function (d) { return new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); };
+        return 'https://www.google.com/calendar/event?action=TEMPLATE&text=' + encodeURIComponent(a.title) +
+            '&dates=' + z(a.starts_at) + '/' + z(a.ends_at) +
+            (a.location ? '&location=' + encodeURIComponent(a.location) : '') +
+            (a.description ? '&details=' + encodeURIComponent(excerpt(a.description)) : '');
+    }
+    function detailHtml(a, images) {
+        var s = new Date(a.starts_at), e = new Date(a.ends_at), multi = !sameDay(s, e);
+        var img = imageFor(a, images);
+        var when = multi
+            ? '<time class="event-date">' + esc(longDate(s)) + '</time> <span class="eventitem-meta-time"><time class="event-time-localized">' + esc(fTime.format(s)) + '</time></span>' +
+              '<span class="event-datetime-divider"></span><br><time class="event-date">' + esc(longDate(e)) + '</time> <span class="eventitem-meta-time"><time class="event-time-localized">' + esc(fTime.format(e)) + '</time></span>'
+            : '<time class="event-date" datetime="' + isoDate(s) + '">' + esc(longDate(s)) + '</time> <span class="eventitem-meta-time"><time class="event-time-localized">' + esc(fTime.format(s)) + '</time>' +
+              '<span class="event-datetime-divider"></span><time class="event-time-localized">' + esc(fTime.format(e)) + '</time></span>';
+        return '<div class="sqs-events-collection-item events events-item">' +
+            '<a href="#" class="eventitem-backlink" data-klub-tilbage>Tilbage til alle begivenheder</a>' +
+            '<article class="eventitem' + (multi ? ' eventitem--multiday' : '') + '">' +
+            '<div class="eventitem-column-meta">' +
+            '<h1 class="eventitem-title">' + esc(a.title) + '</h1>' +
+            '<ul class="eventitem-meta event-meta event-meta-date-time-container"><li class="eventitem-meta-item eventitem-meta-date event-meta-item">' + when + '</li>' +
+            (a.location ? '<li class="eventitem-meta-item eventitem-meta-address event-meta-item">' + esc(a.location) + '</li>' : '') + '</ul>' +
+            '<ul class="eventitem-meta event-meta event-meta-addtocalendar-container"><li class="eventitem-meta-item eventitem-meta-export event-meta-item">' +
+            '<a href="' + esc(googleLink(a)) + '" class="eventitem-meta-export-google" target="_blank" rel="noopener">Google Kalender</a></li></ul>' +
+            '</div>' +
+            '<div class="eventitem-column-content">' +
+            (img ? '<img class="klub-event-img" src="' + esc(img) + '" alt="">' : '') +
+            tagsHtml(a) +
+            (a.description ? '<p>' + esc(a.description) + '</p>' : '') +
+            statusText(a) +
+            '<div class="klub-event-actions">' + signupButton(a) + '</div>' +
+            '</div><div class="clear"></div></article></div>';
+    }
+    // Rul op til kalenderen med lidt luft til en fast topmenu
+    function scrollTo(el) {
+        var header = document.querySelector('header, #header');
+        var off = header && /fixed|sticky/.test(getComputedStyle(header).position) ? header.offsetHeight : 0;
+        window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - off - 24));
     }
     function calendar(el) {
         var images = (el.getAttribute('data-klub-billeder') || '').split('|').filter(Boolean);
         var limit = +el.getAttribute('data-klub-antal') || 0;
-        get('/api/public/calendar').then(function (list) {
-            if (limit) list = list.slice(0, limit);
-            el.innerHTML = list.length
-                ? '<hr class="eventlist-past-upcoming-divider">' + list.map(function (a, i) { return eventHtml(a, images, i); }).join('')
-                : '<p class="klub-empty">Der er ingen kommende aktiviteter i kalenderen lige nu.</p>';
+        var list = null, listClass = el.className;
+        function render(scroll) {
+            var m = /^#aktivitet-(\d+)$/.exec(location.hash);
+            var a = m && list.filter(function (x) { return String(x.id) === m[1]; })[0];
+            if (m) {
+                el.className = listClass.replace(/\beventlist(--upcoming)?\b/g, '').trim();
+                el.innerHTML = a ? detailHtml(a, images)
+                    : '<div class="sqs-events-collection-item events events-item"><a href="#" class="eventitem-backlink" data-klub-tilbage>Tilbage til alle begivenheder</a>' +
+                      '<p class="klub-empty">Aktiviteten findes ikke længere i kalenderen.</p></div>';
+                var back = el.querySelector('[data-klub-tilbage]');
+                back.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+                    // Gå tilbage i historikken, hvis man kom fra listen – ellers fjern blot #aktivitet-…
+                    if (history.state && history.state.klubListe) history.back();
+                    else { history.pushState(null, '', location.pathname + location.search); render(true); }
+                });
+            } else {
+                el.className = listClass;
+                var shown = limit ? list.slice(0, limit) : list;
+                el.innerHTML = shown.length
+                    ? '<hr class="eventlist-past-upcoming-divider">' + shown.map(function (x) { return eventHtml(x, images); }).join('')
+                    : '<p class="klub-empty">Der er ingen kommende aktiviteter i kalenderen lige nu.</p>';
+            }
+            if (scroll && el.getBoundingClientRect().top < 0) scrollTo(el);
+        }
+        el.addEventListener('click', function (ev) {
+            var t = ev.target.closest && ev.target.closest('a[href^="#aktivitet-"]');
+            if (!t) return;
+            ev.preventDefault();
+            history.replaceState({ klubListe: true }, '');
+            history.pushState(null, '', t.getAttribute('href'));
+            render(false);
+            scrollTo(el);
+        });
+        window.addEventListener('popstate', function () { if (list) render(true); });
+        window.addEventListener('hashchange', function () { if (list) render(true); });
+        get('/api/public/calendar').then(function (data) {
+            list = data;
+            render(false);
+            if (location.hash.indexOf('#aktivitet-') === 0) scrollTo(el);
         }).catch(function () { el.innerHTML = '<p class="klub-error">Kalenderen kunne ikke hentes. Prøv igen senere.</p>'; });
     }
 

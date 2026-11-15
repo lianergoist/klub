@@ -35,7 +35,8 @@ class PublicController extends Controller
                 return [
                     'id' => $a->id,
                     'title' => $a->title,
-                    'description' => $a->description ? Str::limit($a->description, 600) : null,
+                    // Hele beskrivelsen til begivenhedsvisningen; widget'en viser selv et uddrag i listen
+                    'description' => $a->description ? Str::limit($a->description, 5000) : null,
                     'starts_at' => $a->starts_at->toIso8601String(),
                     'ends_at' => $a->ends_at->toIso8601String(),
                     'location' => $a->location,
