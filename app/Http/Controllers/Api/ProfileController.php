@@ -110,6 +110,12 @@ class ProfileController extends Controller
         $list = $r->user()->notifications()->limit(50)->get()->map(fn ($n) => $n->data + [
             'id' => $n->id, 'read' => (bool) $n->read_at, 'created_at' => $n->created_at->toIso8601String(),
         ]);
+        // Notifikationer om aflyste aktiviteter: skjules hvis aktiviteten er arkiveret (aflyst uden tilmeldte), ellers markeres de som aflyst
+        $actId = fn ($n) => preg_match('#^/aktiviteter/(\d+)$#', $n['link'] ?? '', $m) ? (int) $m[1] : null;
+        $acts = \App\Models\Activity::whereIn('id', $list->map($actId)->filter()->unique())->whereNotNull('cancelled_at')
+            ->get(['id', 'archived_at'])->keyBy('id');
+        $list = $list->reject(fn ($n) => ($a = $acts[$actId($n)] ?? null) && $a->archived_at)
+            ->map(fn ($n) => $n + ['cancelled' => isset($acts[$actId($n)]) && ! str_starts_with($n['title'] ?? '', 'Aflyst')])->values();
         $r->user()->unreadNotifications->markAsRead();
 
         return $list;

@@ -36,7 +36,7 @@
                 <ul class="list">
                     <li v-for="n in list" :key="n.id">
                         <component :is="n.link ? 'RouterLink' : 'div'" :to="n.link" style="color:inherit;display:block">
-                            <div class="row between"><strong>{{ n.title }}</strong><span v-if="!n.read" class="tag info">Ny</span></div>
+                            <div class="row between"><strong :style="n.cancelled ? 'text-decoration:line-through' : ''">{{ n.title }}</strong><span><span v-if="n.cancelled" class="tag bad">Aflyst</span> <span v-if="!n.read" class="tag info">Ny</span></span></div>
                             <div class="small" style="color:var(--ink-2)">{{ n.body }}</div>
                             <div class="small muted">{{ tidspunkt(n.created_at) }}</div>
                         </component>

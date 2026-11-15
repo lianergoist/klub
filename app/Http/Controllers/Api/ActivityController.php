@@ -435,6 +435,8 @@ class ActivityController extends Controller
             $empty = ! $a->registrations()->whereIn('status', ['signed_up', 'pending_payment'])->exists();
             $a->update(['cancelled_at' => now(), 'archived_at' => $empty ? now() : null]);
             $archived += $empty ? 1 : 0;
+            // Ingen nåede at tilmelde sig: "Ny aktivitet"-notifikationen fjernes også fra indbakkerne
+            if ($empty) self::forgetNotifications($a);
             Audit::log('activity.cancelled', $a, ['reason' => $reason, 'archived' => $empty]);
             $this->notifyParticipants($a, 'Aflyst: '.$a->title.' '.$a->starts_at->locale('da')->isoFormat('D. MMM'),
                 'Aktiviteten er aflyst. Årsag: '.$reason.($a->price ? ' Betalingen refunderes af kassereren.' : ''));
@@ -633,6 +635,12 @@ class ActivityController extends Controller
         if ($d['notify'] ?? true) $this->notifyNew($activity);
 
         return ['ok' => true];
+    }
+
+    /** Sletter alle indbakke-notifikationer, der linker til aktiviteten. */
+    public static function forgetNotifications(Activity $a): int
+    {
+        return \Illuminate\Support\Facades\DB::table('notifications')->where('data->link', '/aktiviteter/'.$a->id)->delete();
     }
 
     private function notifyNew(Activity $a, ?ActivitySeries $series = null): void
