@@ -170,22 +170,14 @@ class UsageSummary extends Command
 
     private function help(array &$md, Collection $events): void
     {
-        $help = $events->where('type', 'track')->filter(fn ($e) => str_starts_with((string) $e->target, 'hjaelp.') || str_starts_with((string) $e->target, 'spoerg.'));
+        $help = $events->where('type', 'track')->filter(fn ($e) => str_starts_with((string) $e->target, 'hjaelp.'));
         if ($help->isEmpty()) return;
         $md[] = '## Hjælp';
         $md[] = '- Hjælpen åbnet: '.$help->where('target', 'hjaelp.aabnet')->count().' gange. Emner: '.$this->counts($help->where('target', 'hjaelp.aabnet')->map(fn ($e) => $e->meta['topic'] ?? 'oversigt'));
         $md[] = '- Hjælpen åbnet fra siderne: '.$this->counts($help->where('target', 'hjaelp.aabnet')->pluck('path'));
-        $md[] = '- Spørgsmål stillet: '.$help->where('target', 'spoerg.sendt')->count().' (selve spørgsmålene gemmes ikke endnu)';
-        $ai = $events->where('type', 'track')->whereIn('target', ['spoerg.besvaret', 'spoerg.ubesvaret', 'spoerg.utilgaengelig']);
-        if ($ai->isNotEmpty()) {
-            $md[] = '- AI-svar: besvaret '.$ai->where('target', 'spoerg.besvaret')->count()
-                .', kunne ikke svare (mulig mangel i hjælpeteksten eller systemet) '.$ai->where('target', 'spoerg.ubesvaret')->count()
-                .', AI utilgængelig '.$ai->where('target', 'spoerg.utilgaengelig')->count();
-            $md[] = '- Emner i AI-svarene: '.$this->counts($ai->flatMap(fn ($e) => $e->meta['topics'] ?? []));
-            $md[] = '- Ubesvarede spørgsmål blev stillet fra: '.$this->counts($ai->where('target', 'spoerg.ubesvaret')->map(fn ($e) => $e->meta['page'] ?? 'ukendt side'));
-            $md[] = '- Tokens: input '.$ai->sum(fn ($e) => $e->meta['in'] ?? 0).', heraf fra cache '.$ai->sum(fn ($e) => $e->meta['cache_read'] ?? 0)
-                .', output '.$ai->sum(fn ($e) => $e->meta['out'] ?? 0);
-        }
+        $md[] = '- Emner læst (foldet ud): '.$this->counts($help->where('target', 'hjaelp.emne')->map(fn ($e) => $e->meta['topic'] ?? '?'));
+        $md[] = '- Søgninger: '.$help->where('target', 'hjaelp.soegt')->count().' med resultat, '.$help->where('target', 'hjaelp.soegt_uden_resultat')->count()
+            .' uden resultat (mulig mangel i hjælpeteksten). Uden resultat fra siderne: '.$this->counts($help->where('target', 'hjaelp.soegt_uden_resultat')->map(fn ($e) => $e->meta['page'] ?? 'ukendt side'));
         $md[] = '';
     }
 

@@ -1,5 +1,5 @@
 <!--
-Hjælpetekst til klubsystemet. Bruges af hjælpe-knapperne (?) og senere af "Spørg"-funktionen (AI).
+Hjælpetekst til klubsystemet. Bruges af hjælpe-knapperne (?) og hjælpens søgning.
 
 Format:
   ## Overskrift {#id kræver:<rettighed> side:/sti,/sti/:id}
@@ -156,5 +156,5 @@ Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlems
 
 # Hjælp
 
-## Spørg om hjælp {#spoerg}
-Finder du ikke svaret her, kan du skrive dit spørgsmål i feltet øverst i hjælpen. Kommer du ikke videre, kan du kontakte bestyrelsen.
+## Finder du ikke svaret? {#spoerg}
+Søg i feltet øverst i hjælpen. Kommer du ikke videre, kan du kontakte bestyrelsen.

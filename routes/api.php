@@ -54,8 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
-    Route::get('help/status', fn () => ['ai' => \App\Support\HelpAssistant::enabled()]);
-    Route::post('help/ask', [\App\Http\Controllers\Api\HelpController::class, 'ask'])->middleware('throttle:help-ask');
     Route::put('profile/password', [ProfileController::class, 'password'])->middleware('throttle:password-change');
     Route::get('profile/packages', [\App\Http\Controllers\Api\PackageController::class, 'mine']);
     Route::post('profile/purchases', [\App\Http\Controllers\Api\PackageController::class, 'buy']);

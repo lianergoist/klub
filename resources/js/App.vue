@@ -16,7 +16,7 @@
                     <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
                     <RouterLink v-if="can.settings" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
                 </template>
-                <button class="navbtn" @click="openHelp()"><Icon name="help" /> Hjælp og spørgsmål</button>
+                <button class="navbtn" @click="openHelp()"><Icon name="help" /> Hjælp</button>
             </nav>
             <div class="who">
                 <div><strong>{{ store.user.name }}</strong></div>

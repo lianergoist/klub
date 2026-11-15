@@ -39,11 +39,4 @@ return [
         ],
     ],
 
-    // AI-svar i hjælpens Spørg-felt (App\Support\HelpAssistant). Uden nøgle er funktionen slået fra.
-    'claude' => [
-        'key' => env('ANTHROPIC_API_KEY'),
-        'model' => env('CLAUDE_HELP_MODEL', 'claude-opus-5-5'),
-        'daily_limit' => (int) env('CLAUDE_HELP_DAILY_LIMIT', 20),
-        'base_url' => env('ANTHROPIC_BASE_URL'), // kun til test mod en lokal falsk API
-    ],
 ];

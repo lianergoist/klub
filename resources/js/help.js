@@ -50,25 +50,6 @@ function parse(md) {
 
 export const sections = parse(raw);
 
-/** AI-svar til HTML: teksten escapes først, derefter kun **fed** og lister ("1." eller "- "). */
-export function answerHtml(text) {
-    const out = [];
-    let list = null, para = [];
-    const flushPara = () => { if (para.length) out.push(`<p>${inline(para.join(' '))}</p>`); para = []; };
-    const flushList = () => { if (list) out.push(`<${list.tag}>${list.items.map((i) => `<li>${inline(i)}</li>`).join('')}</${list.tag}>`); list = null; };
-    for (const line of String(text).split('\n')) {
-        const t = line.trim();
-        const m = t.match(/^(\d+)[.)]\s+(.*)$/) || t.match(/^([-*•])\s+(.*)$/);
-        if (!t) { flushPara(); flushList(); continue; }
-        if (m) {
-            const tag = /\d/.test(m[1]) ? 'ol' : 'ul';
-            flushPara(); if (list && list.tag !== tag) flushList();
-            (list ||= { tag, items: [] }).items.push(m[2]);
-        } else { flushList(); para.push(t); }
-    }
-    flushPara(); flushList();
-    return out.join('');
-}
 
 /** Afsnit, brugeren har adgang til (samme rettigheder som menuen). */
 export function visibleSections() {

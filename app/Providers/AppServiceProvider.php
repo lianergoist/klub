@@ -26,11 +26,6 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by('pwf|'.$r->ip()),
             \Illuminate\Cache\RateLimiting\Limit::perHour(3)->by('pwf-mail|'.mb_strtolower((string) $r->input('email'))),
         ]);
-        \Illuminate\Support\Facades\RateLimiter::for('help-ask', fn ($r) => [
-            \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by('ask|'.$r->user()?->id),
-            \Illuminate\Cache\RateLimiting\Limit::perDay(config('services.claude.daily_limit'))->by('ask-day|'.$r->user()?->id)
-                ->response(fn () => response()->json(['message' => 'Du har stillet mange spørgsmål i dag. Prøv igen i morgen, eller kontakt bestyrelsen.'], 429)),
-        ]);
         \Illuminate\Support\Facades\RateLimiter::for('password-reset', fn ($r) => \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by('pwr|'.$r->ip()));
         \Illuminate\Support\Facades\RateLimiter::for('password-change', fn ($r) => \Illuminate\Cache\RateLimiting\Limit::perMinute(6)->by('pwc|'.($r->user()?->id ?: $r->ip())));
 

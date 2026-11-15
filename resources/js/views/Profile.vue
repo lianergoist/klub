@@ -32,7 +32,7 @@
             </div>
             <div class="card menu"><ul class="list"><li><button type="button" class="mrow" @click="openHelp()">
                 <Icon name="help" class="mi" />
-                <span class="mtext"><strong>Hjælp og spørgsmål</strong><span class="small muted">Sådan bruger du systemet</span></span>
+                <span class="mtext"><strong>Hjælp</strong><span class="small muted">Sådan bruger du systemet</span></span>
                 <span class="chev" aria-hidden="true">›</span>
             </button></li></ul></div>
             <div class="card"><ThemeSwitch /></div>
