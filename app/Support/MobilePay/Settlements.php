@@ -67,6 +67,10 @@ class Settlements
     /** Hent rapport og indlæs. I drift: kald Vipps MobilePays rapport-API i stedet for simulatoren. */
     public static function fetchAndImport(?int $userId = null): array
     {
-        return self::import(SimulatedReport::settlements(), $userId);
+        $r = self::import(SimulatedReport::settlements(), $userId);
+        // Næste udbetaling for de betalinger, der stadig venter (så "ingen nye" kan forklares)
+        $wait = \App\Models\Payment::whereNull('payout_id')->whereIn('method', self::METHODS)->orderBy('created_at')->first();
+
+        return $r + ['next_date' => $wait ? SimulatedReport::payoutDate($wait->created_at)->toDateString() : null];
     }
 }

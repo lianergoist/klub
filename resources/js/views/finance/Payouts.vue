@@ -76,7 +76,9 @@ async function fetchNow() {
     busy.value = true;
     try {
         const r = await api('finance/payouts/fetch', { method: 'POST' });
-        toast(r.created ? `${r.created} nye udbetalinger indlæst (${r.payments} betalinger, gebyrer ${kr(r.fees)})` : 'Ingen nye udbetalinger');
+        toast(r.created ? `${r.created} nye udbetalinger indlæst (${r.payments} betalinger, gebyrer ${kr(r.fees)})`
+            : r.next_date ? `Ingen nye udbetalinger endnu. Næste udbetaling er ${new Date(r.next_date + 'T12:00').toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'short' })} og hentes automatisk kl. 6.30.`
+            : 'Ingen nye udbetalinger – der er ingen betalinger, der venter.');
         await load();
     } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
