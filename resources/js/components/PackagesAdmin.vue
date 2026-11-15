@@ -132,28 +132,33 @@
 
                 <fieldset>
                     <legend>Hvem dækker den?</legend>
-                    <div v-if="!ed.split" class="grid c2">
-                        <label class="field"><span>Antal personer, mindst</span><input v-model.number="ed.total_min" type="number" min="1" required @input="fixMax(ed, 'total_min', 'total_max')"></label>
-                        <label class="field"><span>Antal personer, højst</span><input v-model.number="ed.total_max" type="number" :min="ed.total_min || 1" placeholder="ingen grænse" @change="fixMin(ed, 'total_min', 'total_max')"></label>
+                    <div class="chips">
+                        <button type="button" :class="['chip', { on: ed.mode === 'single' }]" @click="setMode('single')">Én person</button>
+                        <button type="button" :class="['chip', { on: ed.mode === 'family' }]" @click="setMode('family')">Familie (flere personer)</button>
                     </div>
-                    <div v-if="!ed.split" class="field"><span>Hvem kan være med</span>
+                    <div v-if="ed.mode === 'single'" class="field"><span>Personen kan være</span>
                         <div class="row" style="gap:16px;flex-wrap:wrap">
                             <label v-for="s in ed.slotRows" :key="s.person_category_id" class="check"><input type="checkbox" v-model="s.on"> {{ s.label }}</label>
                         </div>
                     </div>
-                    <label class="check"><input type="checkbox" :checked="ed.split" @change="setSplit($event.target.checked)"> Bestemt fordeling på kategorier <span class="small muted">(fx 2 voksne og 1–3 børn)</span></label>
-                    <template v-if="ed.split">
+                    <template v-else>
                         <table class="slots">
                             <thead><tr><th>Kategori</th><th>Med</th><th>Mindst</th><th>Højst</th></tr></thead>
                             <tbody>
                                 <tr v-for="s in ed.slotRows" :key="s.person_category_id">
                                     <td>{{ s.label }}</td>
                                     <td><input type="checkbox" v-model="s.on"></td>
-                                    <td><input v-model.number="s.min" type="number" min="0" :disabled="!s.on" @input="fixMax(s, 'min', 'max')"></td>
-                                    <td><input v-model.number="s.max" type="number" :min="s.min || 0" :disabled="!s.on" @change="fixMin(s, 'min', 'max')"></td>
+                                    <td><input v-model.number="s.min" type="number" min="0" max="50" :disabled="!s.on" @input="fixMax(s, 'min', 'max')"></td>
+                                    <td><input v-model.number="s.max" type="number" :min="s.min || 0" max="50" :disabled="!s.on" placeholder="Ingen grænse" @change="fixMin(s, 'min', 'max')"></td>
+                                </tr>
+                                <tr class="total">
+                                    <td>I alt <span class="small muted">(valgfrit)</span></td><td></td>
+                                    <td><input v-model.number="ed.total_min" type="number" min="1" max="50" :placeholder="String(famMin(ed))" @input="fixMax(ed, 'total_min', 'total_max')"></td>
+                                    <td><input v-model.number="ed.total_max" type="number" :min="ed.total_min || 1" max="50" placeholder="Ingen grænse" @change="fixMin(ed, 'total_min', 'total_max')"></td>
                                 </tr>
                             </tbody>
                         </table>
+                        <p class="small muted" style="margin:0">Tomt "Højst" = ingen grænse. Brug "I alt", hvis antallet er fast, men fordelingen er fri – fx "Familie med 3 personer": voksne og børn uden grænse, i alt 3–3.</p>
                     </template>
                     <p class="small" style="margin:6px 0 0"><span class="muted">Eksempel:</span> {{ preview }}</p>
                 </fieldset>
@@ -172,7 +177,7 @@
                         <label class="check"><input type="checkbox" v-model="ed.guest_only" @change="ed.guest_only && (ed.requires_membership = false)"> Kun for ikke-medlemmer <span class="small muted">(købes på siden /klippekort)</span></label>
                         <label v-if="!ed.guest_only" class="check"><input type="checkbox" v-model="ed.requires_membership"> Kræver gyldigt medlemskab</label>
                     </template>
-                    <label class="check"><input type="checkbox" v-model="ed.self_service"> Medlemmerne kan selv vælge den <span class="small muted">(ellers kun bestyrelsen)</span></label>
+                    <label class="check"><input type="checkbox" v-model="ed.self_service"> Kan købes af medlemmerne selv <span class="small muted">(slå fra for {{ ed.kind === 'membership' ? 'medlemskaber, som kun bestyrelsen tildeler, fx æresmedlem eller trænerkontingent' : 'tilkøb, som kun bestyrelsen tildeler' }})</span></label>
                     <label v-if="ed.kind === 'membership' && ed.period_type === 'dates'" class="field"><span>Ved ny sæson fornyes den som</span>
                         <select v-model="ed.renews_to_id"><option :value="null">Samme medlemskab</option><option v-for="x in d.packages.filter(x => x.kind === 'membership' && x.id !== ed.id && !x.archived && x.period_type === 'dates')" :key="x.id" :value="x.id">{{ x.name }}</option></select>
                     </label>
@@ -247,30 +252,36 @@ function blank(over = {}) {
     return { ...p, fromD: f.d, fromM: f.m, toD: t.d, toM: t.m, isPunch: !!p.uses, hasSale: !!p.sale_from, hasNext: !!p.next_from, nD: nx.d, nM: nx.m, sFromD: sf.d, sFromM: sf.m, sToD: st.d, sToM: st.m,
         slotRows: d.value.categories.filter(c => !c.archived || p.slots.some(s => s.person_category_id === c.id)).map(c => {
             const s = p.slots.find(s => s.person_category_id === c.id);
-            return { person_category_id: c.id, label: `${c.name} (${c.min_age}${c.max_age === null ? '+' : '–' + c.max_age} år)`, on: !!s || !p.id, min: s?.min ?? 0, max: s?.max ?? (p.total_max || 1) };
+            // Højst vises tomt (= ingen grænse), når kategorien ikke begrænser mere end det samlede antal
+            const max = s && s.max < Math.min(p.total_max ?? NO_LIMIT, NO_LIMIT) ? s.max : '';
+            return { person_category_id: c.id, label: `${c.name} (${c.min_age}${c.max_age === null ? '+' : '–' + c.max_age} år)`, on: !!s || !p.id, min: s?.min ?? 0, max };
         }),
-        // Enkel visning, medmindre kategorierne faktisk begrænser fordelingen (fx 2 voksne og 1–3 børn)
-        split: p.slots.some(s => s.min > 0 || s.max < (p.total_max ?? NO_LIMIT)) };
+        mode: p.total_max === 1 ? 'single' : 'family' };
 }
 const NO_LIMIT = 50; // højeste antal, API'et tillader
-/** Det, der gemmes: enkel visning → valgte kategorier 0–total; fordeling → total = summen af kategorierne. */
+const blankNum = (v) => v === '' || v === null || v === undefined;
+/** Mindste antal i en familie: summen af kategoriernes "mindst", dog mindst 2. */
+const famMin = (e) => Math.max(2, e.slotRows.filter(s => s.on).reduce((a, s) => a + (s.min || 0), 0));
+/** Det, der gemmes: én person → valgte kategorier 0–1; familie → kategoriernes mindst/højst (tom = ingen grænse) + evt. i alt. */
 function who(e) {
     const on = e.slotRows.filter(s => s.on);
-    if (!e.split) return { total_min: e.total_min, total_max: e.total_max || null,
-        slots: on.map(s => ({ person_category_id: s.person_category_id, min: 0, max: e.total_max || NO_LIMIT })) };
-    const slots = on.map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: s.max || 0 }));
-    const sum = (k) => slots.reduce((a, s) => a + s[k], 0);
-    return { total_min: Math.max(1, sum('min')), total_max: Math.max(1, sum('max')), slots };
+    if (e.mode === 'single') return { total_min: 1, total_max: 1, slots: on.map(s => ({ person_category_id: s.person_category_id, min: 0, max: 1 })) };
+    const total_min = Math.max(blankNum(e.total_min) ? 0 : e.total_min, famMin(e));
+    let total_max = blankNum(e.total_max) ? null : e.total_max;
+    // Tom "højst" på en kategori = op til det samlede loft (eller ingen grænse)
+    const slots = on.map(s => ({ person_category_id: s.person_category_id, min: s.min || 0, max: blankNum(s.max) ? (total_max ?? NO_LIMIT) : s.max }));
+    const sumMax = slots.reduce((a, s) => a + s.max, 0);
+    if (sumMax < NO_LIMIT && (total_max === null || sumMax < total_max)) total_max = sumMax; // alle kategorier har et loft
+    return { total_min, total_max, slots };
 }
 // Højst er aldrig mindre end mindst: øges mindst, følger højst med (tomt højst = ingen grænse røres ikke).
 // Sættes højst under mindst, følger mindst med ned – først når feltet forlades, så man kan skrive fx 12 i fred.
-function fixMax(o, lo, hi) { if (o[hi] !== '' && o[hi] !== null && typeof o[lo] === 'number' && o[hi] < o[lo]) o[hi] = o[lo]; }
-function fixMin(o, lo, hi) { if (o[hi] !== '' && o[hi] !== null && typeof o[hi] === 'number' && o[hi] < o[lo]) o[lo] = o[hi]; }
-function setSplit(on) {
-    const e = ed.value;
-    if (on) e.slotRows.forEach(s => { s.min = 0; s.max = e.total_max || 1; });
-    else { const w = who(e); e.total_min = w.total_min; e.total_max = w.total_max; }
-    e.split = on;
+function fixMax(o, lo, hi) { if (!blankNum(o[hi]) && typeof o[lo] === 'number' && o[hi] < o[lo]) o[hi] = o[lo]; }
+function fixMin(o, lo, hi) { if (!blankNum(o[hi]) && typeof o[hi] === 'number' && o[hi] < o[lo]) o[lo] = o[hi]; }
+function setMode(m) {
+    const e = ed.value; if (e.mode === m) return;
+    if (m === 'family') { e.slotRows.forEach(s => { s.min = 0; s.max = ''; }); e.total_min = ''; e.total_max = ''; }
+    e.mode = m;
 }
 const totalText = (w) => (w.total_min === w.total_max ? `${w.total_min}` : `${w.total_min}–${w.total_max ?? ''}`.replace(/–$/, '+')) + (w.total_max === 1 ? ' person' : ' personer');
 const catNames = (ids) => (ids || []).map(id => d.value.activity_categories.find(c => c.id === id)?.name).filter(Boolean).join(', ');
@@ -285,16 +296,17 @@ const periodHelp = computed(() => {
 });
 const preview = computed(() => {
     const e = ed.value; if (!e) return '';
-    const age = (s) => d.value.categories.find(c => c.id === s.person_category_id)?.min_age || 0;
     const w = who(e); const cat = (id) => d.value.categories.find(c => c.id === id);
     if (!w.slots.length) return 'Vælg mindst én kategori.';
-    if (!e.split) {
-        const names = w.slots.map(s => cat(s.person_category_id)).sort((a, b) => b.min_age - a.min_age).map(c => c.plural.toLowerCase());
-        return `${totalText(w)} – ${w.slots.length === d.value.categories.filter(c => !c.archived).length ? 'alle aldre' : 'kun ' + names.join(' og ')}`;
+    if (e.mode === 'single') {
+        const names = w.slots.map(s => cat(s.person_category_id)).sort((a, b) => b.min_age - a.min_age).map(c => c.name.toLowerCase());
+        return `1 person – ${w.slots.length === d.value.categories.filter(c => !c.archived).length ? 'alle aldre' : names.join(' eller ')}`;
     }
-    const r = (a, b) => a === b ? `${a}` : `${a}–${b}`;
+    if (w.total_max !== null && w.total_max < w.total_min) return 'Højst i alt er mindre end summen af "mindst" – ret tallene.';
+    const cap = Math.min(w.total_max ?? NO_LIMIT, NO_LIMIT); // kategoriens højst = det samlede loft → ingen ekstra grænse
+    const r = (s) => s.max >= cap ? (s.min ? `mindst ${s.min} ` : '') : s.min === s.max ? `${s.min} ` : `${s.min}–${s.max} `;
     const cats = w.slots.filter(s => s.max > 0).sort((a, b) => cat(b.person_category_id).min_age - cat(a.person_category_id).min_age)
-        .map(s => { const c = cat(s.person_category_id); return `${r(s.min, s.max)} ${(s.max === 1 ? c.name : c.plural).toLowerCase()}`; });
+        .map(s => { const c = cat(s.person_category_id); return `${r(s)}${(s.max === 1 && s.min === 1 ? c.name : c.plural).toLowerCase()}`; });
     return `${totalText(w)} – ${cats.join(' og ')}`;
 });
 
@@ -348,9 +360,11 @@ async function saveCat(c, archived) {
 fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 12px; margin: 0; display: grid; gap: 8px; }
 legend { font-weight: 700; font-size: .9rem; padding: 0 4px; }
 .dm { gap: 6px; flex-wrap: nowrap; } .dm select:first-child { width: 80px; }
-.slots { width: 100%; font-size: .9rem; } .slots th, .slots td { padding: 4px 6px; } .slots input[type=number] { width: 70px; min-height: 36px; padding: 4px 8px; }
+.slots { width: 100%; font-size: .9rem; } .slots th, .slots td { padding: 4px 6px; } .slots input[type=number] { width: 96px; min-height: 36px; padding: 4px 8px; }
 .slots input[type=checkbox] { width: 20px; height: 20px; min-height: 0; }
 .cat { grid-template-columns: 1.2fr 1.2fr .8fr .8fr; gap: 8px; }
 @media (max-width: 560px) { .cat { grid-template-columns: 1fr 1fr; } }
 li.archived { opacity: .6; }
+.slots input::placeholder { font-size: .72rem; }
+.slots tr.total td { border-top: 1px solid var(--line); padding-top: 8px; font-weight: 600; }
 </style>
