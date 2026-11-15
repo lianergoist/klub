@@ -57,9 +57,9 @@ const tabs = [
     { id: 'posteringer', tab: 'Posteringer', title: 'Posteringer', icon: 'list', hint: 'Bogføring og bilag', year: true },
     { id: 'betalinger', tab: 'Betalinger', title: 'Betalinger', icon: 'money', hint: 'Regninger, påmindelser og refusioner' },
     { id: 'udlaeg', tab: 'Udlæg', title: 'Udlæg', icon: 'receipt', hint: 'Kvitteringer fra medlemmer' },
-    { id: 'budget', tab: 'Budget', title: 'Budget', icon: 'flag', hint: 'Budget pr. konto', year: true, group: 2, desktop: true },
     { id: 'mobilepay', tab: 'MobilePay', title: 'MobilePay', icon: 'phone', hint: 'Afregninger og gebyrer', year: true },
     { id: 'bank', tab: 'Bankafstemning', title: 'Bankafstemning', icon: 'bank', hint: 'Afstem mod kontoudtog fra banken', desktop: true },
+    { id: 'budget', tab: 'Budget', title: 'Budget', icon: 'flag', hint: 'Budget pr. konto', year: true, group: 2, desktop: true },
     { id: 'aarsregnskab', tab: 'Årsregnskab', title: 'Årsregnskab', icon: 'file', hint: 'Resultat og balance til generalforsamlingen', year: true, group: 2 },
     { id: 'log', tab: 'Ændringslog', title: 'Ændringslog', icon: 'clock', hint: 'Hvem har bogført og rettet hvad', group: 2 },
 ];
