@@ -68,8 +68,10 @@ const router = createRouter({ history: createWebHistory(), routes, scrollBehavio
 router.beforeEach(async (to, from) => {
     if (IS_APP && !siteAccess() && to.path !== '/adgang') return '/adgang';
     if (to.meta.public) return true;
-    if (!store.token) return '/login';
-    if (!store.user) { try { await refreshMe(); } catch { return '/login'; } }
+    // Husk siden (fx /aktiviteter/42 fra hjemmesidens kalender), så man kommer tilbage efter login
+    const toLogin = to.path === '/aktiviteter' ? '/login' : { path: '/login', query: { til: to.fullPath } };
+    if (!store.token) return toLogin;
+    if (!store.user) { try { await refreshMe(); } catch { return toLogin; } }
     // Gæster (prøvetræning/SUP-kursus) har kun adgang til betaling og deres kvittering
     // Gæster (ikke-medlemmer) har kun adgang til deres klippekort-side, betaling og kvittering
     if (store.user?.status === 'guest' && !to.meta.guest && !to.path.startsWith('/betal')) return '/klip';

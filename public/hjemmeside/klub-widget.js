@@ -65,10 +65,11 @@
     }
 
     // ---------- Kalender ----------
-    // "Tilmeld" fører til klub-systemet (direkte til tilmelding/booking for aktiviteten, hvis den er åben)
+    // "Tilmeld" fører til aktiviteten i klub-systemet; er man ikke logget ind, bliver man bedt om at logge ind
+    // eller melde sig ind og kommer derefter tilbage til aktiviteten
     function signupButton(a) {
-        if (a.full) return '<span class="klub-status">Holdet er fuldt</span>';
-        return '<a href="' + esc(link(a.signup_url || '/')) + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">Tilmeld &#8594;</a>';
+        return (a.full ? '<span class="klub-status">Holdet er fuldt</span>' : '') +
+            '<a href="' + esc(link('/aktiviteter/' + a.id)) + '" class="eventlist-button sqs-editable-button sqs-button-element--primary">Tilmeld &#8594;</a>';
     }
     var eventHash = function (a) { return '#aktivitet-' + a.id; };
     function imageFor(a, images) { return images.length ? images[a.id % images.length] : null; }

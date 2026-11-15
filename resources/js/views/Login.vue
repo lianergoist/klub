@@ -8,6 +8,7 @@
         </div>
         <div class="card login-card">
             <form @submit.prevent="login" class="stack">
+                <p v-if="activityTarget" class="banner info">Log ind for at se aktiviteten og tilmelde dig. Er du ikke medlem, kan du melde dig ind nedenfor.</p>
                 <label class="field"><span>E-mail</span><input v-model="email" name="email" id="email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
                 <label class="field"><span>Adgangskode</span><input v-model="password" name="password" id="password" type="password" autocomplete="current-password" required></label>
                 <RouterLink :to="{ path: '/glemt-adgangskode', query: email ? { email } : {} }" class="small forgot">Glemt adgangskode?</RouterLink>
@@ -36,11 +37,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { api, setSession, store, IS_APP } from '../api';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 
-const router = useRouter();
+const router = useRouter(); const route = useRoute();
+// ?til=/aktiviteter/42: hvor man skal hen efter login (kun stier i systemet)
+const target = typeof route.query.til === 'string' && /^\/(?!\/)/.test(route.query.til) ? route.query.til : '/aktiviteter';
+const activityTarget = /^\/aktiviteter\/\d+/.test(target);
 const email = ref(''); const password = ref(''); const error = ref(''); const busy = ref(false);
 const demo = ref([]); const links = ref([]);
 
@@ -52,7 +56,7 @@ onMounted(async () => {
 // Prøvetræning/kurser findes kun på weben – i appen åbnes de i browseren
 async function openWeb(path) { (await import('../native')).openWeb(path); }
 
-async function done(res) { setSession(res.token, res.user); router.push('/aktiviteter'); }
+async function done(res) { setSession(res.token, res.user); router.push(target); }
 async function login() {
     busy.value = true; error.value = '';
     try { await done(await api('login', { method: 'POST', body: { email: email.value, password: password.value } })); }
