@@ -19,7 +19,7 @@ class Design
     public const FONTS = ['poppins', 'system'];
     public const STATUSES = ['available', 'development'];
     /** Navnene på de indbyggede temaer kan ikke bruges igen */
-    public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'Marie', 'Blå', 'Grøn', 'Orange', 'Mørk'];
+    public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'Blå', 'Grøn', 'Orange', 'Mørk'];
 
     public static function rules(?int $ignoreId = null): array
     {

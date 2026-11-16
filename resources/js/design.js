@@ -12,7 +12,6 @@ const MORK = { bg: '#0d1716', surface: '#15211f', ink: '#e9efee', heading: '#e9e
 const BLAA = { bg: '#f4f6f5', surface: '#ffffff', ink: '#10201f', heading: '#10201f', accent: '#0f7c8c', brand: '#0c4a5e', orange: '#0f7c8c' };
 export const BUILT_IN = {
     klub: { name: 'SurfHorsens', data: { light: { bg: '#e3d8d3', surface: '#fbf7f5', ink: '#33243a', heading: '#7e5a8c', accent: '#7e5a8c', brand: '#7e5a8c', orange: '#ff9933' }, dark: KLUB_DARK, radius: 14, font: 'poppins', logo: null } },
-    marie: { name: 'Marie', data: { light: { bg: '#e3d8d3', surface: '#efe8e4', ink: '#4a2f52', heading: '#83598c', accent: '#83598c', brand: '#83598c', orange: '#ff9933' }, dark: KLUB_DARK, radius: 6, font: 'poppins', logo: null } },
     standard: { name: 'Blå', data: { light: BLAA, dark: MORK, radius: 14, font: 'system', logo: null } },
     gron: { name: 'Grøn', data: { light: { bg: '#f2f5f1', surface: '#ffffff', ink: '#142018', heading: '#142018', accent: '#2a7a4f', brand: '#1d4d35', orange: '#2a7a4f' }, dark: MORK, radius: 14, font: 'system', logo: null } },
     orange: { name: 'Orange', data: { light: { bg: '#f8f4f0', surface: '#ffffff', ink: '#2a1a10', heading: '#2a1a10', accent: '#b84a12', brand: '#6b2f12', orange: '#b84a12' }, dark: MORK, radius: 14, font: 'system', logo: null } },
@@ -95,8 +94,8 @@ export function themeCss(key, d) {
         const ink = v['brand-ink'];
         out += `${sel}{color-scheme:${isDark ? 'dark' : 'light'};${Object.entries(v).map(([k, x]) => `--${k}:${x}`).join(';')}}\n`;
         out += `${sel} .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--btn-ink)}${sel} .btn.brand{color:var(--brand-ink)}\n`;
-        out += `${sel} .sidebar{color:${ink}}${sel} .sidebar nav a{color:${rgba(ink, 0.86)}}${sel} .sidebar .sect{color:${rgba(ink, 0.7)}}`
-            + `${sel} .sidebar nav a:hover{background:${rgba(ink, 0.08)}}${sel} .sidebar nav a.router-link-active{color:${ink};background:${rgba(ink, 0.16)};box-shadow:inset 3px 0 0 var(--orange)}\n`;
+        out += `${sel} .sidebar{color:${ink}}${sel} .sidebar nav a,${sel} .sidebar nav button.navbtn{color:${rgba(ink, 0.86)}}${sel} .sidebar .sect{color:${rgba(ink, 0.7)}}`
+            + `${sel} .sidebar nav a:hover,${sel} .sidebar nav button.navbtn:hover{background:${rgba(ink, 0.08)}}${sel} .sidebar nav a.router-link-active{color:${ink};background:${rgba(ink, 0.16)};box-shadow:inset 3px 0 0 var(--orange)}\n`;
         if (isDark) out += `${sel} .sidebar{border-right:1px solid var(--line)}\n`;
     }
     out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.system}}\n`;

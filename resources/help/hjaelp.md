@@ -159,6 +159,7 @@ Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlems
 ## Farvetemaer {#design kræver:design_manage side:/indstillinger/design}
 Under **Indstillinger → Design** laver du klubbens egne farvetemaer: farver, logo, skrift og runde hjørner. Sidernes opbygning ændres aldrig, så alt virker på både mobil og pc.
 
+- Værktøjslinjen øverst har **Tema**, **Gem**, **Farver**, **Logo** og **Skrift og hjørner**. Et tryk åbner en værktøjsboks oven på forhåndsvisningen. Den kan flyttes ved at trække i overskriften og lukkes med ×.
 - De indbyggede temaer (fx SurfHorsens) kan ikke rettes. Tryk **Åbn kopi** og gem kopien under et nyt navn.
 - Tryk **Rediger** ved et af klubbens egne temaer for at rette det. **Gem** gemmer ændringerne, og **Gem som…** gemmer dem som et nyt tema, så det gamle forbliver uændret.
 - Vælg **Lys udgave** eller **Mørk udgave**, og tryk på en farve for at ændre den. Den mørke udgave bruges, når telefonen eller computeren står på mørk tilstand.

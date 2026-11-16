@@ -590,7 +590,7 @@ Klubbens hjemmeside henter kalender og priser fra klubsystemet, så de kun skal 
 
 Klubben kan lave egne farvetemaer uden teknisk hjælp og uden at ødelægge, hvordan siderne virker på mobil og pc.
 
-- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Marie, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under Indstillinger → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
+- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under Indstillinger → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
 - **Kerne:** et eget tema har navn, 7 farver i en lys og en mørk udgave (følger enhedens indstilling), eget logo, skrift (Poppins eller enhedens egen) og runde hjørner. Farverne vælges ved at trykke på dem. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layoutet kan ikke ændres.
 - **Kerne:** **Gem** og **Gem som…** (nyt navn, det gamle tema bevares). Status er *Under udvikling* (kun dem, der må rette design, kan vælge det under Farvetema) eller *Tilgængeligt for medlemmer*. Et tema kan slettes. Medlemmer med det valgt får så Automatisk.
 - **Kerne:** forhåndsvisning af de rigtige sider på mobil og computer, hvor intet kan gemmes. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis temaet gøres tilgængeligt alligevel. Oprettelse, ændring og sletning står i ændringsloggen. Kræver rettigheden "Lave og rette farvetemaer" (standard: administrator).
