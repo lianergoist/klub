@@ -104,8 +104,6 @@ body.menu-open { overflow: hidden; }
 
 /* ---------- kort (Priser) ---------- */
 .sh-card-grid { display: grid; grid-template-columns: var(--a) var(--b); gap: 12px; align-items: start; }
-.sh-card-grid.is-right { grid-template-columns: var(--b) var(--a); }
-.sh-card-grid.is-right .sh-card-img { order: 2; }
 .sh-card-img { margin: 0; }
 .sh-card-img img { width: 100%; border-radius: 14px; }
 .sh-card { background: var(--orange); border-radius: 14px; padding: clamp(28px, 4vw, 52px); display: grid; grid-template-columns: 1fr 1fr; gap: 28px; font-size: .9rem; line-height: 1.8; }
@@ -113,8 +111,7 @@ body.menu-open { overflow: hidden; }
 .sh-card.is-stacked { grid-template-columns: 1fr; gap: 12px; }
 .sh-card-body p { margin-bottom: .55em; }
 @media (max-width: 767px) {
-  .sh-card-grid, .sh-card-grid.is-right { grid-template-columns: 1fr; }
-  .sh-card-grid.is-right .sh-card-img { order: 0; }
+  .sh-card-grid { grid-template-columns: 1fr; }
   .sh-card { grid-template-columns: 1fr; gap: 12px; }
 }
 

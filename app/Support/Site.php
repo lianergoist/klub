@@ -19,7 +19,7 @@ use DOMNode;
  *   columns   Én eller to kolonner. layout: one|two, widths [a, b] (kun admin), bg: sand|orange, tone: lilla|pink,
  *             align: left|center, cols: [[elementer], [elementer]]
  *             Elementer: image {src, alt, link?, plain?} · text {html} · button {label, link} · box {html} · rule · map {address}
- *   card      Billede + orange boks (Priser). Hver anden har billedet til højre. image, alt, label, heading, html,
+ *   card      Billede til venstre + orange boks til højre (Priser). image, alt, label, heading, html,
  *             prices (prislisten fra Indstillinger → Pakker), button {label, link}, widths [billede, boks]
  *   faq       Spørgsmål og svar (fold ud). label, items [{q, a}]
  *   calendar  Kalenderen fra klub-systemet (aktiviteter med "Vis i kalenderen på hjemmesiden"). images [...]

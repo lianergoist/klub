@@ -1,6 +1,5 @@
 @php
     $v = fn ($f) => '/hjemmeside/'.$f.'?v='.(@filemtime(public_path('hjemmeside/'.$f)) ?: 1);
-    $cardIndex = 0;
 @endphp
 <!doctype html>
 <html lang="da">
@@ -46,8 +45,8 @@
 
 <main id="indhold">
     @foreach ($blocks as $i => $b)
-        @php $next = $blocks[$i + 1]['id'] ?? null; $nth = $b['type'] === 'card' ? $cardIndex++ : 0; @endphp
-        @includeIf('site.blocks.'.$b['type'], ['b' => $b, 'next' => $next, 'first' => $i === 0, 'nth' => $nth])
+        @php $next = $blocks[$i + 1]['id'] ?? null; @endphp
+        @includeIf('site.blocks.'.$b['type'], ['b' => $b, 'next' => $next, 'first' => $i === 0])
     @endforeach
 </main>
 

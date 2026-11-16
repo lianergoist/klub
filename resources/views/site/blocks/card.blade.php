@@ -1,10 +1,9 @@
 @php
     $w = $b['widths'] ?? [3, 5];
-    $right = $nth % 2 === 1; // hver anden: billedet til højre
     $hasImg = !empty($b['image']);
 @endphp
 <section id="blok-{{ $b['id'] }}" class="sh-block sh-card-block">
-    <div class="sh-wrap {{ $hasImg ? 'sh-card-grid' : '' }} {{ $right ? 'is-right' : '' }}" style="--a:{{ (int) $w[0] ?: 3 }}fr;--b:{{ (int) ($w[1] ?? 5) ?: 5 }}fr">
+    <div class="sh-wrap {{ $hasImg ? 'sh-card-grid' : '' }}" style="--a:{{ (int) $w[0] ?: 3 }}fr;--b:{{ (int) ($w[1] ?? 5) ?: 5 }}fr">
         @if ($hasImg)
             <figure class="sh-card-img">@include('site.blocks._image', ['src' => $b['image'], 'alt' => $b['alt'] ?? ''])</figure>
         @endif
