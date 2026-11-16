@@ -11,15 +11,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Indstillinger → Design. Man arbejder i én fælles kladde, ser den i forhåndsvisningen og udgiver den.
- * Hver udgivelse gemmes som en version, der kan hentes tilbage i kladden.
+ * Indstillinger → Design: egne farvetemaer. Man åbner et tema (en kopi, hvis det er indbygget), retter og gemmer det –
+ * eller gemmer det under et nyt navn. Status styrer, om medlemmerne kan vælge det, eller om det stadig er under udvikling.
  */
 class DesignController extends Controller
 {
-    /** Offentlig: det udgivne design (null = standarddesignet i app.css). */
+    /** Offentlig: temaer, man kan vælge. Dem, der må rette design, får også temaer under udvikling med. */
     public function show()
     {
-        return response()->json(Design::current())->header('Cache-Control', 'public, max-age=60');
+        $u = auth('sanctum')->user();
+        $themes = $u?->may('design.manage') ? Design::all() : Design::available();
+
+        return response()->json(['themes' => $themes])->header('Cache-Control', 'no-cache');
     }
 
     public function logo(string $file)
@@ -35,37 +38,48 @@ class DesignController extends Controller
     public function admin(Request $r)
     {
         abort_unless($r->user()->may('design.manage'), 403);
-        $draft = DB::table('design_versions')->where('status', 'draft')->first();
-        $pub = Design::published();
-        $names = User::whereIn('id', DB::table('design_versions')->whereNotNull('created_by')->pluck('created_by'))->pluck('name', 'id');
-        $row = fn ($v) => $v ? ['id' => $v->id, 'data' => json_decode($v->data, true), 'by' => $names[$v->created_by] ?? null,
-            'at' => ($v->published_at ?? $v->updated_at) ? \Illuminate\Support\Carbon::parse($v->published_at ?? $v->updated_at)->toIso8601String() : null] : null;
-        $withLogo = function ($v) { if ($v && $v['data']['logo']) $v['logo_url'] = Design::logoUrl($v['data']['logo']); return $v; };
+        $rows = DB::table('design_themes')->orderBy('name')->get();
+        $names = User::whereIn('id', $rows->pluck('updated_by')->filter())->pluck('name', 'id');
 
-        return [
-            'draft' => $withLogo($row($draft)),
-            'published' => $withLogo($row($pub)),
-            'history' => DB::table('design_versions')->where('status', 'published')->orderByDesc('id')->limit(20)->get()->map(fn ($v) => $withLogo($row($v))),
-        ];
+        return ['themes' => $rows->map(fn ($t) => Design::row($t) + ['by' => $names[$t->updated_by] ?? null,
+            'updated_at' => \Illuminate\Support\Carbon::parse($t->updated_at)->toIso8601String()])];
     }
 
-    public function saveDraft(Request $r)
+    public function store(Request $r)
     {
         abort_unless($r->user()->may('design.manage'), 403);
-        $data = Design::clean($r->validate(Design::rules())['data']);
-        $id = DB::table('design_versions')->where('status', 'draft')->value('id');
-        $row = ['data' => json_encode($data), 'created_by' => $r->user()->id, 'updated_at' => now()];
-        $id ? DB::table('design_versions')->where('id', $id)->update($row)
-            : DB::table('design_versions')->insert($row + ['status' => 'draft', 'created_at' => now()]);
+        $v = $r->validate(Design::rules(), Design::messages());
+        $id = DB::table('design_themes')->insertGetId(['name' => trim($v['name']), 'status' => $v['status'], 'data' => json_encode(Design::clean($v['data'])),
+            'created_by' => $r->user()->id, 'updated_by' => $r->user()->id, 'created_at' => now(), 'updated_at' => now()]);
+        Design::forget();
+        Audit::log('design.theme_created', null, ['tema' => trim($v['name']), 'status' => $v['status']]);
 
-        return ['ok' => true, 'data' => $data];
+        return Design::row(DB::table('design_themes')->find($id));
     }
 
-    /** Fortryd kladden (den næste visning tager udgangspunkt i det udgivne design). */
-    public function discardDraft(Request $r)
+    public function update(Request $r, int $id)
     {
         abort_unless($r->user()->may('design.manage'), 403);
-        DB::table('design_versions')->where('status', 'draft')->delete();
+        $old = DB::table('design_themes')->find($id);
+        abort_unless($old, 404, 'Temaet findes ikke længere.');
+        $v = $r->validate(Design::rules($id), Design::messages());
+        DB::table('design_themes')->where('id', $id)->update(['name' => trim($v['name']), 'status' => $v['status'], 'data' => json_encode(Design::clean($v['data'])),
+            'updated_by' => $r->user()->id, 'updated_at' => now()]);
+        Design::forget();
+        Audit::log('design.theme_updated', null, array_filter(['tema' => trim($v['name']), 'navn_før' => $old->name !== trim($v['name']) ? $old->name : null,
+            'status' => $old->status !== $v['status'] ? $old->status.' → '.$v['status'] : null]));
+
+        return Design::row(DB::table('design_themes')->find($id));
+    }
+
+    public function destroy(Request $r, int $id)
+    {
+        abort_unless($r->user()->may('design.manage'), 403);
+        $t = DB::table('design_themes')->find($id);
+        abort_unless($t, 404, 'Temaet findes ikke længere.');
+        DB::table('design_themes')->where('id', $id)->delete();
+        Design::forget();
+        Audit::log('design.theme_deleted', null, ['tema' => $t->name]);
 
         return ['ok' => true];
     }
@@ -77,19 +91,5 @@ class DesignController extends Controller
         $path = Design::storeLogo($r->file('logo'));
 
         return ['logo' => $path, 'logo_url' => Design::logoUrl($path)];
-    }
-
-    public function publish(Request $r)
-    {
-        abort_unless($r->user()->may('design.manage'), 403);
-        $data = Design::clean($r->validate(Design::rules())['data']);
-        $old = Design::published();
-        $id = DB::table('design_versions')->insertGetId(['status' => 'published', 'data' => json_encode($data), 'created_by' => $r->user()->id,
-            'published_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('design_versions')->where('status', 'draft')->delete();
-        Design::forget();
-        Audit::log('design.published', null, ['fra' => $old ? 'version '.$old->id : 'standarddesign', 'til' => 'version '.$id]);
-
-        return Design::current();
     }
 }

@@ -1,34 +1,42 @@
-import { reactive } from 'vue';
-import { api, API_BASE } from './api';
+import { reactive, watch } from 'vue';
+import { api, store } from './api';
 
 /**
- * Klubbens design (Indstillinger → Design): farver, logo, skrift og hjørner i SurfHorsens-temaet.
+ * Egne farvetemaer (Indstillinger → Design): farver i en lys og en mørk udgave, logo, skrift og hjørner.
  * Kun CSS-variabler ændres – aldrig layout – så siderne virker på mobil og pc uanset valg.
- * Standardværdierne svarer til html[data-tema=klub] i app.css. Er en tilstands farver uændrede, rører vi dem ikke,
- * så det håndtunede standarddesign bevares.
+ * De indbyggede temaer ligger i app.css og kan ikke rettes; BUILT_IN er deres grundfarver, så man kan åbne en kopi.
+ * Et eget tema har nøglen 'egen-<id>' (html[data-tema=egen-5]) og følger enhedens lyse/mørke tilstand.
  */
-export const DEFAULTS = {
-    light: { bg: '#e3d8d3', surface: '#fbf7f5', ink: '#33243a', heading: '#7e5a8c', accent: '#7e5a8c', brand: '#7e5a8c', orange: '#ff9933' },
-    dark: { bg: '#1d1520', surface: '#291f2e', ink: '#f3ebef', heading: '#d9b8e6', accent: '#c49ad6', brand: '#4f3559', orange: '#ff9933' },
-    radius: 14,
-    font: 'poppins',
-    logo: null,
+const KLUB_DARK = { bg: '#1d1520', surface: '#291f2e', ink: '#f3ebef', heading: '#d9b8e6', accent: '#c49ad6', brand: '#4f3559', orange: '#ff9933' };
+const MORK = { bg: '#0d1716', surface: '#15211f', ink: '#e9efee', heading: '#e9efee', accent: '#4cc2cf', brand: '#0f2e36', orange: '#4cc2cf' };
+const BLAA = { bg: '#f4f6f5', surface: '#ffffff', ink: '#10201f', heading: '#10201f', accent: '#0f7c8c', brand: '#0c4a5e', orange: '#0f7c8c' };
+export const BUILT_IN = {
+    klub: { name: 'SurfHorsens', data: { light: { bg: '#e3d8d3', surface: '#fbf7f5', ink: '#33243a', heading: '#7e5a8c', accent: '#7e5a8c', brand: '#7e5a8c', orange: '#ff9933' }, dark: KLUB_DARK, radius: 14, font: 'poppins', logo: null } },
+    marie: { name: 'Marie', data: { light: { bg: '#e3d8d3', surface: '#efe8e4', ink: '#4a2f52', heading: '#83598c', accent: '#83598c', brand: '#83598c', orange: '#ff9933' }, dark: KLUB_DARK, radius: 6, font: 'poppins', logo: null } },
+    standard: { name: 'Blå', data: { light: BLAA, dark: MORK, radius: 14, font: 'system', logo: null } },
+    gron: { name: 'Grøn', data: { light: { bg: '#f2f5f1', surface: '#ffffff', ink: '#142018', heading: '#142018', accent: '#2a7a4f', brand: '#1d4d35', orange: '#2a7a4f' }, dark: MORK, radius: 14, font: 'system', logo: null } },
+    orange: { name: 'Orange', data: { light: { bg: '#f8f4f0', surface: '#ffffff', ink: '#2a1a10', heading: '#2a1a10', accent: '#b84a12', brand: '#6b2f12', orange: '#b84a12' }, dark: MORK, radius: 14, font: 'system', logo: null } },
+    mork: { name: 'Mørk', data: { light: BLAA, dark: MORK, radius: 14, font: 'system', logo: null } },
 };
 export const DEFAULT_LOGO = '/brand/surfhorsens-logo.webp';
 
 export const COLOR_FIELDS = [
     ['bg', 'Baggrund', 'Bag kortene og på login-siden'],
     ['surface', 'Kort og felter', 'Kort, lister og indtastningsfelter'],
-    ['ink', 'Tekst', 'Almindelig tekst. Dæmpet tekst og kanter beregnes ud fra den'],
+    ['ink', 'Tekst', 'Dæmpet tekst og kanter beregnes ud fra den'],
     ['heading', 'Overskrifter', ''],
-    ['accent', 'Knapper og links', 'Teksten på knapperne bliver automatisk hvid eller mørk'],
-    ['brand', 'Menu', 'Menuen i venstre side på pc. Teksten bliver automatisk hvid eller mørk'],
+    ['accent', 'Knapper og links', 'Teksten på knapperne bliver selv hvid eller mørk'],
+    ['brand', 'Menu', 'Menuen i venstre side på pc'],
     ['orange', 'Detaljer', 'Markering af den valgte side i menuen'],
 ];
 export const FONTS = { poppins: 'Poppins (klubbens skrift)', system: 'Enhedens egen skrift' };
-const FONT_CSS = { system: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' };
+const FONT_CSS = {
+    poppins: '"Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+    system: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+};
 
-export const design = reactive({ logo: DEFAULT_LOGO, version: null });
+/** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: det aktive temas logo. */
+export const design = reactive({ themes: [], logo: DEFAULT_LOGO });
 
 // ---------- farver ----------
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -49,6 +57,7 @@ export function derive(c, dark) {
         'ink-2': mix(c.ink, c.surface, 0.22),
         'ink-3': mix(c.ink, c.surface, dark ? 0.38 : 0.32),
         'accent-soft': mix(c.surface, c.accent, dark ? 0.22 : 0.14),
+        sand: mix(c.surface, c.orange, dark ? 0.2 : 0.18),
         'btn-ink': inkOn(c.accent),
         'brand-ink': inkOn(c.brand),
     };
@@ -71,67 +80,66 @@ export function checks(d) {
     return out;
 }
 
-const same = (a, b) => Object.keys(b).every((k) => a?.[k]?.toLowerCase() === b[k]);
 const rgba = (h, a) => `rgba(${rgb(h).join(',')},${a})`;
+// Mørk udgave: statusfarver, der kan læses på mørk baggrund (som temaet Mørk)
+const DARK_EXTRA = { ok: '#5fd08a', 'ok-soft': '#12301f', warn: '#f0b252', 'warn-soft': '#33270f', bad: '#ff8a80', 'bad-soft': '#3a1714', shadow: '0 1px 2px rgba(0,0,0,.3)' };
 
-export function css(d) {
-    if (!d) return '';
+/** CSS for ét eget tema (nøgle fx 'egen-5') */
+export function themeCss(key, d) {
+    if (!d?.light || !d?.dark || !/^egen-[\w-]+$/.test(key)) return '';
     let out = '';
     for (const m of ['light', 'dark']) {
-        if (!d[m] || same(d[m], DEFAULTS[m])) continue;
-        const sel = m === 'dark' ? ':root[data-tema=klub][data-mork]' : ':root[data-tema=klub]:not([data-mork])';
-        const v = derive(d[m], m === 'dark');
-        out += `${sel}{${Object.entries(v).map(([k, x]) => `--${k}:${x}`).join(';')}}\n`;
-        out += `${sel} .btn.primary{color:var(--btn-ink)}${sel} .btn.brand{color:var(--brand-ink)}\n`;
-        out += `${sel} .sidebar{color:${v['brand-ink']}}${sel} .sidebar nav a{color:${rgba(v['brand-ink'], 0.86)}}${sel} .sidebar .sect{color:${rgba(v['brand-ink'], 0.7)}}`
-            + `${sel} .sidebar nav a:hover{background:${rgba(v['brand-ink'], 0.08)}}${sel} .sidebar nav a.router-link-active{color:${v['brand-ink']};background:${rgba(v['brand-ink'], 0.16)}}\n`;
+        const isDark = m === 'dark';
+        const sel = `:root[data-tema=${key}]${isDark ? '[data-mork]' : ':not([data-mork])'}`;
+        const v = { ...derive(d[m], isDark), ...(isDark ? DARK_EXTRA : {}) };
+        const ink = v['brand-ink'];
+        out += `${sel}{color-scheme:${isDark ? 'dark' : 'light'};${Object.entries(v).map(([k, x]) => `--${k}:${x}`).join(';')}}\n`;
+        out += `${sel} .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--btn-ink)}${sel} .btn.brand{color:var(--brand-ink)}\n`;
+        out += `${sel} .sidebar{color:${ink}}${sel} .sidebar nav a{color:${rgba(ink, 0.86)}}${sel} .sidebar .sect{color:${rgba(ink, 0.7)}}`
+            + `${sel} .sidebar nav a:hover{background:${rgba(ink, 0.08)}}${sel} .sidebar nav a.router-link-active{color:${ink};background:${rgba(ink, 0.16)};box-shadow:inset 3px 0 0 var(--orange)}\n`;
+        if (isDark) out += `${sel} .sidebar{border-right:1px solid var(--line)}\n`;
     }
-    const root = [];
-    if (d.radius !== undefined && d.radius !== DEFAULTS.radius) root.push(`--radius:${Number(d.radius)}px`);
-    if (FONT_CSS[d.font]) root.push(`--font:${FONT_CSS[d.font]}`);
-    if (root.length) out += `:root[data-tema=klub]{${root.join(';')}}\n`;
+    out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.system}}\n`;
     return out;
 }
 
-/** Statuslinjens farve i SurfHorsens-temaet */
-export function themeColor(darkMode) {
-    return current?.[darkMode ? 'dark' : 'light']?.brand || null;
+let preview = null;
+export const findTheme = (key) => (key === 'egen-preview' ? preview : design.themes.find((t) => t.key === key));
+
+/** Menufarve til statuslinjen */
+export function themeColor(key, dark) {
+    return findTheme(key)?.data?.[dark ? 'dark' : 'light']?.brand || null;
 }
 
-let current = null;
-function apply(d, logoUrl) {
-    current = d;
+function inject() {
     let el = document.getElementById('klub-design');
     if (!el) { el = document.createElement('style'); el.id = 'klub-design'; document.head.appendChild(el); }
-    el.textContent = css(d);
-    design.logo = logoUrl || DEFAULT_LOGO;
-    window.dispatchEvent(new Event('klubdesign')); // theme.js opdaterer statuslinjen
+    el.textContent = design.themes.map((t) => themeCss(t.key, t.data)).join('') + (preview ? themeCss('egen-preview', preview.data) : '');
+    window.dispatchEvent(new Event('klubdesign')); // theme.js opdaterer temalisten, logo og statuslinje
 }
 
-const logoFrom = (r) => (r?.logo_url ? r.logo_url : null);
 export const PREVIEW = new URLSearchParams(location.search).get('designvisning'); // 'lys' | 'mork' i forhåndsvisningen
 
-/** Ved opstart: brug det gemte design med det samme (ingen blink), hent derefter det nyeste. */
+/** Ved opstart: brug de gemte temaer med det samme (ingen blink), hent derefter de nyeste. */
 export function initDesign() {
     if (PREVIEW) {
-        // Forhåndsvisning i Indstillinger → Design: kladden kommer fra siden udenom (samme adresse)
-        const take = (p) => p && apply(p.data, p.logo_url);
+        // Forhåndsvisning i Indstillinger → Design: temaet, der redigeres, kommer fra siden udenom (samme adresse)
+        const take = (p) => { if (p) { preview = { key: 'egen-preview', data: p.data, logo_url: p.logo_url }; inject(); } };
         try { take(window.parent.__klubDesignDraft); } catch {}
         window.addEventListener('message', (e) => { if (e.origin === location.origin && e.data?.type === 'klub-design') take(e.data); });
         return;
     }
-    try { const c = JSON.parse(localStorage.getItem('klub-design') || 'null'); if (c) apply(c.data, logoFrom(c)); } catch {}
+    try { const c = JSON.parse(localStorage.getItem('klub-temaer') || 'null'); if (Array.isArray(c)) { design.themes = c; inject(); } } catch {}
     refreshDesign();
+    // Efter log ind/ud: dem, der må rette design, ser også temaer under udvikling
+    watch(() => store.token, () => refreshDesign());
 }
 
-/** fresh=true efter en udgivelse: spring browserens cache (60 s) over */
-export async function refreshDesign(fresh = false) {
+export async function refreshDesign() {
     try {
-        const r = await api(fresh ? `design?t=${Date.now()}` : 'design');
-        apply(r.data, logoFrom(r));
-        try { localStorage.setItem('klub-design', JSON.stringify(r)); } catch {}
+        const r = await api('design');
+        design.themes = r.themes || [];
+        inject();
+        try { localStorage.setItem('klub-temaer', JSON.stringify(design.themes)); } catch {}
     } catch {}
 }
-
-export const logoSrc = (url) => url || DEFAULT_LOGO;
-export { API_BASE };

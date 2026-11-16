@@ -2,18 +2,20 @@
     <label class="theme-switch">
         <span class="ts-label">Farvetema</span>
         <span class="ts-box">
-            <span class="ts-sw" :style="{ background: SWATCH[store.tema] }" aria-hidden="true"></span>
+            <span class="ts-sw" :style="{ background: swatch(store.tema) }" aria-hidden="true"></span>
             <select :value="store.tema" @change="setTheme($event.target.value, true)">
                 <option v-for="(label, key) in THEMES" :key="key" :value="key">{{ label }}</option>
             </select>
             <span class="ts-chev" aria-hidden="true">▾</span>
         </span>
         <span v-if="store.tema === 'auto'" class="ts-hint">SurfHorsens – lyst eller mørkt som din telefon/computer</span>
+        <span v-else-if="store.tema.startsWith('egen-')" class="ts-hint">Lyst eller mørkt som din telefon/computer</span>
     </label>
 </template>
 <script setup>
 import { store } from '../api';
 import { THEMES, setTheme } from '../theme';
+import { findTheme } from '../design';
 
 // Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen)
 const SWATCH = {
@@ -24,6 +26,11 @@ const SWATCH = {
     klub: 'conic-gradient(#7e5a8c 0 25%, #e665a1 0 50%, #ff9933 0 75%, #65a4a3 0)',
     marie: 'conic-gradient(#e3d8d3 0 40%, #83598c 0 70%, #ff9933 0 85%, #e665a1 0)',
     mork: 'linear-gradient(135deg, #0d1716 50%, #4cc2cf 50%)',
+};
+// Egne temaer: menu, knapper og detaljer
+const swatch = (k) => {
+    const c = findTheme(k)?.data?.light;
+    return c ? `conic-gradient(${c.brand} 0 40%, ${c.accent} 0 70%, ${c.orange} 0 85%, ${c.bg} 0)` : SWATCH[k] || SWATCH.auto;
 };
 </script>
 <style scoped>

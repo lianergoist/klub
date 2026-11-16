@@ -588,14 +588,14 @@ Klubbens hjemmeside henter kalender og priser fra klubsystemet, så de kun skal 
 
 ## Klubbens design
 
-Klubbens udseende kan ændres af ikke-tekniske frivillige uden at ødelægge, hvordan siderne virker på mobil og pc.
+Klubben kan lave egne farvetemaer uden teknisk hjælp og uden at ødelægge, hvordan siderne virker på mobil og pc.
 
-- **Kerne:** under Indstillinger → Design ændrer man SurfHorsens-temaets farver (7 farver i en lys og en mørk udgave), logo, skrift (Poppins eller enhedens egen) og runde hjørner. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layoutet kan ikke ændres.
-- **Kerne:** ændringer gemmes som kladde og vises i en forhåndsvisning af de rigtige sider på mobil og computer (intet kan gemmes inde i forhåndsvisningen). Først ved **Udgiv** ser alle medlemmer dem. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis man udgiver alligevel.
-- **Kerne:** hver udgivelse gemmes som en version, og en tidligere version eller standarddesignet kan hentes ind i kladden igen. Udgivelser står i ændringsloggen. Kræver rettigheden "Ændre klubbens design" (standard: administrator).
-- **Kerne:** medlemmer, der selv har valgt et andet farvetema, beholder det. Logoet gælder i alle temaer.
+- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Marie, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under Indstillinger → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
+- **Kerne:** et eget tema har navn, 7 farver i en lys og en mørk udgave (følger enhedens indstilling), eget logo, skrift (Poppins eller enhedens egen) og runde hjørner. Farverne vælges ved at trykke på dem. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layoutet kan ikke ændres.
+- **Kerne:** **Gem** og **Gem som…** (nyt navn, det gamle tema bevares). Status er *Under udvikling* (kun dem, der må rette design, kan vælge det under Farvetema) eller *Tilgængeligt for medlemmer*. Et tema kan slettes. Medlemmer med det valgt får så Automatisk.
+- **Kerne:** forhåndsvisning af de rigtige sider på mobil og computer, hvor intet kan gemmes. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis temaet gøres tilgængeligt alligevel. Oprettelse, ændring og sletning står i ændringsloggen. Kræver rettigheden "Lave og rette farvetemaer" (standard: administrator).
 - **Senere:** større ændringer (fx en ny forside) tegnes som forslag i Figma eller Penpot og bygges ind af udvikleren.
-- **Afklares:** hvem i klubben skal have lov til at ændre designet?
+- **Afklares:** hvem i klubben skal have lov til at lave temaer? Skal klubben kunne vælge et af sine egne temaer som standard i stedet for SurfHorsens?
 
 ## Forslag til faseopdeling
 

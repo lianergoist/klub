@@ -65,10 +65,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile/invoices', [ProfileController::class, 'invoices']);
     Route::get('profile/export', [ProfileController::class, 'export']);
     Route::get('settings/design', [\App\Http\Controllers\Api\DesignController::class, 'admin']);
-    Route::put('settings/design/draft', [\App\Http\Controllers\Api\DesignController::class, 'saveDraft']);
-    Route::delete('settings/design/draft', [\App\Http\Controllers\Api\DesignController::class, 'discardDraft']);
+    Route::post('settings/design/themes', [\App\Http\Controllers\Api\DesignController::class, 'store']);
+    Route::put('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'update'])->whereNumber('id');
+    Route::delete('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'destroy'])->whereNumber('id');
     Route::post('settings/design/logo', [\App\Http\Controllers\Api\DesignController::class, 'uploadLogo'])->middleware('throttle:20,1');
-    Route::post('settings/design/publish', [\App\Http\Controllers\Api\DesignController::class, 'publish']);
     Route::get('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'admin']);
     Route::post('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'store']);
     Route::put('settings/packages/{package}', [\App\Http\Controllers\Api\PackageController::class, 'update']);

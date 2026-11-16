@@ -9,24 +9,37 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Klubbens design: de værdier, der må ændres i SurfHorsens-temaet (det tema, Automatisk bruger).
- * Kun farver, logo, skrift og hjørner – aldrig layout – så siderne virker på mobil og pc uanset valg.
+ * Egne farvetemaer: farver (lys og mørk udgave), logo, skrift og hjørner. Aldrig layout – så siderne virker
+ * på mobil og pc uanset valg. De indbyggede temaer i app.css kan ikke rettes; man gemmer en kopi som eget tema.
  * Afledte farver (kanter, dæmpet tekst, knaptekst) beregnes i resources/js/design.js.
  */
 class Design
 {
     public const COLORS = ['bg', 'surface', 'ink', 'heading', 'accent', 'brand', 'orange'];
     public const FONTS = ['poppins', 'system'];
+    public const STATUSES = ['available', 'development'];
+    /** Navnene på de indbyggede temaer kan ikke bruges igen */
+    public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'Marie', 'Blå', 'Grøn', 'Orange', 'Mørk'];
 
-    public static function rules(): array
+    public static function rules(?int $ignoreId = null): array
     {
-        $r = ['data' => 'required|array', 'data.radius' => 'required|integer|min:0|max:20', 'data.font' => 'required|in:'.implode(',', self::FONTS),
-            'data.logo' => ['nullable', 'string', 'regex:#^design/logo-[0-9a-f-]{36}\.png$#']];
+        $r = [
+            'name' => ['required', 'string', 'max:40', 'not_in:'.implode(',', self::BUILT_IN),
+                \Illuminate\Validation\Rule::unique('design_themes', 'name')->ignore($ignoreId)],
+            'status' => 'required|in:'.implode(',', self::STATUSES),
+            'data' => 'required|array', 'data.radius' => 'required|integer|min:0|max:20', 'data.font' => 'required|in:'.implode(',', self::FONTS),
+            'data.logo' => ['nullable', 'string', 'regex:#^design/logo-[0-9a-f-]{36}\.png$#'],
+        ];
         foreach (['light', 'dark'] as $m) {
             foreach (self::COLORS as $c) $r["data.$m.$c"] = ['required', 'regex:/^#[0-9a-fA-F]{6}$/'];
         }
 
         return $r;
+    }
+
+    public static function messages(): array
+    {
+        return ['name.unique' => 'Der findes allerede et tema med det navn.', 'name.not_in' => 'Navnet bruges af et indbygget tema. Vælg et andet.'];
     }
 
     /** Kun de kendte nøgler gemmes. */
@@ -41,24 +54,28 @@ class Design
         return $out;
     }
 
-    public static function published(): ?object
+    public static function row(object $t): array
     {
-        return DB::table('design_versions')->where('status', 'published')->orderByDesc('id')->first();
+        $d = json_decode($t->data, true);
+
+        return ['id' => $t->id, 'key' => 'egen-'.$t->id, 'name' => $t->name, 'status' => $t->status, 'data' => $d,
+            'logo_url' => $d['logo'] ? self::logoUrl($d['logo']) : null];
     }
 
-    /** Det, alle enheder henter (offentligt, også før login). */
-    public static function current(): array
+    /** Temaer, medlemmerne kan vælge (offentligt, også før login). */
+    public static function available(): array
     {
-        return Cache::rememberForever('design_current', function () {
-            $p = self::published();
-            if (! $p) return ['version' => null, 'data' => null];
-            $d = json_decode($p->data, true);
-
-            return ['version' => $p->id, 'data' => $d, 'logo_url' => $d['logo'] ? self::logoUrl($d['logo']) : null];
-        });
+        return Cache::rememberForever('design_themes', fn () => DB::table('design_themes')->where('status', 'available')->orderBy('name')->get()
+            ->map(fn ($t) => self::row($t))->all());
     }
 
-    public static function forget(): void { Cache::forget('design_current'); }
+    /** Alle temaer, også dem under udvikling (til dem, der må rette design). */
+    public static function all(): array
+    {
+        return DB::table('design_themes')->orderBy('name')->get()->map(fn ($t) => self::row($t))->all();
+    }
+
+    public static function forget(): void { Cache::forget('design_themes'); }
 
     public static function logoUrl(string $path): string
     {
