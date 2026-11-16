@@ -1,4 +1,5 @@
 import { store } from './api';
+import { PREVIEW, themeColor } from './design';
 
 // Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå).
 // 'auto' = SurfHorsens, lys eller mørk efter telefonens/computerens indstilling.
@@ -21,10 +22,12 @@ function read() {
 function apply() {
     const html = document.documentElement;
     const t = store.tema === 'auto' ? 'klub' : store.tema;
-    const klubMork = store.tema === 'auto' && systemDark();
+    const klubMork = PREVIEW ? PREVIEW === 'mork' : store.tema === 'auto' && systemDark();
     html.dataset.tema = t;
     if (klubMork) html.dataset.mork = ''; else delete html.dataset.mork;
-    document.querySelector('meta[name=theme-color]')?.setAttribute('content', COLORS[klubMork ? 'klub-mork' : t]);
+    // Klubbens eget design (Indstillinger → Design) kan have en anden menufarve
+    const custom = t === 'klub' ? themeColor(klubMork) : null;
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', custom || COLORS[klubMork ? 'klub-mork' : t]);
     // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke
     // eslint-disable-next-line no-undef
     if (__APP__) import('./native').then((m) => m.setStatusBarDark(klubMork || t === 'mork')).catch(() => {});
@@ -40,6 +43,9 @@ export function setTheme(t, remember = false) {
 
 /** Fx ?tema=klub, ?tema=mork eller ?tema=auto i adressen vælger tema (praktisk til at dele et link). */
 export function initTheme() {
+    // Forhåndsvisningen i Indstillinger → Design viser altid SurfHorsens og gemmer intet (localStorage deles med siden udenom)
+    if (PREVIEW) { store.tema = 'klub'; apply(); return; }
+    window.addEventListener('klubdesign', apply);
     const fromUrl = new URLSearchParams(location.search).get('tema');
     if (THEMES[fromUrl]) setTheme(fromUrl, true);
     else setTheme(read() || 'auto');

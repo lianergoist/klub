@@ -2,7 +2,7 @@
     <div class="login-wrap">
         <div class="login-hero">
             <img class="brand-default" src="/icon.svg" alt="" width="64" height="64">
-            <img class="brand-logo" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:200px;height:auto;margin:0 auto 6px">
+            <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:200px;height:auto;margin:0 auto 6px">
             <h1>Medlemsportal</h1>
             <p>Aktiviteter, medlemskab og betaling samlet ét sted.</p>
         </div>
@@ -36,6 +36,7 @@
 </template>
 
 <script setup>
+import { design } from '../design';
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { api, setSession, store, IS_APP, returnTarget } from '../api';

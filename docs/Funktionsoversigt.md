@@ -586,6 +586,17 @@ Klubbens hjemmeside henter kalender og priser fra klubsystemet, så de kun skal 
 - **Afklares:** Windsurf introkursus (499 kr.) og begynderkursus (1.199 kr.) findes kun som tekst på hjemmesiden. Skal de oprettes som tilbud i systemet, så de kan bookes og betales? SUP-kurset koster 499 kr. på siden, men 500 kr. i systemet.
 - **Afklares:** nyhedsbrevsformularen på forsiden virker ikke i dag. Skal den fjernes, eller skal tilmeldinger gemmes i klubsystemet (fx som interesseliste)?
 
+## Klubbens design
+
+Klubbens udseende kan ændres af ikke-tekniske frivillige uden at ødelægge, hvordan siderne virker på mobil og pc.
+
+- **Kerne:** under Indstillinger → Design ændrer man SurfHorsens-temaets farver (7 farver i en lys og en mørk udgave), logo, skrift (Poppins eller enhedens egen) og runde hjørner. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layoutet kan ikke ændres.
+- **Kerne:** ændringer gemmes som kladde og vises i en forhåndsvisning af de rigtige sider på mobil og computer (intet kan gemmes inde i forhåndsvisningen). Først ved **Udgiv** ser alle medlemmer dem. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis man udgiver alligevel.
+- **Kerne:** hver udgivelse gemmes som en version, og en tidligere version eller standarddesignet kan hentes ind i kladden igen. Udgivelser står i ændringsloggen. Kræver rettigheden "Ændre klubbens design" (standard: administrator).
+- **Kerne:** medlemmer, der selv har valgt et andet farvetema, beholder det. Logoet gælder i alle temaer.
+- **Senere:** større ændringer (fx en ny forside) tegnes som forslag i Figma eller Penpot og bygges ind af udvikleren.
+- **Afklares:** hvem i klubben skal have lov til at ændre designet?
+
 ## Forslag til faseopdeling
 
 Et system med alt på én gang er stort at bygge og svagt at teste. Forslaget er at tage det i tre træk, så klubben kan bruge det efter første fase:

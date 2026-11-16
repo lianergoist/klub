@@ -35,7 +35,11 @@ export class ApiError extends Error {
     constructor(message, status, errors, data) { super(message); this.status = status; this.errors = errors || {}; this.data = data || {}; }
 }
 
+// Forhåndsvisningen i Indstillinger → Design (iframe): siden er rigtig, men intet må gemmes derinde
+const DESIGN_PREVIEW = new URLSearchParams(location.search).has('designvisning');
+
 export async function api(path, { method = 'GET', body, form } = {}) {
+    if (DESIGN_PREVIEW && method !== 'GET') throw new ApiError('Forhåndsvisning – intet bliver gemt her.', 0);
     const headers = { Accept: 'application/json', ...usageHeaders() };
     if (store.token) headers.Authorization = `Bearer ${store.token}`;
     if (IS_APP && siteAccess()) headers['X-Site-Access'] = siteAccess();
@@ -62,6 +66,7 @@ export async function api(path, { method = 'GET', body, form } = {}) {
 /** Upload med statuslinje (fx video i opslag). onProgress får 0–100. Fejl håndteres som i api(). */
 export function upload(path, form, onProgress) {
     return new Promise((resolve, reject) => {
+        if (DESIGN_PREVIEW) return reject(new ApiError('Forhåndsvisning – intet bliver gemt her.', 0));
         const x = new XMLHttpRequest();
         x.open('POST', `${API_BASE}/api/${path}`);
         x.setRequestHeader('Accept', 'application/json');
@@ -111,6 +116,7 @@ export function toast(text, kind = 'ok') {
 
 /** Log ud overalt (i appen afmeldes telefonen også push). */
 export async function logout() {
+    if (DESIGN_PREVIEW) { toast('Forhåndsvisning – du bliver ikke logget ud.'); throw new ApiError('preview', 0); }
     if (IS_APP) { try { await (await import('./native')).unregisterPush(); } catch {} }
     try { await api('logout', { method: 'POST' }); } catch {}
     setSession(null, null);

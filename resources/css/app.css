@@ -377,3 +377,7 @@ html.native body::before { content: ''; position: fixed; top: 0; left: 0; right:
 .sidebar nav button.navbtn { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #cfe5e8; background: none; border: 0; font: inherit; width: 100%; cursor: pointer; text-align: left; }
 .sidebar nav button.navbtn:hover { background: rgba(255,255,255,.07); }
 html[data-tema=marie] .sidebar nav button.navbtn { color: var(--ink-2); border-radius: 6px; }
+
+/* Klubbens logo (kan skiftes under Indstillinger → Design): bredden er fast, et højt logo skaleres ned i stedet for at skubbe siden */
+img.brand-logo, .brand-logo img { max-height: 110px; object-fit: contain; }
+.sidebar .brand-logo img { object-position: left center; }

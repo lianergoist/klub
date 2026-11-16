@@ -2,7 +2,7 @@
     <div v-if="store.user && !route.meta.public && !route.meta.guest && store.user.status !== 'guest'" class="shell">
         <aside class="sidebar">
             <div class="brandmark brand-default"><img src="/icon.svg" alt=""> Klubben</div>
-            <div class="brand-logo" style="padding:0 10px 18px"><img src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>
+            <div class="brand-logo" style="padding:0 10px 18px"><img :src="design.logo" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
@@ -43,6 +43,7 @@
 </template>
 
 <script setup>
+import { design } from './design';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';

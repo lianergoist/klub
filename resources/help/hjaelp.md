@@ -156,5 +156,16 @@ Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlems
 
 # Hjælp
 
+## Klubbens design {#design kræver:design_manage side:/indstillinger/design}
+Under **Indstillinger → Design** ændrer du farver, logo, skrift og runde hjørner i klubbens tema (SurfHorsens). Siderne beholder deres opbygning, så de virker på både mobil og pc, uanset hvad du vælger.
+
+- Vælg **Lys udgave** eller **Mørk udgave** øverst. Den mørke bruges, når telefonen eller computeren står på mørk tilstand.
+- Ændringer gemmes automatisk som **kladde**. Kun du og andre med adgang til Design ser kladden i forhåndsvisningen.
+- **Kan man læse det?** advarer, hvis tekst og baggrund ligger for tæt på hinanden. Ret farven, til advarslen forsvinder.
+- Tryk **Udgiv**, når du er tilfreds. Alle medlemmer ser det nye design, næste gang de åbner appen eller siden.
+- Fortryder du, kan du under **Tidligere versioner** hente en gammel version eller standarddesignet ind i kladden og udgive den igen.
+
+Medlemmer, der selv har valgt et andet farvetema (fx Grøn), beholder det. Logoet gælder for alle temaer.
+
 ## Finder du ikke svaret? {#spoerg}
 Søg i feltet øverst i hjælpen. Kommer du ikke videre, kan du kontakte bestyrelsen.

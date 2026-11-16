@@ -2,7 +2,7 @@
     <div class="guest">
         <header class="ghead">
             <img class="brand-default" src="/icon.svg" alt="" width="52" height="52">
-            <img class="brand-logo" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens" style="width:170px;height:auto;margin:0 auto">
+            <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:170px;height:auto;margin:0 auto">
             <h1>Prøv SurfHorsens</h1>
             <p class="muted">Ikke medlem endnu? {{ intro }}</p>
         </header>
@@ -51,6 +51,7 @@
     </div>
 </template>
 <script setup>
+import { design } from '../design';
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { api, setSession, datoLang, klok } from '../api';

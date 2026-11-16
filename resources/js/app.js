@@ -3,8 +3,10 @@ import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
 import { store, refreshMe, IS_APP, siteAccess } from './api';
 import { initTheme } from './theme';
+import { initDesign, PREVIEW } from './design';
 import { initUsage } from './usage';
 
+initDesign();
 initTheme();
 
 // Appen bygges uden gæstesiderne (prøvetræning bruges på weben)
@@ -44,6 +46,7 @@ const routes = [
     { path: '/medlemmer/:id', component: v('MemberDetail'), props: true, meta: { can: 'members_view' } },
     { path: '/indstillinger', component: v('Settings'), meta: { can: 'settings' } },
     { path: '/indstillinger/aendringslog', component: v('AuditLog'), meta: { can: 'audit_view', wide: true } },
+    { path: '/indstillinger/design', component: v('Design'), meta: { can: 'design_manage', wide: true } },
     { path: '/indstillinger/rettigheder', component: v('Permissions'), meta: { can: 'roles_manage', wide: true } },
     {
         path: '/okonomi', component: v('finance/FinanceLayout'), meta: { can: 'finance_read', wide: true },
@@ -80,11 +83,11 @@ router.beforeEach(async (to, from) => {
 });
 
 const app = createApp(App).use(router);
-initUsage(router, app);
+if (!PREVIEW) initUsage(router, app); // forhåndsvisningen i Design tæller ikke med i brugsloggen
 app.mount('#app');
 
 if (__APP__) {
     import('./native').then((m) => m.initNative(router));
-} else if ('serviceWorker' in navigator) {
+} else if ('serviceWorker' in navigator && !PREVIEW) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
