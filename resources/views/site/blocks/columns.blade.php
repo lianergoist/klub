@@ -1,8 +1,11 @@
 @php
     // En tom kolonne (fx når billedet er fjernet): resten breder sig over hele bredden
-    $filled = array_values(array_filter(array_slice($b['cols'] ?? [], 0, 2), fn ($c) => !empty($c)));
-    $two = ($b['layout'] ?? 'one') === 'two' && count($filled) === 2;
-    $cols = $two ? $filled : [$filled ? array_merge(...$filled) : []];
+    $raw = array_slice($b['cols'] ?? [], 0, 2);
+    $filled = array_values(array_filter($raw, fn ($c) => !empty($c)));
+    // I editorens forhåndsvisning vises en tom kolonne som en stiplet ramme, så man kan se, at den findes
+    $showEmpty = !empty($preview) && ($b['layout'] ?? 'one') === 'two' && count($raw) === 2 && $filled;
+    $two = ($b['layout'] ?? 'one') === 'two' && (count($filled) === 2 || $showEmpty);
+    $cols = $showEmpty ? $raw : ($two ? $filled : [$filled ? array_merge(...$filled) : []]);
     $w = $b['widths'] ?? [1, 1];
     $isImg = fn ($col) => ($col[0]['t'] ?? '') === 'image';
     // På mobil står billedet øverst
@@ -14,6 +17,7 @@
         @if (!$filled)<p class="sh-pv-empty">Tom blok – tilføj tekst, billede eller en knap.</p>@endif
         @foreach ($cols as $col)
             <div class="sh-col">
+                @if (!$col)<p class="sh-pv-empty">Tom kolonne. Den vises ikke på hjemmesiden – her fylder resten af blokken hele bredden. Tilføj indhold for at vise den.</p>@endif
                 @foreach ($col as $el)
                     @switch($el['t'] ?? '')
                         @case('image')

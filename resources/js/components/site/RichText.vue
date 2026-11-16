@@ -134,6 +134,7 @@ function applyPrice() {
 .rt-fmt { width: auto; min-height: 30px; padding: 2px 8px; font-size: .82rem; }
 .rt-pop { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-bottom: 1px solid var(--line); background: var(--accent-soft); }
 .rt-ed { padding: 8px 10px; min-height: 90px; max-height: 340px; overflow-y: auto; outline: none; font-size: .9rem; line-height: 1.55; }
+.rt-ed :deep(h2), .rt-ed :deep(h3), .rt-ed :deep(h4) { text-transform: none; letter-spacing: normal; color: inherit; }
 .rt-ed :deep(h2) { font-size: 1.3rem; margin: .3em 0; }
 .rt-ed :deep(h3) { font-size: 1.12rem; margin: .3em 0; }
 .rt-ed :deep(h4) { font-size: .98rem; margin: .3em 0; }

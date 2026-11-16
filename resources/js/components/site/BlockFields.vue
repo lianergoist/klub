@@ -33,7 +33,7 @@
 
             <section v-for="(col, ci) in b.cols" :key="ci" class="col">
                 <h4>{{ b.layout === 'two' ? (ci === 0 ? 'Venstre kolonne' : 'Højre kolonne') + ' (på mobil: ' + (ci === 0 ? 'øverst' : 'nederst') + ')' : 'Indhold' }}</h4>
-                <p v-if="!col.length" class="small muted" style="margin:0 0 6px">Tom – resten af blokken fylder hele bredden.</p>
+                <p v-if="!col.length" class="small" style="margin:0 0 6px;color:var(--warn)">Kolonnen er tom og vises derfor ikke – resten af blokken fylder hele bredden på hjemmesiden. Tilføj tekst, et billede eller en knap herunder for at vise den.</p>
                 <div v-for="(el, ei) in col" :key="ei" class="el">
                     <div class="el-head">
                         <strong>{{ EL[el.t] }}</strong>
@@ -125,7 +125,8 @@ function move(arr, i, d) { const [x] = arr.splice(i, 1); arr.splice(i + d, 0, x)
 function setLayout(v) {
     const blk = b.value;
     if (v === 'one') blk.cols = [blk.cols.flat()];
-    else if (blk.cols.length < 2) blk.cols = [blk.cols[0] || [], []];
+    // Den nye kolonne får en tekst at starte med – en tom kolonne vises ikke på hjemmesiden
+    else if (blk.cols.length < 2 || !blk.cols[1].length) blk.cols = [blk.cols[0] || [], [{ t: 'text', html: '<p>Skriv teksten her.</p>' }]];
     blk.layout = v;
 }
 
