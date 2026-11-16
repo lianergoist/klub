@@ -1,6 +1,6 @@
 import { reactive } from 'vue';
 import { store } from './api';
-import { PREVIEW, design, findTheme, themeColor, DEFAULT_LOGO } from './design';
+import { PREVIEW, design, findTheme, themeColor } from './design';
 
 // Temaet Marie blev fjernet 16/11-2026; har man det valgt, giver setTheme Automatisk.
 // Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå).
@@ -39,7 +39,6 @@ function apply() {
     const mork = PREVIEW ? PREVIEW === 'mork' : followsDevice && systemDark();
     html.dataset.tema = t;
     if (mork && (t === 'klub' || isCustom(t))) html.dataset.mork = ''; else delete html.dataset.mork;
-    design.logo = (isCustom(t) && findTheme(t)?.logo_url) || DEFAULT_LOGO;
     const color = isCustom(t) ? themeColor(t, mork) : COLORS[mork && t === 'klub' ? 'klub-mork' : t];
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', color || COLORS.klub);
     // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke

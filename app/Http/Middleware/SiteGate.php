@@ -17,11 +17,11 @@ class SiteGate
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Klubbens design og logo er offentlige (vises før login og på login-siden).
+        // Klubbens farvetemaer er offentlige (vises før login og på login-siden).
         // Signerede billedlinks (opslagstavlen) er allerede udstedt til en indlogget bruger og udløber selv. <img> kan ikke sende appens token.
         $signedImage = $request->is('api/feed/images/*', 'api/expense-claims/*/file') && $request->hasValidSignature();
 
-        if (! self::enabled() || $request->isMethod('OPTIONS') || $request->is('adgang', 'up', 'api/site-access', 'api/design', 'api/design/logo/*') || $signedImage || self::valid($request)) {
+        if (! self::enabled() || $request->isMethod('OPTIONS') || $request->is('adgang', 'up', 'api/site-access', 'api/design') || $signedImage || self::valid($request)) {
             return $next($request);
         }
 

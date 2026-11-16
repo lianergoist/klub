@@ -2,7 +2,7 @@ import { reactive, watch } from 'vue';
 import { api, store } from './api';
 
 /**
- * Egne farvetemaer (Indstillinger → Design): farver i en lys og en mørk udgave, logo, skrift og hjørner.
+ * Egne farvetemaer (Indstillinger → Design): farver i en lys og en mørk udgave, skrift og hjørner. Logoet er altid klubbens.
  * Kun CSS-variabler ændres – aldrig layout – så siderne virker på mobil og pc uanset valg.
  * De indbyggede temaer ligger i app.css og kan ikke rettes; BUILT_IN er deres grundfarver, så man kan åbne en kopi.
  * Et eget tema har nøglen 'egen-<id>' (html[data-tema=egen-5]) og følger enhedens lyse/mørke tilstand.
@@ -34,7 +34,7 @@ const FONT_CSS = {
     system: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
 
-/** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: det aktive temas logo. */
+/** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: klubbens logo. */
 export const design = reactive({ themes: [], logo: DEFAULT_LOGO });
 
 // ---------- farver ----------
@@ -123,7 +123,7 @@ export const PREVIEW = new URLSearchParams(location.search).get('designvisning')
 export function initDesign() {
     if (PREVIEW) {
         // Forhåndsvisning i Indstillinger → Design: temaet, der redigeres, kommer fra siden udenom (samme adresse)
-        const take = (p) => { if (p) { preview = { key: 'egen-preview', data: p.data, logo_url: p.logo_url }; inject(); } };
+        const take = (p) => { if (p) { preview = { key: 'egen-preview', data: p.data }; inject(); } };
         try { take(window.parent.__klubDesignDraft); } catch {}
         window.addEventListener('message', (e) => { if (e.origin === location.origin && e.data?.type === 'klub-design') take(e.data); });
         return;

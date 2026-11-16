@@ -7,7 +7,7 @@
                     <Icon name="users" class="mi" /><span class="mtext"><strong>Rettigheder</strong><span class="small muted">Hvilke roller der må hvad, og personlige rettigheder</span></span><span class="chev">›</span>
                 </RouterLink></li>
                 <li v-if="can.design_manage"><RouterLink to="/indstillinger/design" class="mrow">
-                    <Icon name="image" class="mi" /><span class="mtext"><strong>Design</strong><span class="small muted">Egne farvetemaer med farver, logo, skrift og hjørner</span></span><span class="chev">›</span>
+                    <Icon name="image" class="mi" /><span class="mtext"><strong>Design</strong><span class="small muted">Egne farvetemaer med farver, skrift og hjørner</span></span><span class="chev">›</span>
                 </RouterLink></li>
                 <li v-if="can.audit_view"><RouterLink to="/indstillinger/aendringslog" class="mrow">
                     <Icon name="clock" class="mi" /><span class="mtext"><strong>Ændringslog</strong><span class="small muted">Alle handlinger i systemet med hvem og hvornår</span></span><span class="chev">›</span>

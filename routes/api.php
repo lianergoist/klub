@@ -25,7 +25,6 @@ Route::post('demo-login', [AuthController::class, 'demoLogin'])->middleware('thr
 Route::get('public/calendar', [\App\Http\Controllers\Api\PublicController::class, 'calendar'])->middleware('throttle:120,1');
 Route::get('public/prices', [\App\Http\Controllers\Api\PublicController::class, 'prices'])->middleware('throttle:120,1');
 Route::get('design', [\App\Http\Controllers\Api\DesignController::class, 'show'])->middleware('throttle:120,1');
-Route::get('design/logo/{file}', [\App\Http\Controllers\Api\DesignController::class, 'logo']);
 Route::get('packages/offer', [\App\Http\Controllers\Api\PackageController::class, 'offer']);
 Route::get('guest/offers', [GuestController::class, 'offers']);
 Route::get('login-links', [GuestController::class, 'loginLinks']);
@@ -68,7 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('settings/design/themes', [\App\Http\Controllers\Api\DesignController::class, 'store']);
     Route::put('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'update'])->whereNumber('id');
     Route::delete('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'destroy'])->whereNumber('id');
-    Route::post('settings/design/logo', [\App\Http\Controllers\Api\DesignController::class, 'uploadLogo'])->middleware('throttle:20,1');
     Route::get('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'admin']);
     Route::post('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'store']);
     Route::put('settings/packages/{package}', [\App\Http\Controllers\Api\PackageController::class, 'update']);

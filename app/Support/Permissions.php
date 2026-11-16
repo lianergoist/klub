@@ -55,7 +55,7 @@ class Permissions
             'Se alle handlinger i systemet (medlemmer, aktiviteter, opslag, udstyr, rettigheder m.m.) under Indstillinger. Regnskabets egen ændringslog ligger under Økonomi.', ['admin']],
 
         'design.manage' => ['Design', 'Lave og rette farvetemaer',
-            'Lave egne farvetemaer under Indstillinger → Design (farver, logo, skrift og runde hjørner) og gøre dem tilgængelige for medlemmerne. De indbyggede temaer og layoutet kan ikke ændres.', ['admin']],
+            'Lave egne farvetemaer under Indstillinger → Design (farver, skrift og runde hjørner) og gøre dem tilgængelige for medlemmerne. De indbyggede temaer og layoutet kan ikke ændres.', ['admin']],
 
         'feed.moderate' => ['Kommunikation', 'Moderere opslagstavlen',
             'Skjule og slette opslag og kommentarer og afvise anmeldelser.', ['trainer', 'board', 'admin']],

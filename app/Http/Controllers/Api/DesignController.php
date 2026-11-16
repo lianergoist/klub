@@ -8,7 +8,6 @@ use App\Support\Audit;
 use App\Support\Design;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Indstillinger → Design: egne farvetemaer. Man åbner et tema (en kopi, hvis det er indbygget), retter og gemmer det –
@@ -23,16 +22,6 @@ class DesignController extends Controller
         $themes = $u?->may('design.manage') ? Design::all() : Design::available();
 
         return response()->json(['themes' => $themes])->header('Cache-Control', 'no-cache');
-    }
-
-    public function logo(string $file)
-    {
-        abort_unless(preg_match('/^logo-[0-9a-f-]{36}\.png$/', $file), 404);
-        $path = 'design/'.$file;
-        abort_unless(Storage::exists($path), 404);
-
-        // Filnavnet ændres ved hver upload, så filen kan caches længe
-        return response(Storage::get($path), 200, ['Content-Type' => 'image/png', 'Cache-Control' => 'public, max-age=31536000, immutable']);
     }
 
     public function admin(Request $r)
@@ -82,14 +71,5 @@ class DesignController extends Controller
         Audit::log('design.theme_deleted', null, ['tema' => $t->name]);
 
         return ['ok' => true];
-    }
-
-    public function uploadLogo(Request $r)
-    {
-        abort_unless($r->user()->may('design.manage'), 403);
-        $r->validate(['logo' => 'required|file|mimes:png,jpg,jpeg,webp|max:5120']);
-        $path = Design::storeLogo($r->file('logo'));
-
-        return ['logo' => $path, 'logo_url' => Design::logoUrl($path)];
     }
 }

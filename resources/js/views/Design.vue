@@ -125,19 +125,6 @@
                     </template>
                 </template>
 
-                <!-- Logo -->
-                <template v-else-if="panel === 'logo' && ed">
-                    <div class="logos">
-                        <div class="lg" :style="{ background: ed.data[mode].surface }"><img :src="ed.logo_url || DEFAULT_LOGO" alt="Logo"></div>
-                        <div class="lg" :style="{ background: ed.data[mode].brand }"><img :src="ed.logo_url || DEFAULT_LOGO" alt="Logo i menuen"></div>
-                    </div>
-                    <p class="small muted" style="margin:8px 0">PNG med gennemsigtig baggrund er bedst. Logoet vises altid i samme bredde, så det ikke kan skubbe siden.</p>
-                    <div class="row" style="gap:8px">
-                        <label class="btn small"><input type="file" accept="image/png,image/jpeg,image/webp" hidden @change="uploadLogo"> {{ uploading ? 'Sender…' : 'Vælg nyt logo' }}</label>
-                        <button v-if="ed.data.logo" class="btn ghost small" @click="ed.data.logo = null; ed.logo_url = null">Brug klubbens standardlogo</button>
-                    </div>
-                </template>
-
                 <!-- Skrift og hjørner -->
                 <template v-else-if="panel === 'skrift' && ed">
                     <div class="small" style="font-weight:600;margin-bottom:6px">Skrift</div>
@@ -171,7 +158,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { api, toast } from '../api';
-import { BUILT_IN, DEFAULT_LOGO, COLOR_FIELDS, FONTS, checks, refreshDesign, inkOn } from '../design';
+import { BUILT_IN, COLOR_FIELDS, FONTS, checks, refreshDesign, inkOn } from '../design';
 import { isMobile } from '../mobile';
 import HelpButton from '../components/HelpButton.vue';
 import Modal from '../components/Modal.vue';
@@ -180,24 +167,23 @@ const TOOLS = [
     { id: 'tema', label: 'Tema' },
     { id: 'gem', label: 'Gem' },
     { id: 'farver', label: 'Farver' },
-    { id: 'logo', label: 'Logo' },
     { id: 'skrift', label: 'Skrift og hjørner' },
 ];
-const TITLES = { tema: 'Vælg tema', gem: 'Gem', farver: 'Farver', logo: 'Logo', skrift: 'Skrift og hjørner' };
+const TITLES = { tema: 'Vælg tema', gem: 'Gem', farver: 'Farver', skrift: 'Skrift og hjørner' };
 const PAGES = { '/aktiviteter': 'Aktiviteter', '/opslag': 'Opslag', '/profil': 'Profil', '/mere': 'Mere' };
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const datoTid = (s) => new Date(s).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const sw = (d) => `conic-gradient(${d.light.brand} 0 40%, ${d.light.accent} 0 70%, ${d.light.orange} 0 85%, ${d.light.bg} 0)`;
 
 const themes = ref(null);
-const ed = ref(null);   // temaet, der redigeres: { id|null, name, status, data, logo_url }
+const ed = ref(null);   // temaet, der redigeres: { id|null, name, status, data }
 const orig = ref(null); // som det var, da det blev åbnet/gemt
 const panel = ref('tema');
 const title = computed(() => TITLES[panel.value]);
 const mode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 const page = ref('/aktiviteter');
 const device = ref('pc');
-const busy = ref(false); const uploading = ref(false);
+const busy = ref(false);
 const saveAs = reactive({ open: false, name: '', status: 'development' });
 const src = computed(() => `${page.value}?designvisning=${mode.value === 'dark' ? 'mork' : 'lys'}`);
 
@@ -205,7 +191,7 @@ function toggle(id) { panel.value = panel.value === id ? null : id; if (panel.va
 
 // Sammenlign uafhængigt af nøglernes rækkefølge (databasen sorterer dem)
 const pick = (c) => COLOR_FIELDS.map(([k]) => c?.[k]?.toLowerCase());
-const norm = (x) => JSON.stringify([x.name, x.status, pick(x.data.light), pick(x.data.dark), Number(x.data.radius), x.data.font, x.data.logo || null]);
+const norm = (x) => JSON.stringify([x.name, x.status, pick(x.data.light), pick(x.data.dark), Number(x.data.radius), x.data.font]);
 const dirty = computed(() => ed.value && orig.value && norm(ed.value) !== norm(orig.value));
 const bad = computed(() => (ed.value ? checks(ed.value.data).filter((c) => !c.ok) : []));
 
@@ -221,12 +207,12 @@ function start(t) {
 }
 function openTheme(t) {
     if (!discardOk()) return;
-    start({ id: t.id, name: t.name, status: t.status, data: t.data, logo_url: t.logo_url });
+    start({ id: t.id, name: t.name, status: t.status, data: t.data });
 }
 function openCopy(k) {
     if (!discardOk()) return;
     const b = BUILT_IN[k];
-    start({ id: null, name: suggestName('Kopi af ' + b.name), status: 'development', data: b.data, logo_url: null });
+    start({ id: null, name: suggestName('Kopi af ' + b.name), status: 'development', data: b.data });
     orig.value.name = null; // en ny kopi er altid "ikke gemt"
 }
 function close() { if (discardOk()) { ed.value = null; orig.value = null; panel.value = 'tema'; } }
@@ -264,7 +250,7 @@ async function doSaveAs() {
     busy.value = false;
 }
 async function after(r, msg) {
-    ed.value = { id: r.id, name: r.name, status: r.status, data: r.data, logo_url: r.logo_url };
+    ed.value = { id: r.id, name: r.name, status: r.status, data: r.data };
     orig.value = clone(ed.value);
     await Promise.all([load(), refreshDesign()]); // temavælgeren skal kende det nye/ændrede tema
     toast(msg);
@@ -281,27 +267,15 @@ async function remove() {
     busy.value = false;
 }
 
-async function uploadLogo(e) {
-    const file = e.target.files[0]; e.target.value = '';
-    if (!file) return;
-    uploading.value = true;
-    try {
-        const form = new FormData(); form.append('logo', file);
-        const r = await api('settings/design/logo', { method: 'POST', form });
-        ed.value.logo_url = r.logo_url; ed.value.data.logo = r.logo;
-    } catch (err) { toast(err.message, 'error'); }
-    uploading.value = false;
-}
-
 // ---------- forhåndsvisning ----------
 const phoneF = ref(null); const pcF = ref(null);
 function send() {
     if (!ed.value) return;
-    const p = { type: 'klub-design', data: clone(ed.value.data), logo_url: ed.value.logo_url };
+    const p = { type: 'klub-design', data: clone(ed.value.data) };
     window.__klubDesignDraft = p; // læses af iframen, når den indlæses
     for (const f of [phoneF.value, pcF.value]) f?.contentWindow?.postMessage(p, location.origin);
 }
-watch(() => ed.value && [ed.value.data, ed.value.logo_url], send, { deep: true });
+watch(() => ed.value?.data, send, { deep: true });
 watch(device, () => nextTick(fit));
 
 // Computer: hele bredden, højden fylder skærmen. Mobil: hele telefonen, så høj som skærmen tillader.
@@ -408,9 +382,6 @@ onUnmounted(() => {
 .cpick::-webkit-color-swatch { border: 0; border-radius: 7px; }
 .cpick::-moz-color-swatch { border: 0; border-radius: 7px; }
 .crow .mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.logos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.lg { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; align-items: center; justify-content: center; min-height: 80px; }
-.lg img { width: 100%; max-width: 150px; max-height: 70px; object-fit: contain; }
 .rdemo { border: 1px solid var(--line); background: var(--surface-2); padding: 10px 18px; font-size: .85rem; }
 </style>
 <style>
