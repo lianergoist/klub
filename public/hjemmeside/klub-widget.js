@@ -12,7 +12,7 @@
  *   <a data-klub="login" href="…/login">     bliver til "Klubsystem", hvis man er logget ind (samme domæne)
  *
  * Klub-systemets adresse tages fra scriptets egen adresse (eller data-klub-api på script-tagget).
- * Siden bruger Squarespaces egne klasser (eventlist-…, sqs-button-element--primary), så designet følger med.
+ * Kalenderen bruger Squarespaces klassenavne (eventlist-…), så den passer ind på Squarespace; klubbens egen side styler dem i site.css.
  */
 (function () {
     'use strict';

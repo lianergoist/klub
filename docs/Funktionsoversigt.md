@@ -576,15 +576,19 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 ## Offentlig hjemmeside
 
-Klubbens hjemmeside henter kalender og priser fra klubsystemet, så de kun skal vedligeholdes ét sted. I proof of concept ligger en kopi af den nuværende Squarespace-side på klubsystemets forside; samme lille script kan sættes ind på Squarespace-siden.
+Klubbens hjemmeside ligger i klubsystemet og henter kalender og priser derfra, så de kun skal vedligeholdes ét sted. Siderne (Forside, Priser og medlemskab, Kalender, Så meget AlÅha, Kontakt) er bygget af faste blokke, så indholdet kan rettes uden at ødelægge visningen på mobil og pc. Kalender-scriptet kan stadig sættes ind på en anden hjemmeside (fx Squarespace).
 
 - **Kerne:** "Log ind" i menuen (bliver til "Klubsystem", når man er logget ind) og "Meld mig ind!" går til indmeldelsen.
 - **Kerne:** kalenderen viser kommende aktiviteter, som er markeret "Vis i kalenderen på hjemmesiden" (fluebenet sættes, når aktiviteten oprettes eller rettes; standard er nej). Åbne tilbud til ikke-medlemmer får knappen "Book plads", aktiviteter med klippekort "Tilmeld med klippekort" og øvrige "Log ind og tilmeld dig".
-- **Kerne:** prislisten (kontingenter, udstyrsleje og tilkøb, tilbud til ikke-medlemmer) dannes ud fra pakkerne under Indstillinger → Pakker. Kursuspriser i teksten kan følge en pakke med samme navn.
+- **Kerne:** prislisten (kontingenter, udstyrsleje og tilkøb, tilbud til ikke-medlemmer) dannes ud fra pakkerne under Indstillinger → Pakker. Kursuspriser i teksten kan følge en pakke.
+- **Kerne:** bloktyper: billede i fuld bredde med overskrift (forsiden og Priser fylder hele skærmen, og knappen ruller til næste blok), én eller to kolonner med billeder, tekst og knapper, orange priskort med billede (hver anden med billedet til højre), spørgsmål og svar, kalender. Menu og bund ligger fast.
+- **Kerne:** knapper peger på sider, indmeldelse, tilbud eller aktiviteter i systemet – ikke på adresser, man skriver selv. Et tilbud eller en aktivitet, der ikke længere findes eller er overstået, giver ingen knap.
+- **Kerne:** kortet på Kontakt hentes først fra Google Maps, når man klikker (ingen cookies fra Google før).
+- **Næste trin:** editor til hjemmesiden med rettigheden "Redigere hjemmesiden" (ikke givet til bestyrelsen som standard; admin giver den til enkelte personer). Man klikker på en blok og retter billede, tekst og knappens mål (valgt fra en liste), kan fjerne billedet, skjule og tilføje blokke og selv udgive. Billeder kan uploades og skaleres automatisk. Kun admin kan ændre layout (en eller to kolonner, bredder), slette blokke og rette Kalender.
 - **Senere:** kalender som abonnement (iCal/CalDAV, fx via en Radicale-server).
-- **Afklares:** skal hjemmesiden blive på Squarespace (designeren kan redigere, klubsystemet leverer kalender og priser via et script), eller flyttes helt ind i klubsystemet?
 - **Afklares:** Windsurf introkursus (499 kr.) og begynderkursus (1.199 kr.) findes kun som tekst på hjemmesiden. Skal de oprettes som tilbud i systemet, så de kan bookes og betales? SUP-kurset koster 499 kr. på siden, men 500 kr. i systemet.
-- **Afklares:** nyhedsbrevsformularen på forsiden virker ikke i dag. Skal den fjernes, eller skal tilmeldinger gemmes i klubsystemet (fx som interesseliste)?
+- **Afklares:** nyhedsbrevsformularen på forsiden virkede ikke og er erstattet af en "Meld dig ind"-knap. Skal tilmeldinger til et nyhedsbrev gemmes i klubsystemet (fx som interesseliste)?
+- **Afklares:** kontaktformularerne på Kontakt (windsurf/wingfoil og SUP) virkede ikke uden for Squarespace; nu står kun overskrifterne. Skal der være en kontaktformular i klubsystemet, eller en mail/et telefonnummer i hver boks?
 
 ## Klubbens design
 

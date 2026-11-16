@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+UDGÅET 16/11-2026: hjemmesiden er nu blokke i site_pages (se App\Support\Site). Bevares kun til sammenligning.
+
 Importerer HTTrack-kopien af surfhorsens.dk (Squarespace) til klub-systemet.
 
     python3 -I tools/hjemmeside/import.py /var/www/surfhorsens /var/www/klub
