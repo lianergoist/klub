@@ -15,20 +15,19 @@ class SiteController extends Controller
     public function show(string $page = '')
     {
         $p = SitePage::where('slug', $page)->firstOrFail();
-        $menu = SitePage::where('slug', '!=', '')->orderBy('position')->get(['slug', 'title']);
 
-        return response()
-            ->view('site.page', ['page' => $p, 'blocks' => array_values(array_filter($p->blocks, fn ($b) => empty($b['hidden']))), 'menu' => $menu])
-            ->header('Cache-Control', 'public, max-age=60');
+        return response($this->render($p))->header('Content-Type', 'text/html; charset=utf-8')->header('Cache-Control', 'no-cache'); // ændringer fra editoren skal ses med det samme
     }
 
-    /** Den gamle kopi af Squarespace-siden – til sammenligning, indtil den nye er godkendt */
-    public function old(string $page = '')
+    /**
+     * Siden som HTML. $preview: til editoren (Indstillinger → Hjemmeside) – skjulte blokke vises nedtonet,
+     * blokkene kan vælges med et klik, og links fører ingen steder hen.
+     */
+    public function render(SitePage $p, bool $preview = false): string
     {
-        $names = ['' => 'forside', 'priser-og-medlemskab' => 'priser-og-medlemskab', 'kalender' => 'kalender', 'kontakt' => 'kontakt', 'read-me' => 'read-me'];
-        $file = resource_path('site/'.($names[$page] ?? 'x').'.html');
-        abort_unless(is_file($file), 404);
+        $menu = SitePage::where('slug', '!=', '')->orderBy('position')->get(['slug', 'title']);
+        $blocks = array_values($preview ? $p->blocks : array_filter($p->blocks, fn ($b) => empty($b['hidden'])));
 
-        return response()->file($file, ['Content-Type' => 'text/html; charset=utf-8', 'Cache-Control' => 'no-cache']);
+        return view('site.page', ['page' => $p, 'blocks' => $blocks, 'menu' => $menu, 'preview' => $preview])->render();
     }
 }

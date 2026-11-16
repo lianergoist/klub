@@ -56,6 +56,8 @@ class Permissions
 
         'design.manage' => ['Design', 'Lave og rette farvetemaer',
             'Lave egne farvetemaer under Indstillinger → Design (farver, skrift og runde hjørner) og gøre dem tilgængelige for medlemmerne. De indbyggede temaer og layoutet kan ikke ændres.', ['admin']],
+        'site.edit' => ['Design', 'Redigere hjemmesiden',
+            'Rette tekster, billeder og knapper på klubbens hjemmeside, skjule og tilføje blokke og udgive ændringerne. Layoutet (kolonner og bredder), sletning af blokke og siden Kalender kan kun administratoren ændre.', ['admin']],
 
         'feed.moderate' => ['Kommunikation', 'Moderere opslagstavlen',
             'Skjule og slette opslag og kommentarer og afvise anmeldelser.', ['trainer', 'board', 'admin']],

@@ -1,0 +1,13 @@
+/* Forhåndsvisningen i Indstillinger → Hjemmeside: blokkene kan vælges med et klik */
+.sh-pv { position: relative; cursor: pointer; }
+.sh-pv::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5; transition: box-shadow .15s; }
+.sh-pv:hover::after { box-shadow: inset 0 0 0 3px rgba(47, 125, 225, .55); }
+.sh-pv.is-selected::after { box-shadow: inset 0 0 0 4px #2f7de1; }
+.sh-pv.is-hidden > * { opacity: .35; filter: grayscale(.6); }
+.sh-pv.is-hidden::before { content: 'Skjult – vises ikke på siden'; position: absolute; top: 12px; left: 12px; z-index: 6; background: #33243a; color: #fff;
+  font: 600 13px/1 system-ui, sans-serif; padding: 7px 10px; border-radius: 6px; }
+.sh-pv-empty { text-align: center; padding: 40px 16px; border: 2px dashed rgba(126, 90, 140, .5); border-radius: 12px; margin: 0; }
+/* To blokke med samme baggrund efter hinanden (som på den rigtige side) */
+.sh-pv:has(> .sh-cols.sh-bg-sand) + .sh-pv > .sh-cols.sh-bg-sand { padding-top: 0; }
+.sh-pv:has(> .sh-card-block) + .sh-pv > .sh-cols, .sh-pv:has(> .sh-cols) + .sh-pv > .sh-card-block { margin-top: calc(var(--pad) - 12px); }
+html { scroll-behavior: auto; }

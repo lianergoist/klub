@@ -31,3 +31,4 @@ Thumbs.db
 
 # Android-app til download (bygges på serveren)
 /public/app/
+/public/hjemmeside/uploads

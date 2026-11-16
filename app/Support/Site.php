@@ -95,8 +95,11 @@ class Site
         return $groups;
     }
 
-    /** Tekst fra blokkene: kun simple tags (overskrifter, afsnit, fed, kursiv, lister, links), priser sættes ind fra pakkerne */
-    public static function html(?string $html): string
+    /**
+     * Tekst fra blokkene: kun simple tags (overskrifter, afsnit, fed, kursiv, lister, links).
+     * $render: priser (<span data-pris="pakke-id">) sættes ind fra pakkerne. Uden: kun rensning (når der gemmes).
+     */
+    public static function html(?string $html, bool $render = true): string
     {
         if (! $html || trim($html) === '') return '';
         $doc = new DOMDocument();
@@ -104,7 +107,7 @@ class Site
         $doc->loadHTML('<?xml encoding="utf-8"?><div id="rod">'.$html.'</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         libxml_clear_errors();
         $root = $doc->getElementById('rod');
-        self::clean($root);
+        self::clean($root, $render);
         $out = '';
         foreach ($root->childNodes as $c) $out .= $doc->saveHTML($c);
 
@@ -113,16 +116,26 @@ class Site
 
     private const TAGS = ['p', 'br', 'strong', 'b', 'em', 'i', 'a', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'span'];
 
-    private static function clean(DOMNode $node): void
+    // Det, browserens redigering laver, oversættes til de tilladte tags
+    private const RENAME = ['b' => 'strong', 'i' => 'em', 'div' => 'p', 'h1' => 'h2', 'h5' => 'h4', 'h6' => 'h4'];
+
+    private static function clean(DOMNode $node, bool $render = true): void
     {
         foreach (iterator_to_array($node->childNodes) as $c) {
             if ($c->nodeType === XML_TEXT_NODE) continue;
             if (! $c instanceof DOMElement) { $node->removeChild($c); continue; }
             $tag = strtolower($c->tagName);
+            if (isset(self::RENAME[$tag]) && ! ($tag === 'div' && $c->getElementsByTagName('p')->length)) {
+                $n = $c->ownerDocument->createElement(self::RENAME[$tag]);
+                while ($c->firstChild) $n->appendChild($c->firstChild);
+                $node->replaceChild($n, $c);
+                $c = $n;
+                $tag = self::RENAME[$tag];
+            }
             if (! in_array($tag, self::TAGS, true)) {
                 // Ukendte tags: behold teksten, fjern tagget (script/style fjernes helt)
                 if (! in_array($tag, ['script', 'style', 'iframe', 'object', 'embed', 'template'], true)) {
-                    self::clean($c);
+                    self::clean($c, $render);
                     while ($c->firstChild) $node->insertBefore($c->firstChild, $c);
                 }
                 $node->removeChild($c);
@@ -138,11 +151,16 @@ class Site
             foreach (iterator_to_array($c->attributes) as $a) $c->removeAttribute($a->name);
             foreach ($keep as $k => $v) $c->setAttribute($k, $v);
             if ($tag === 'span' && isset($keep['data-pris'])) {
-                $p = Package::whereKey((int) $keep['data-pris'])->whereNull('archived_at')->first();
-                if ($p) $c->textContent = self::kr($p->price());
+                if ($render && $p = Package::whereKey((int) $keep['data-pris'])->whereNull('archived_at')->first()) $c->textContent = self::kr($p->price());
                 continue;
             }
-            self::clean($c);
+            if ($tag === 'span') { // andre spans: kun teksten
+                self::clean($c, $render);
+                while ($c->firstChild) $node->insertBefore($c->firstChild, $c);
+                $node->removeChild($c);
+                continue;
+            }
+            self::clean($c, $render);
         }
     }
 

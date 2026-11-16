@@ -1,13 +1,16 @@
 <template>
     <div>
         <h1 style="margin-bottom:14px">Indstillinger</h1>
-        <div v-if="can.roles_manage || can.audit_view || can.design_manage" class="card links">
+        <div v-if="can.roles_manage || can.audit_view || can.design_manage || can.site_edit" class="card links">
             <ul class="list">
                 <li v-if="can.roles_manage"><RouterLink to="/indstillinger/rettigheder" class="mrow">
                     <Icon name="users" class="mi" /><span class="mtext"><strong>Rettigheder</strong><span class="small muted">Hvilke roller der må hvad, og personlige rettigheder</span></span><span class="chev">›</span>
                 </RouterLink></li>
                 <li v-if="can.design_manage"><RouterLink to="/indstillinger/design" class="mrow">
                     <Icon name="image" class="mi" /><span class="mtext"><strong>Design</strong><span class="small muted">Egne farvetemaer med farver, skrift og hjørner</span></span><span class="chev">›</span>
+                </RouterLink></li>
+                <li v-if="can.site_edit"><RouterLink to="/indstillinger/hjemmeside" class="mrow">
+                    <Icon name="globe" class="mi" /><span class="mtext"><strong>Hjemmeside</strong><span class="small muted">Tekster, billeder og knapper på klubbens hjemmeside</span></span><span class="chev">›</span>
                 </RouterLink></li>
                 <li v-if="can.audit_view"><RouterLink to="/indstillinger/aendringslog" class="mrow">
                     <Icon name="clock" class="mi" /><span class="mtext"><strong>Ændringslog</strong><span class="small muted">Alle handlinger i systemet med hvem og hvornår</span></span><span class="chev">›</span>

@@ -1,13 +1,17 @@
 @php
-    $two = ($b['layout'] ?? 'one') === 'two' && count($b['cols'] ?? []) > 1;
-    $cols = $two ? array_slice($b['cols'], 0, 2) : [array_merge(...array_values($b['cols'] ?? [[]]))];
+    // En tom kolonne (fx når billedet er fjernet): resten breder sig over hele bredden
+    $filled = array_values(array_filter(array_slice($b['cols'] ?? [], 0, 2), fn ($c) => !empty($c)));
+    $two = ($b['layout'] ?? 'one') === 'two' && count($filled) === 2;
+    $cols = $two ? $filled : [$filled ? array_merge(...$filled) : []];
     $w = $b['widths'] ?? [1, 1];
     $isImg = fn ($col) => ($col[0]['t'] ?? '') === 'image';
     // På mobil står billedet øverst
     $flip = $two && $isImg($cols[1]) && ! $isImg($cols[0]);
 @endphp
+@if ($filled || !empty($preview))
 <section id="blok-{{ $b['id'] }}" class="sh-block sh-cols sh-bg-{{ $b['bg'] ?? 'sand' }} sh-tone-{{ $b['tone'] ?? 'lilla' }} sh-align-{{ $b['align'] ?? 'left' }}">
     <div class="sh-wrap {{ $two ? 'sh-grid' : 'sh-single' }} {{ $flip ? 'sh-flip' : '' }}" @if ($two) style="--a:{{ (int) $w[0] ?: 1 }}fr;--b:{{ (int) ($w[1] ?? 1) ?: 1 }}fr" @endif>
+        @if (!$filled)<p class="sh-pv-empty">Tom blok – tilføj tekst, billede eller en knap.</p>@endif
         @foreach ($cols as $col)
             <div class="sh-col">
                 @foreach ($col as $el)
@@ -46,3 +50,4 @@
         @endforeach
     </div>
 </section>
+@endif

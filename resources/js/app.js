@@ -47,6 +47,7 @@ const routes = [
     { path: '/indstillinger', component: v('Settings'), meta: { can: 'settings' } },
     { path: '/indstillinger/aendringslog', component: v('AuditLog'), meta: { can: 'audit_view', wide: true } },
     { path: '/indstillinger/design', component: v('Design'), meta: { can: 'design_manage', wide: true } },
+    { path: '/indstillinger/hjemmeside', component: v('SiteEditor'), meta: { can: 'site_edit', wide: true } },
     { path: '/indstillinger/rettigheder', component: v('Permissions'), meta: { can: 'roles_manage', wide: true } },
     {
         path: '/okonomi', component: v('finance/FinanceLayout'), meta: { can: 'finance_read', wide: true },

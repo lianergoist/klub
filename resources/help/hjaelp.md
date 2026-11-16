@@ -168,5 +168,19 @@ Under **Indstillinger → Design** laver du klubbens egne farvetemaer: farver, s
 
 Sletter du et tema, får medlemmer, der havde valgt det, Automatisk (SurfHorsens) i stedet.
 
+## Hjemmesiden {#hjemmeside kræver:site_edit side:/indstillinger/hjemmeside}
+Under **Indstillinger → Hjemmeside** retter du klubbens offentlige sider: Forside, Priser og medlemskab, Så meget AlÅha og Kontakt. Siderne er bygget af faste blokke, så de altid virker på både mobil og pc.
+
+- Vælg siden øverst til venstre. Forhåndsvisningen viser siden, som den kommer til at se ud. Skift mellem **Mobil** og **Computer**.
+- **Klik på en blok** i forhåndsvisningen for at rette den. Værktøjsboksen viser kun den blok: billede, tekst og knapper. Boksen kan flyttes ved at trække i overskriften.
+- **Billeder:** tryk **Skift billede** og vælg et af klubbens billeder eller upload et nyt. Det gøres automatisk mindre og renses for oplysninger som GPS-position. Skriv altid en kort beskrivelse af billedet – den læses op for svagtseende.
+- **Fjern et billede** (×), så breder teksten sig over hele bredden.
+- **Knapper** fører til en side, indmeldelsen, et tilbud til ikke-medlemmer (fx en prøvetime) eller en aktivitet i kalenderen. Du vælger fra en liste. Er tilbuddet eller aktiviteten væk eller overstået, forsvinder knappen af sig selv.
+- **Tekst:** brug knapperne over teksten til overskrifter, fed, kursiv, punktlister og links. **Pris** indsætter en pris fra Pakker, som altid følger den aktuelle pris.
+- **Skjul blokken** fjerner den fra hjemmesiden uden at slette den. **Tilføj blok** sætter en ny blok ind under den valgte.
+- **↶ Fortryd** fortryder den seneste ændring. **Udgiv** lægger ændringerne på hjemmesiden. Under **Historik** kan du hente en tidligere udgave.
+
+Kun administratoren kan ændre layoutet (en eller to kolonner og bredder), slette blokke og rette siden Kalender.
+
 ## Finder du ikke svaret? {#spoerg}
 Søg i feltet øverst i hjælpen. Kommer du ikke videre, kan du kontakte bestyrelsen.

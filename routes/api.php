@@ -67,6 +67,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('settings/design/themes', [\App\Http\Controllers\Api\DesignController::class, 'store']);
     Route::put('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'update'])->whereNumber('id');
     Route::delete('settings/design/themes/{id}', [\App\Http\Controllers\Api\DesignController::class, 'destroy'])->whereNumber('id');
+    // Hjemmesiden (Indstillinger → Hjemmeside)
+    Route::get('settings/site', [\App\Http\Controllers\Api\SiteAdminController::class, 'index']);
+    Route::get('settings/site/images', [\App\Http\Controllers\Api\SiteAdminController::class, 'images']);
+    Route::post('settings/site/images', [\App\Http\Controllers\Api\SiteAdminController::class, 'upload'])->middleware('throttle:30,1');
+    Route::get('settings/site/{id}', [\App\Http\Controllers\Api\SiteAdminController::class, 'show'])->whereNumber('id');
+    Route::post('settings/site/{id}/preview', [\App\Http\Controllers\Api\SiteAdminController::class, 'preview'])->whereNumber('id')->middleware('throttle:240,1');
+    Route::put('settings/site/{id}', [\App\Http\Controllers\Api\SiteAdminController::class, 'update'])->whereNumber('id');
+    Route::get('settings/site/{id}/versions', [\App\Http\Controllers\Api\SiteAdminController::class, 'versions'])->whereNumber('id');
+    Route::get('settings/site/{id}/versions/{versionId}', [\App\Http\Controllers\Api\SiteAdminController::class, 'version'])->whereNumber('id')->whereNumber('versionId');
     Route::get('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'admin']);
     Route::post('settings/packages', [\App\Http\Controllers\Api\PackageController::class, 'store']);
     Route::put('settings/packages/{package}', [\App\Http\Controllers\Api\PackageController::class, 'update']);

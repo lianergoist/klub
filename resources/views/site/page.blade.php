@@ -45,8 +45,14 @@
 
 <main id="indhold">
     @foreach ($blocks as $i => $b)
-        @php $next = $blocks[$i + 1]['id'] ?? null; @endphp
+        @php
+            // "Næste blok" = den næste, der vises
+            $next = null;
+            for ($j = $i + 1; $j < count($blocks); $j++) if (empty($blocks[$j]['hidden'])) { $next = $blocks[$j]['id']; break; }
+        @endphp
+        @if ($preview)<div class="sh-pv {{ !empty($b['hidden']) ? 'is-hidden' : '' }}" data-blok="{{ $b['id'] }}">@endif
         @includeIf('site.blocks.'.$b['type'], ['b' => $b, 'next' => $next, 'first' => $i === 0])
+        @if ($preview)</div>@endif
     @endforeach
 </main>
 
@@ -56,5 +62,9 @@
 </footer>
 <script src="{{ $v('site.js') }}" defer></script>
 <script src="{{ $v('klub-widget.js') }}" defer></script>
+@if ($preview)
+    <link rel="stylesheet" href="{{ $v('editor-preview.css') }}">
+    <script src="{{ $v('editor-preview.js') }}"></script>
+@endif
 </body>
 </html>
