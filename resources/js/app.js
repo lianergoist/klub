@@ -70,7 +70,6 @@ const routes = [
 const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: (to, from, saved) => saved || { top: 0 } });
 
 router.beforeEach(async (to, from) => {
-    if (IS_APP && !siteAccess() && to.path !== '/adgang') return '/adgang';
     if (to.meta.public) return true;
     // Husk siden (fx /aktiviteter/42 fra hjemmesidens kalender), så man kommer tilbage efter login
     const toLogin = to.path === '/aktiviteter' ? '/login' : { path: '/login', query: { til: to.fullPath } };
