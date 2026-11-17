@@ -14,7 +14,7 @@
                     <div class="sect">Administration</div>
                     <RouterLink v-if="can.members_view" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
                     <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
-                    <RouterLink v-if="can.memberships" to="/medlemskaber"><Icon name="bag" /> Medlemskaber og tilkøb</RouterLink>
+                    <RouterLink v-if="can.memberships" to="/medlemskaber"><Icon name="bag" /> Medlemskaber</RouterLink>
                     <RouterLink v-if="siteEdit" to="/rediger-hjemmeside"><Icon name="globe" /> Hjemmeside</RouterLink>
                     <RouterLink v-if="can.system" to="/system"><Icon name="gear" /> System</RouterLink>
                 </template>
