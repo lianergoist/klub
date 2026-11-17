@@ -96,7 +96,8 @@ p { margin: 0 0 .75rem; }
     .sidebar .who { margin-top: auto; padding: 10px 12px 8px; border-top: 1px solid rgba(255,255,255,.12); font-size: .85rem; }
     .sidebar .who button { margin-top: 8px; }
     .tabbar, .mobile-only { display: none !important; }
-    .main { padding: 28px 32px 48px; }
+    /* Tablet på langs i appen: hold også her fri af statuslinjen (og evt. hjem-indikator) */
+    .main { padding: calc(env(safe-area-inset-top, 0px) + 28px) 32px calc(env(safe-area-inset-bottom, 0px) + 48px); }
 }
 
 
@@ -221,7 +222,7 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 50; background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.2); max-width: calc(100% - 32px); font-weight: 600; }
 .toast.error { background: var(--bad); color: #fff; }
 @media (min-width: 900px) { .toast { bottom: 28px; } }
-.modal-bg { position: fixed; inset: 0; background: rgba(5,15,15,.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.modal-bg { position: fixed; inset: 0; background: rgba(5,15,15,.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
 .modal { background: var(--surface); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 20px 18px calc(env(safe-area-inset-bottom, 0px) + 20px); max-height: 90vh; overflow-y: auto; }
 @media (min-width: 600px) { .modal-bg { align-items: center; } .modal { border-radius: 18px; } }
 .spinner { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 40px auto; }

@@ -35,7 +35,7 @@ export class ApiError extends Error {
     constructor(message, status, errors, data) { super(message); this.status = status; this.errors = errors || {}; this.data = data || {}; }
 }
 
-// Forhåndsvisningen i Indstillinger → Design (iframe): siden er rigtig, men intet må gemmes derinde
+// Forhåndsvisningen i System → Design (iframe): siden er rigtig, men intet må gemmes derinde
 const DESIGN_PREVIEW = new URLSearchParams(location.search).has('designvisning');
 
 export async function api(path, { method = 'GET', body, form } = {}) {

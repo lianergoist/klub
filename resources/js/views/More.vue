@@ -17,7 +17,7 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
-import { store } from '../api';
+import { store, IS_APP } from '../api';
 const can = computed(() => store.user.can);
 const router = useRouter();
 const tools = computed(() => [
@@ -25,7 +25,9 @@ const tools = computed(() => [
     can.value.equipment && { to: '/udstyr', icon: 'board', title: 'Udstyr', hint: 'Udstyrslisten og booking' },
     can.value.members_view && { to: '/medlemmer', icon: 'users', title: 'Medlemmer', hint: 'Kartotek, roller og betalinger' },
     can.value.finance_read && { to: '/okonomi', icon: 'money', title: 'Økonomi', hint: 'Regnskab, betalinger og udlæg' },
-    can.value.settings && { to: '/indstillinger', icon: 'gear', title: 'Indstillinger', hint: 'Kategorier, medlemskaber, priser og rettigheder' },
+    can.value.memberships && { to: '/medlemskaber', icon: 'bag', title: 'Medlemskaber og tilkøb', hint: 'Pakker, tilbud og priser' },
+    !IS_APP && can.value.site_edit && { to: '/rediger-hjemmeside', icon: 'globe', title: 'Hjemmeside', hint: 'Tekster og billeder på klubbens hjemmeside' },
+    can.value.system && { to: '/system', icon: 'gear', title: 'System', hint: 'Rettigheder, design, ændringslog og kategorier' },
 ].filter(Boolean));
 // Ingen værktøjer (fx et gammelt link): send videre til Profil
 onMounted(() => { if (!tools.value.length) router.replace('/profil'); });

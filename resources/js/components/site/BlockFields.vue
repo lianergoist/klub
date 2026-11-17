@@ -74,7 +74,7 @@
             <label class="field"><span>Lille tekst over overskriften</span><input v-model="b.label" maxlength="80" placeholder="Fx: 1 dags kursus"></label>
             <label class="field"><span>Overskrift</span><input v-model="b.heading" maxlength="160"></label>
             <div class="fld"><div class="lbl">Tekst</div><RichText v-model="b.html" :options="options" :prices="options.prices" label="Tekst" /></div>
-            <label class="check"><input v-model="b.prices" type="checkbox"> Vis prislisten (fra Indstillinger → Pakker)</label>
+            <label class="check"><input v-model="b.prices" type="checkbox"> Vis prislisten (fra Medlemskaber og tilkøb)</label>
             <ButtonFields v-model="b.button" :options="options" :blocks="linkBlocks" optional />
             <details v-if="admin" class="adm">
                 <summary>Layout (kun admin)</summary>

@@ -70,7 +70,7 @@
                     <select v-model="f.guest_package_id"><option :value="null">Nej</option><option v-for="o in guestOffers" :key="o.id" :value="o.id">Ja, som {{ lcFirst(o.label) }} ({{ o.price_fmt }})</option></select>
                 </label>
                 <label v-if="punchOk" class="check"><input type="checkbox" v-model="f.punchcard"> Åben for klippekort <span class="small muted">(ikke-medlemmer kan tilmelde sig med et klip)</span></label>
-                <p v-if="f.guest_package_id" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler tilbuddets pris<template v-if="guestOffers.find(o => o.id === f.guest_package_id)?.creditable">, og beløbet trækkes fra kontingentet, hvis de melder sig ind</template>. Tilbuddene oprettes under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer.</p>
+                <p v-if="f.guest_package_id" class="small muted" style="margin:-4px 0 0">Aktiviteten vises på siden "Prøv SurfHorsens". Gæster betaler tilbuddets pris<template v-if="guestOffers.find(o => o.id === f.guest_package_id)?.creditable">, og beløbet trækkes fra kontingentet, hvis de melder sig ind</template>. Tilbuddene oprettes under Medlemskaber og tilkøb → Ikke-medlemmer.</p>
                 </div>
             </details>
             <label v-if="!id" class="check"><input type="checkbox" v-model="f.notify"> Send besked til medlemmer, der følger kategorien</label>

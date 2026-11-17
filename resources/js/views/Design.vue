@@ -2,7 +2,7 @@
     <div class="dpage">
         <div class="topbar">
             <h1>Design <HelpButton topic="design" /></h1>
-            <RouterLink to="/indstillinger" class="btn small ghost">← Indstillinger</RouterLink>
+            <RouterLink to="/system" class="btn small ghost">← System</RouterLink>
         </div>
 
         <!-- Værktøjslinjen: et tryk åbner den flydende værktøjsboks, et tryk mere lukker den -->
@@ -337,7 +337,7 @@ onUnmounted(() => {
 });
 </script>
 <style scoped>
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 8px; margin-bottom: 12px; position: sticky; top: 8px; z-index: 30; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 8px; margin-bottom: 12px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 30; }
 .tools { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .tool { position: relative; border: 0; background: none; font: inherit; font-weight: 600; font-size: .92rem; color: var(--ink-2); padding: 9px 14px; border-radius: 10px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .tool:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }

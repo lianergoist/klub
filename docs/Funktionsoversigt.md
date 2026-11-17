@@ -32,10 +32,10 @@ Et medlem kan have flere roller samtidigt (fx træner og bestyrelsesmedlem). Rol
 - **Kerne: rollestyring som ovenfor, og at roller kan tildeles og fjernes af administrator med dato (historik).**
 
 - **Kerne:** administrator tildeler og afslutter roller under Medlemmer → medlemmets side → Roller → "Tildel rolle" (knappen vises kun for administratorer).
-- **Kerne:** tabellen ovenfor er kun standarden. Under **Indstillinger → Rettigheder** er alle handlinger, der kræver en rolle, samlet i en liste (aktiviteter, medlemmer, kommunikation, økonomi), og administrator vælger for hver handling, hvilke roller der giver adgang. Ændringer gælder straks og skrives i ændringsloggen. En handling, der er ændret fra standarden, er markeret og kan sættes tilbage.
+- **Kerne:** tabellen ovenfor er kun standarden. Under **System → Rettigheder** er alle handlinger, der kræver en rolle, samlet i en liste (aktiviteter, medlemmer, kommunikation, økonomi), og administrator vælger for hver handling, hvilke roller der giver adgang. Ændringer gælder straks og skrives i ændringsloggen. En handling, der er ændret fra standarden, er markeret og kan sættes tilbage.
 - **Kerne:** **personlige rettigheder:** administrator kan give et enkelt medlem én rettighed uden hele rollen (fx må Y godkende nye medlemmer uden at sidde i bestyrelsen), med fra-dato, evt. til-dato og en bemærkning. Det sker på medlemmets side under "Personlige rettigheder", hvor man også kan se, hvad medlemmet må i dag.
 - **Kerne:** "Tildele roller og rettigheder" er låst til administrator, så ingen kan låse sig selv ude. Nye funktioner (fx udstyr) får deres egne rettigheder i listen.
-- **Afklares:** hvilke roller skal have hvilke rettigheder? Proof of concept starter med standarden i tabellen ovenfor; bestyrelsen kan gennemgå listen under Indstillinger → Rettigheder.
+- **Afklares:** hvilke roller skal have hvilke rettigheder? Proof of concept starter med standarden i tabellen ovenfor; bestyrelsen kan gennemgå listen under System → Rettigheder.
 - **Afklares:** hvilke af disse skal være admin-opgaver: spærre/genåbne et login og sende nyt login-link, slette/anonymisere medlemmer (GDPR), klubindstillinger (navn, logo, kontaktoplysninger, sæsondatoer), opsætning af betaling og e-mail, import/eksport af medlemsdata? Forslag: admin er en teknisk rolle, mens priser, pakker og kategorier forbliver bestyrelsens.
 
 
@@ -47,7 +47,7 @@ Kartoteket er systemets rygrad: alt (aktiviteter, kontingent, betalinger) hænge
 
 - **Kerne:** medlemmer kan selv oprette sig, rette egne oplysninger og se egen historik. Indmeldelse kræver ikke godkendelse: man sendes direkte videre til betaling af kontingent, og når betalingen er gennemført, er man aktivt medlem. Indtil da har medlemmet status "afventer betaling". Bestyrelse/kasserer kan aktivere manuelt (fx ved kontant betaling eller æresmedlemskab).
 
-- **Kerne:** **Min profil** samler medlemmets egne sider: oplysninger, familie og medlemskab, regninger, kvitteringer (udlæg), tilkøb, beskeder og notifikationer samt mine data. På computer vises de som faner. På mobil og i appen er profilen en liste med en kort status i hver linje, fx medlemskabets udløb, antal åbne regninger og udlæg, der afventer. Et tryk åbner siden med et tilbage-link. Farvetema og Log ud står nederst i profilen. Bundmenuens femte fane, **Mere**, vises kun for dem, der har adgang til et af værktøjerne (Trænerportal, Udstyr, Medlemmer, Økonomi eller Indstillinger). Almindelige medlemmer har fire faner.
+- **Kerne:** **Min profil** samler medlemmets egne sider: oplysninger, familie og medlemskab, regninger, kvitteringer (udlæg), tilkøb, beskeder og notifikationer samt mine data. På computer vises de som faner. På mobil og i appen er profilen en liste med en kort status i hver linje, fx medlemskabets udløb, antal åbne regninger og udlæg, der afventer. Et tryk åbner siden med et tilbage-link. Farvetema og Log ud står nederst i profilen. Bundmenuens femte fane, **Mere**, vises kun for dem, der har adgang til et af værktøjerne (Trænerportal, Udstyr, Medlemmer, Økonomi, Medlemskaber og tilkøb, Hjemmeside eller System). Almindelige medlemmer har fire faner.
 
 - **Kerne:** familier/husstande: ét betalende medlem (forælder) og flere tilknyttede medlemmer (børn, partner). Forælder kan tilmelde børn til aktiviteter.
 
@@ -268,7 +268,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 | Familiekontingent, 3 personer i samme husstand | 2.500 kr. |
 | Familiekontingent, 4 eller flere i samme husstand | 3.000 kr. |
 
-- **Kerne:** alle medlemskaber og tilkøb er **pakker**, som bestyrelse og admin selv opretter under Indstillinger → Medlemskaber og tilkøb. En pakke beskriver:
+- **Kerne:** alle medlemskaber og tilkøb er **pakker**, som bestyrelse og admin selv opretter under Medlemskaber og tilkøb. En pakke beskriver:
   - **hvem** den dækker: først vælges **Én person** eller **Familie (flere personer)**. Én person: hvilke personkategorier personen kan være (fx kun voksne eller både barn og voksen). Familie: mindst–højst pr. personkategori (tomt højst = ingen grænse, fx "2 voksne og 1–3 børn") og evt. et antal i alt (fx "Familie med 3 personer": voksne og børn frit, i alt 3),
   - **hvor længe** den gælder: faste datoer hvert år (fx 1/5–30/4 eller 1/8–30/4), et antal dage fra køb (1–365) eller engangsbetaling,
   - **pris** med historik ("gælder fra"), hvilken konto indtægten bogføres på, og om medlemmerne selv kan købe den (slås fra for pakker, som kun bestyrelsen tildeler, fx æresmedlem eller trænerkontingent).
@@ -356,13 +356,13 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 - **Kerne:** udstyrsleje findes som pakker for 1, 2, 3, 4 og 5 personer i husstanden (samme priser som før). Lejen gælder sæsonen ud (30. april).
 
-- **Senere:** nye tilkøb med pladser (som rack og skab) kræver, at pladserne kan oprettes under Indstillinger. Indtil videre har kun de eksisterende opbevaringspakker pladser.
+- **Senere:** nye tilkøb med pladser (som rack og skab) kræver, at pladserne kan oprettes under Medlemskaber og tilkøb. Indtil videre har kun de eksisterende opbevaringspakker pladser.
 
 - **Senere:** tilkøb med faste datoer (fx opbevaring) fornyes automatisk ved ny sæson ligesom medlemskaber.
 
-- **Afklares:** priserne for opbevaring (rackplads 600 kr., skab 400 kr.) og dagsleje (100 kr.) er foreløbige. Bestyrelsen kan selv rette dem under Indstillinger.
+- **Afklares:** priserne for opbevaring (rackplads 600 kr., skab 400 kr.) og dagsleje (100 kr.) er foreløbige. Bestyrelsen kan selv rette dem under Medlemskaber og tilkøb.
 
-- **Kerne:** tilbud til ikke-medlemmer er pakker af typen **tilbud** (tilmelding til én aktivitet). Bestyrelsen opretter og retter dem under Indstillinger → Medlemskaber og tilkøb → **Ikke-medlemmer** (navn, beskrivelse, pris med "gælder fra", konto, og om beløbet modregnes i kontingentet). Fanebladet viser også klippekort kun for ikke-medlemmer. På aktiviteten vælger træneren under "Åben for ikke-medlemmer", hvilket tilbud den er åben for.
+- **Kerne:** tilbud til ikke-medlemmer er pakker af typen **tilbud** (tilmelding til én aktivitet). Bestyrelsen opretter og retter dem under Medlemskaber og tilkøb → **Ikke-medlemmer** (navn, beskrivelse, pris med "gælder fra", konto, og om beløbet modregnes i kontingentet). Fanebladet viser også klippekort kun for ikke-medlemmer. På aktiviteten vælger træneren under "Åben for ikke-medlemmer", hvilket tilbud den er åben for.
 
 - **Kerne (i proof of concept):** ikke-medlemmer kan på siden "Prøv SurfHorsens" købe klubbens tilbud, i dag en **prøvetræning (400 kr.)** eller et **SUP-kursus (500 kr.)**. De vælger en dato blandt de aktiviteter, trænerne har åbnet for gæster, udfylder navn, kontaktoplysninger og fødselsdato (under 18: forælders navn og telefon) og betaler med MobilePay. De står derefter på deltagerlisten mærket "Gæst", men har ikke adgang til medlemsdelen.
 
@@ -376,15 +376,15 @@ Udover kontingent betaler medlemmer for ting, der bruger klubbens ressourcer. Sy
 
 **Klippekort for ikke-medlemmer** (fx SUP 10-turskort)
 
-- **Kerne:** et klippekort er et tilkøb med et antal klip (fx 10), der gælder 12 måneder fra køb og til aktiviteter i bestemte kategorier (fx SUP). Bestyrelsen opretter det under Indstillinger → Medlemskaber og tilkøb (felterne "Klippekort med klip" og "Kun for ikke-medlemmer"). Klippekort er kun for ikke-medlemmer. (Besluttet 11. nov. 2026.)
+- **Kerne:** et klippekort er et tilkøb med et antal klip (fx 10), der gælder 12 måneder fra køb og til aktiviteter i bestemte kategorier (fx SUP). Bestyrelsen opretter det under Medlemskaber og tilkøb (felterne "Klippekort med klip" og "Kun for ikke-medlemmer"). Klippekort er kun for ikke-medlemmer. (Besluttet 11. nov. 2026.)
 
 - **Kerne:** ikke-medlemmer køber kortet og opretter et login på siden /klippekort (linket fra login-siden) og betaler med MobilePay. De logger ind som gæst og ser kun deres klippekort, de aktiviteter, kortet gælder til, og deres egne regninger.
 
-- **Kerne:** **login-siden** viser under "Log ind" altid "Ikke medlem endnu? Meld dig ind". Tilbud og klippekort til ikke-medlemmer kan få deres egen linje, fx "Prøv en træning", "Tag et SUP-kursus" eller "Køb et klippekort til SUP-ture". Teksten sættes på tilbuddet under Indstillinger → Medlemskaber og tilkøb → Ikke-medlemmer (feltet "Tekst på login-siden", højst 40 tegn). Linjen vises kun, når der er noget at købe: kommende aktiviteter, man kan tilmelde sig, eller et klippekort til salg. Et tilbud åbner siden "Prøv SurfHorsens" med kun det tilbud. I appen åbnes tilbuddene i browseren.
+- **Kerne:** **login-siden** viser under "Log ind" altid "Ikke medlem endnu? Meld dig ind". Tilbud og klippekort til ikke-medlemmer kan få deres egen linje, fx "Prøv en træning", "Tag et SUP-kursus" eller "Køb et klippekort til SUP-ture". Teksten sættes på tilbuddet under Medlemskaber og tilkøb → Ikke-medlemmer (feltet "Tekst på login-siden", højst 40 tegn). Linjen vises kun, når der er noget at købe: kommende aktiviteter, man kan tilmelde sig, eller et klippekort til salg. Et tilbud åbner siden "Prøv SurfHorsens" med kun det tilbud. I appen åbnes tilbuddene i browseren.
 
 - **Kerne:** en aktivitet åbnes for klippekort med feltet "Åben for klippekort" (også på faste aktiviteter). Feltet vises kun, når der findes et klippekort til en af aktivitetens kategorier. Tilmelding bruger ét klip; afmelding inden afmeldingsfristen giver klippet tilbage, udeblivelse gør ikke. Trænerne ser gæsterne på deltagerlisten med mærket "Gæst" og kan registrere fremmøde som for alle andre. Klubben kan dermed se, hvor mange der kommer.
 
-- **Afklares:** prisen på SUP 10-turskortet. I proof of concept er den foreløbigt 600 kr. Bestyrelsen kan rette den under Indstillinger.
+- **Afklares:** prisen på SUP 10-turskortet. I proof of concept er den foreløbigt 600 kr. Bestyrelsen kan rette den under Medlemskaber og tilkøb.
 
 - **Afklares:** skal et betalt klippekort trækkes fra kontingentet, hvis gæsten melder sig ind (som prøvetræning og SUP-kursus inden for 12 måneder)? I proof of concept trækkes det ikke fra.
 
@@ -412,7 +412,7 @@ Oversigten viser, hvad klubben har af udstyr, og i hvilken stand det er. Den kan
 - **Kerne:** en aktivitet booker som udgangspunkt **alt udstyr i underkategorierne til aktivitetens kategorier** (en windsurf-aktivitet booker alle boards, sejl, master og bomme). Træneren kan i stedet vælge **kun bestemt udstyr** – så kan resten bookes af andre.
 - **Kerne:** er noget af udstyret allerede booket, når en aktivitet oprettes eller flyttes, vises hvad og af hvem, med knapper til at skrive til den, der har booket. Træneren kan vælge: opret alligevel, ret tidspunkt/udstyr, eller opret som **Afventer**.
 - **Kerne:** en aktivitet, der **afventer**, er ikke rigtig oprettet endnu: medlemmerne kan ikke se den eller tilmelde sig, de får ikke besked, og den optager ikke udstyr. Trænere ser den med mærket "Afventer" og opretter den på aktivitetens side ("Opret aktiviteten nu"), når det er afklaret. Ved faste aktiviteter afventer kun de gange, hvor udstyret er booket.
-- **Kerne:** trænere og bestyrelse kan booke (rettigheden "Booke udstyr"). Administrator vælger under Indstillinger → Rettigheder, om **almindelige medlemmer** kan booke: **ikke**, **kun med betalt udstyrsleje eller dagsleje** (standard; pakker med "Giver ret til at booke udstyr", gælder i pakkens periode, når regningen er betalt) eller **alle med betalt medlemskab**. Kun medlemmer, der må booke, ser Udstyr i menuen. Har man købt leje, der ikke er betalt, ser man Udstyr med en "Betal nu"-knap. Man kan booke bestemte stykker udstyr i et tidsrum (højst 14 dage). Udstyr, som en anden har booket, kan ikke vælges.
+- **Kerne:** trænere og bestyrelse kan booke (rettigheden "Booke udstyr"). Administrator vælger under System → Rettigheder, om **almindelige medlemmer** kan booke: **ikke**, **kun med betalt udstyrsleje eller dagsleje** (standard; pakker med "Giver ret til at booke udstyr", gælder i pakkens periode, når regningen er betalt) eller **alle med betalt medlemskab**. Kun medlemmer, der må booke, ser Udstyr i menuen. Har man købt leje, der ikke er betalt, ser man Udstyr med en "Betal nu"-knap. Man kan booke bestemte stykker udstyr i et tidsrum (højst 14 dage). Udstyr, som en anden har booket, kan ikke vælges.
 - **Kerne:** vil man booke udstyr, som en aktivitet har booket, sendes et **ønske** til træneren/tovholderen (ellers den, der oprettede aktiviteten), som får besked og svarer **Ja** eller **Nej** med én knap – på aktivitetens side eller under Udstyr → Bookinger. Ved ja er udstyret lånt ud og ikke længere booket af aktiviteten. Den, der ønskede, får besked om svaret. Bestyrelsen kan også svare (rettigheden "Svare på ønsker om udstyr på alle aktiviteter").
 - **Kerne:** har et medlem booket udstyr, som en aktivitet skal bruge, kan træneren **bede om at få bookingen flyttet** – direkte fra advarslen, når aktiviteten oprettes eller rettes (med en valgfri besked), eller senere på aktivitetens side. Medlemmet får besked med en **svarfrist** (24 timer, dog højst halvdelen af tiden til aktiviteten starter) og kan under Udstyr → Bookinger **flytte bookingen** (nyt tidspunkt eller andet udstyr), **annullere** den eller **sige nej** med en begrundelse. Træneren får besked om svaret, og når udstyret er frigivet.
 - **Kerne:** påmindelser (sendes én gang): den, der har booket, får en påmindelse 3 timer før svarfristen, og træneren får besked, når fristen er overskredet uden svar ("Bookingen kan nu annulleres"). Må ingen af dem annullere, går beskeden til bestyrelsen.
@@ -547,7 +547,7 @@ Systemet gemmer navne, adresser, fødselsdatoer og børns oplysninger, så foren
 
 - **Afklares:** hvad sker der med børn og partner, når husstandens betaler melder sig ud? Hvad med refusion af kontingent midt i sæsonen og ubetalte regninger? Skal opslag og beskeder slettes eller stå som "Tidligere medlem"?
 
-- **Kerne:** ændringslog over, hvem der har gjort hvad og hvornår. Under **Økonomi → Ændringslog** vises kun det, der vedrører regnskabet (posteringer, betalinger, regninger og køb, udlæg, budget og priser), så kasserer og revisor kan følge bogføringen. Den fulde log med alle handlinger (medlemmer, roller og rettigheder, aktiviteter, opslag, udstyr m.m.) ligger under **Indstillinger → Ændringslog** og kan som standard kun ses af administrator (rettigheden "Se den fulde ændringslog"). Hvert medlems egen historik vises stadig på medlemssiden.
+- **Kerne:** ændringslog over, hvem der har gjort hvad og hvornår. Under **Økonomi → Ændringslog** vises kun det, der vedrører regnskabet (posteringer, betalinger, regninger og køb, udlæg, budget og priser), så kasserer og revisor kan følge bogføringen. Den fulde log med alle handlinger (medlemmer, roller og rettigheder, aktiviteter, opslag, udstyr m.m.) ligger under **System → Ændringslog** og kan som standard kun ses af administrator (rettigheden "Se den fulde ændringslog"). Hvert medlems egen historik vises stadig på medlemssiden.
 
 - **Kerne:** automatisk sikkerhedskopi og en plan for, hvem der kan genskabe systemet.
 
@@ -585,11 +585,11 @@ Klubbens hjemmeside ligger i klubsystemet og henter kalender og priser derfra, s
 
 - **Kerne:** "Log ind" i menuen (bliver til "Klubsystem", når man er logget ind) og "Meld mig ind!" går til indmeldelsen.
 - **Kerne:** kalenderen viser kommende aktiviteter, som er markeret "Vis i kalenderen på hjemmesiden" (fluebenet sættes, når aktiviteten oprettes eller rettes; standard er nej). Åbne tilbud til ikke-medlemmer får knappen "Book plads", aktiviteter med klippekort "Tilmeld med klippekort" og øvrige "Log ind og tilmeld dig".
-- **Kerne:** prislisten (kontingenter, udstyrsleje og tilkøb, tilbud til ikke-medlemmer) dannes ud fra pakkerne under Indstillinger → Pakker. Kursuspriser i teksten kan følge en pakke.
+- **Kerne:** prislisten (kontingenter, udstyrsleje og tilkøb, tilbud til ikke-medlemmer) dannes ud fra pakkerne under Medlemskaber og tilkøb. Kursuspriser i teksten kan følge en pakke.
 - **Kerne:** bloktyper: billede i fuld bredde med overskrift (forsiden og Priser fylder hele skærmen, og knappen ruller til næste blok), én eller to kolonner med billeder, tekst og knapper, orange priskort med billedet til venstre, spørgsmål og svar, kalender. Menu og bund ligger fast.
 - **Kerne:** knapper peger på sider, indmeldelse, tilbud eller aktiviteter i systemet – ikke på adresser, man skriver selv. Et tilbud eller en aktivitet, der ikke længere findes eller er overstået, giver ingen knap.
 - **Kerne:** kortet på Kontakt hentes først fra Google Maps, når man klikker (ingen cookies fra Google før).
-- **Kerne:** editor under Indstillinger → Hjemmeside med rettigheden "Redigere hjemmesiden" (som standard kun administratoren; admin giver den til enkelte personer under Rettigheder). Man klikker på en blok i forhåndsvisningen (mobil eller computer) og retter billede, tekst og knappens mål (valgt fra en liste), kan fjerne billedet, så teksten fylder hele bredden, skjule og tilføje blokke, fortryde og selv udgive. Billeder kan uploades og bliver skaleret og renset for metadata; en beskrivelse af billedet er påkrævet. Hver udgivelse gemmes i historikken (de seneste 50).
+- **Kerne:** editor under menupunktet Hjemmeside (kun på weben, ikke i appen) med rettigheden "Redigere hjemmesiden" (som standard kun administratoren; admin giver den til enkelte personer under Rettigheder). Man klikker på en blok i forhåndsvisningen (mobil eller computer) og retter billede, tekst og knappens mål (valgt fra en liste), kan fjerne billedet, så teksten fylder hele bredden, skjule og tilføje blokke, fortryde og selv udgive. Billeder kan uploades og bliver skaleret og renset for metadata; en beskrivelse af billedet er påkrævet. Hver udgivelse gemmes i historikken (de seneste 50).
 - **Kerne:** kun administratoren kan ændre layout (en eller to kolonner, bredder, baggrund), slette blokke og rette siden Kalender. Det kontrolleres også på serveren.
 - **Senere:** admin kan selv definere nye layouts (fx to kolonner på 20/80 eller andre bredder end de faste valg) og gøre dem til skabeloner under "Tilføj blok", så redaktørerne kan bruge dem. Redaktørerne kan kun vælge mellem de godkendte layouts. Vent til det viser sig, hvilke layouts der bliver brug for.
 - **Senere:** kalender som abonnement (iCal/CalDAV, fx via en Radicale-server).
@@ -601,7 +601,7 @@ Klubbens hjemmeside ligger i klubsystemet og henter kalender og priser derfra, s
 
 Klubben kan lave egne farvetemaer uden teknisk hjælp og uden at ødelægge, hvordan siderne virker på mobil og pc.
 
-- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under Indstillinger → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
+- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under System → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
 - **Kerne:** et eget tema har navn, 7 farver i en lys og en mørk udgave (følger enhedens indstilling), skrift (Poppins eller enhedens egen) og runde hjørner. Farverne vælges ved at trykke på dem. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layout og logo kan ikke ændres.
 - **Kerne:** **Gem** og **Gem som…** (nyt navn, det gamle tema bevares). Status er *Under udvikling* (kun dem, der må rette design, kan vælge det under Farvetema) eller *Tilgængeligt for medlemmer*. Et tema kan slettes. Medlemmer med det valgt får så Automatisk.
 - **Kerne:** forhåndsvisning af de rigtige sider på mobil og computer, hvor intet kan gemmes. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis temaet gøres tilgængeligt alligevel. Oprettelse, ændring og sletning står i ændringsloggen. Kræver rettigheden "Lave og rette farvetemaer" (standard: administrator).

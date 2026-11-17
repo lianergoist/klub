@@ -15,7 +15,7 @@
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink :to="{ path: '/bliv-medlem', query: til ? { til } : {} }">Meld dig ind</RouterLink></p>
-                <!-- Tilbud og klippekort til ikke-medlemmer: tekst sættes under Indstillinger → Medlemskaber og tilkøb, vises kun når der er noget at købe -->
+                <!-- Tilbud og klippekort til ikke-medlemmer: tekst sættes under Medlemskaber og tilkøb, vises kun når der er noget at købe -->
                 <p v-for="l in links" :key="l.to" class="small offer-link">
                     <a v-if="l.web && IS_APP" href="#" @click.prevent="openWeb(l.to)">{{ l.text }}</a>
                     <RouterLink v-else :to="l.to">{{ l.text }}</RouterLink>

@@ -5,7 +5,7 @@ import { PREVIEW, design, findTheme, themeColor } from './design';
 // Temaet Marie blev fjernet 16/11-2026; har man det valgt, giver setTheme Automatisk.
 // Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå).
 // 'auto' = SurfHorsens, lys eller mørk efter telefonens/computerens indstilling.
-// Egne temaer fra Indstillinger → Design tilføjes som 'egen-<id>' og følger også telefonens lyse/mørke tilstand.
+// Egne temaer fra System → Design tilføjes som 'egen-<id>' og følger også telefonens lyse/mørke tilstand.
 const BUILT_IN = { auto: 'Automatisk', klub: 'SurfHorsens', standard: 'Blå', gron: 'Grøn', orange: 'Orange', mork: 'Mørk' };
 export const THEMES = reactive({ ...BUILT_IN });
 const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', 'klub-mork': '#1d1520', mork: '#0d1716' };
@@ -57,7 +57,7 @@ export function setTheme(t, remember = false) {
 
 /** Fx ?tema=klub, ?tema=mork eller ?tema=auto i adressen vælger tema (praktisk til at dele et link). */
 export function initTheme() {
-    // Forhåndsvisningen i Indstillinger → Design viser temaet, der redigeres, og gemmer intet (localStorage deles med siden udenom)
+    // Forhåndsvisningen i System → Design viser temaet, der redigeres, og gemmer intet (localStorage deles med siden udenom)
     if (PREVIEW) {
         THEMES['egen-preview'] = 'Forhåndsvisning';
         store.tema = 'egen-preview';

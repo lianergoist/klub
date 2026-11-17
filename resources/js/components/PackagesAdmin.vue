@@ -1,6 +1,6 @@
 <template>
     <div class="card">
-        <h2>Medlemskaber og tilkøb</h2>
+        <h2>Pakker</h2>
         <p class="small muted">Alt, der kan købes, er en pakke: <strong>hvem</strong> den dækker (antal personer pr. kategori), <strong>hvor længe</strong> den gælder og <strong>hvad</strong> den koster. Ændringer gælder kun nye køb. Pakker slettes ikke, men arkiveres, så tidligere køb og regninger bevares.<span v-if="d && !d.can_edit"> Du kan se pakkerne og ændre priser, men ikke oprette eller rette pakker.</span></p>
         <div class="chips" style="margin-bottom:12px">
             <button v-for="t in tabs" :key="t.id" :class="['chip', { on: tab === t.id }]" @click="tab = t.id">{{ t.label }}</button>

@@ -300,10 +300,10 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .vbadge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); color: #fff; border-radius: 999px; padding: 8px 12px 8px 14px; font-size: .8rem; font-weight: 600; pointer-events: none; }
 .vbadge .tri { width: 0; height: 0; border-style: solid; border-width: 7px 0 7px 12px; border-color: transparent transparent transparent #fff; }
 .lb-close, .lb-nav { position: absolute; border: 0; color: #fff; background: rgba(255,255,255,.14); border-radius: 999px; cursor: pointer; display: grid; place-items: center; }
-.lb-close { top: 12px; right: 12px; width: 40px; height: 40px; }
+.lb-close { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; width: 40px; height: 40px; }
 .lb-close svg { width: 22px; height: 22px; }
 .lb-nav { top: 50%; transform: translateY(-50%); width: 44px; height: 44px; font-size: 2rem; line-height: 1; padding-bottom: 4px; }
 .lb-nav.prev { left: 10px; } .lb-nav.next { right: 10px; }
 .lb-close:hover, .lb-nav:hover { background: rgba(255,255,255,.28); }
-.lb-count { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #fff; font-size: .9rem; background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 999px; }
+.lb-count { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); left: 50%; transform: translateX(-50%); color: #fff; font-size: .9rem; background: rgba(0,0,0,.4); padding: 2px 10px; border-radius: 999px; }
 </style>

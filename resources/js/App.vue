@@ -10,11 +10,13 @@
                 <RouterLink v-if="can.equipment" to="/udstyr"><Icon name="board" /> Udstyr</RouterLink>
                 <RouterLink :to="inboxLink" :class="{ 'router-link-active': route.path.startsWith('/indbakke') || route.path.startsWith('/beskeder') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
                 <RouterLink to="/profil"><Icon name="user" /> Min profil</RouterLink>
-                <template v-if="can.members_view || can.finance_read || can.settings">
+                <template v-if="can.members_view || can.finance_read || can.memberships || siteEdit || can.system">
                     <div class="sect">Administration</div>
                     <RouterLink v-if="can.members_view" to="/medlemmer"><Icon name="users" /> Medlemmer</RouterLink>
                     <RouterLink v-if="can.finance_read" to="/okonomi"><Icon name="money" /> Økonomi</RouterLink>
-                    <RouterLink v-if="can.settings" to="/indstillinger"><Icon name="gear" /> Indstillinger</RouterLink>
+                    <RouterLink v-if="can.memberships" to="/medlemskaber"><Icon name="bag" /> Medlemskaber og tilkøb</RouterLink>
+                    <RouterLink v-if="siteEdit" to="/rediger-hjemmeside"><Icon name="globe" /> Hjemmeside</RouterLink>
+                    <RouterLink v-if="can.system" to="/system"><Icon name="gear" /> System</RouterLink>
                 </template>
                 <button class="navbtn" @click="openHelp()"><Icon name="help" /> Hjælp</button>
             </nav>
@@ -53,13 +55,15 @@ import ThemeSwitch from './components/ThemeSwitch.vue';
 import AppVersion from './components/AppVersion.vue';
 import HelpPanel from './components/HelpPanel.vue';
 import { help, openHelp } from './help';
-import { store, api, roleLabel, logout as doLogout } from './api';
+import { store, api, roleLabel, logout as doLogout, IS_APP } from './api';
 
 const route = useRoute();
 const router = useRouter();
 const can = computed(() => store.user?.can || {});
 // "Mere" i bundmenuen kun for dem, der har et værktøj dér (almindelige medlemmer har farvetema og Log ud under Profil)
-const hasMore = computed(() => !!(can.value.portal || can.value.equipment || can.value.members_view || can.value.finance_read || can.value.settings));
+// Hjemmesiden redigeres kun på weben (editoren virker ikke i appen)
+const siteEdit = computed(() => !IS_APP && !!can.value.site_edit);
+const hasMore = computed(() => !!(can.value.portal || can.value.equipment || can.value.members_view || can.value.finance_read || can.value.memberships || siteEdit.value || can.value.system));
 // Indbakken åbner på den fane, der har ulæste (ellers Beskeder; dem uden beskeder får notifikationerne)
 const inboxLink = computed(() => {
     const u = store.user || {};

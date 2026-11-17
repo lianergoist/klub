@@ -157,7 +157,7 @@
             <div v-if="!buy.options" class="spinner"></div>
             <div v-else class="stack">
                 <p class="small muted" style="margin:0">Her vises de tilkøb, medlemmerne ikke selv kan købe. Andre tilkøb køber medlemmet selv i appen.</p>
-                <p v-if="!buy.options.packages.length" class="banner" style="margin:0">Der er ingen tilkøb, som kun bestyrelsen kan give. Fjern krydset "Kan købes af medlemmerne selv" på et tilkøb under Indstillinger → Medlemskaber og tilkøb.</p>
+                <p v-if="!buy.options.packages.length" class="banner" style="margin:0">Der er ingen tilkøb, som kun bestyrelsen kan give. Fjern krydset "Kan købes af medlemmerne selv" på et tilkøb under Medlemskaber og tilkøb.</p>
                 <label v-else class="field"><span>Tilkøb</span>
                     <select v-model="buy.package_id" @change="buy.resource_id = null">
                         <option :value="null" disabled>Vælg …</option>

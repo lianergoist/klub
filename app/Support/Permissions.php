@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Alle handlinger, der kræver en rolle. Admin styrer under Indstillinger → Rettigheder, hvilke roller hver
+ * Alle handlinger, der kræver en rolle. Admin styrer under System → Rettigheder, hvilke roller hver
  * handling kræver, og kan give enkelte medlemmer en rettighed (fx en kasserer-opgave) uden hele rollen.
  *
  * Nye handlinger tilføjes her med en standard; standarden gælder, indtil admin ændrer den.
@@ -58,10 +58,10 @@ class Permissions
         'roles.manage' => ['Medlemmer', 'Tildele roller og rettigheder',
             'Tildele og afslutte roller, give enkelte medlemmer rettigheder og ændre denne oversigt. Er altid administratorens, så ingen kan låse sig selv ude.', ['admin'], true],
         'audit.view' => ['Medlemmer', 'Se den fulde ændringslog',
-            'Se alle handlinger i systemet (medlemmer, aktiviteter, opslag, udstyr, rettigheder m.m.) under Indstillinger. Regnskabets egen ændringslog ligger under Økonomi.', ['admin']],
+            'Se alle handlinger i systemet (medlemmer, aktiviteter, opslag, udstyr, rettigheder m.m.) under System. Regnskabets egen ændringslog ligger under Økonomi.', ['admin']],
 
         'design.manage' => ['Design', 'Lave og rette farvetemaer',
-            'Lave egne farvetemaer under Indstillinger → Design (farver, skrift og runde hjørner) og gøre dem tilgængelige for medlemmerne. De indbyggede temaer og layoutet kan ikke ændres.', ['admin']],
+            'Lave egne farvetemaer under System → Design (farver, skrift og runde hjørner) og gøre dem tilgængelige for medlemmerne. De indbyggede temaer og layoutet kan ikke ændres.', ['admin']],
         'site.edit' => ['Design', 'Redigere hjemmesiden',
             'Rette tekster, billeder og knapper på klubbens hjemmeside, skjule og tilføje blokke og udgive ændringerne. Layoutet (kolonner og bredder), sletning af blokke og siden Kalender kan kun administratoren ændre.', ['admin']],
 

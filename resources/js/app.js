@@ -45,11 +45,17 @@ const routes = [
     { path: '/kvittering', redirect: '/profil/kvitteringer' }, // gamle links og beskeder
     { path: '/medlemmer', component: v('Members'), meta: { can: 'members_view', wide: true } },
     { path: '/medlemmer/:id', component: v('MemberDetail'), props: true, meta: { can: 'members_view' } },
-    { path: '/indstillinger', component: v('Settings'), meta: { can: 'settings' } },
-    { path: '/indstillinger/aendringslog', component: v('AuditLog'), meta: { can: 'audit_view', wide: true } },
-    { path: '/indstillinger/design', component: v('Design'), meta: { can: 'design_manage', wide: true } },
-    { path: '/indstillinger/hjemmeside', component: v('SiteEditor'), meta: { can: 'site_edit', wide: true } },
-    { path: '/indstillinger/rettigheder', component: v('Permissions'), meta: { can: 'roles_manage', wide: true } },
+    { path: '/system', component: v('System'), meta: { can: 'system' } },
+    { path: '/system/aendringslog', component: v('AuditLog'), meta: { can: 'audit_view', wide: true } },
+    { path: '/system/design', component: v('Design'), meta: { can: 'design_manage', wide: true } },
+    { path: '/system/rettigheder', component: v('Permissions'), meta: { can: 'roles_manage', wide: true } },
+    { path: '/medlemskaber', component: v('Memberships'), meta: { can: 'memberships' } },
+    // Hjemmesiden redigeres kun på weben (editoren virker ikke i appen)
+    ...(__APP__ ? [] : [{ path: '/rediger-hjemmeside', component: v('SiteEditor'), meta: { can: 'site_edit', wide: true } }]),
+    // Gamle adresser (Indstillinger blev delt i System, Medlemskaber og Hjemmeside)
+    { path: '/indstillinger', redirect: '/system' },
+    { path: '/indstillinger/hjemmeside', redirect: '/rediger-hjemmeside' },
+    { path: '/indstillinger/:sub', redirect: to => `/system/${to.params.sub}` },
     {
         path: '/okonomi', component: v('finance/FinanceLayout'), meta: { can: 'finance_read', wide: true },
         children: [

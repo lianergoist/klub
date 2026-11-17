@@ -182,7 +182,10 @@ class AuthController extends Controller
             'must_change_password' => (bool) $u->must_change_password,
             'season' => \App\Support\Season::label(),
             'can' => ($can = \App\Support\Permissions::flags($u)) + [
-                // Indstillinger vises, hvis man må mindst én af tingene dér
+                // Menupunkterne System og Medlemskaber og tilkøb
+                'system' => $can['categories_manage'] || $can['roles_manage'] || $can['audit_view'] || $can['design_manage'],
+                'memberships' => $can['packages_manage'] || $can['prices_edit'],
+                // Den gamle samlede Indstillinger-side (bruges af ældre app-versioner)
                 'settings' => $can['categories_manage'] || $can['packages_manage'] || $can['prices_edit'] || $can['roles_manage'] || $can['audit_view'] || $can['design_manage'] || $can['site_edit'],
                 // Trænerportalen: egen utilgængelighed (trænere) og/eller oversigten over alle trænere
                 'portal' => $can['trainers_portal'] || $can['activities_take'],

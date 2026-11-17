@@ -2,7 +2,7 @@
     <div>
         <div class="topbar">
             <h1>Rettigheder</h1>
-            <RouterLink to="/indstillinger" class="btn small ghost">← Indstillinger</RouterLink>
+            <RouterLink to="/system" class="btn small ghost">← System</RouterLink>
         </div>
         <div class="muted" style="margin:0 0 14px">Vælg, hvilke roller der må hvad. Tryk på en rolle for at slå den til eller fra – det gælder med det samme.
             <details class="more-info"><summary class="small">Mere om rettigheder</summary>

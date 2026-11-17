@@ -5,7 +5,7 @@ namespace App\Support;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Renser og kontrollerer blokke fra hjemmeside-editoren (Indstillinger → Hjemmeside), før de gemmes.
+ * Renser og kontrollerer blokke fra hjemmeside-editoren (menupunktet Hjemmeside), før de gemmes.
  * Kun kendte felter med kendte værdier kommer igennem, så en side altid kan vises på mobil og pc.
  *
  * Redaktører (rettigheden "Redigere hjemmesiden") må rette indholdet: billeder, tekster, knapper, skjule og tilføje blokke.

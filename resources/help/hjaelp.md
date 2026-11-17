@@ -15,7 +15,7 @@ Skriv kort, i du-form, og brug de samme ord som på knapperne.
 ## Sådan er systemet bygget op {#overblik side:/aktiviteter,/mere}
 Menuen har fire faste punkter: **Aktiviteter** (træninger, kurser og arrangementer), **Opslag** (klubbens opslagstavle), **Indbakke** (notifikationer og beskeder) og **Profil** (dine oplysninger, familie, regninger og indstillinger).
 
-Har du en rolle i klubben, fx træner eller kasserer, får du også adgang til værktøjer som **Trænerportal**, **Udstyr**, **Medlemmer**, **Økonomi** og **Indstillinger**. På mobil ligger de under **Mere**, på computer i menuen til venstre.
+Har du en rolle i klubben, fx træner eller kasserer, får du også adgang til værktøjer som **Trænerportal**, **Udstyr**, **Medlemmer**, **Økonomi**, **Medlemskaber og tilkøb** og **System**. På mobil ligger de under **Mere**, på computer i menuen til venstre.
 
 ## Login og adgangskode {#login side:/login,/glemt-adgangskode,/nulstil-adgangskode}
 Du logger ind med din e-mail og adgangskode.
@@ -166,13 +166,16 @@ Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer,
 ## Bankafstemning {#bankafstemning kræver:finance_read side:/okonomi/bank}
 Hent kontoudtoget som CSV i netbanken og vælg filen under **Økonomi → Bankafstemning**. Systemet viser de første linjer og gætter, hvilke kolonner der er dato, tekst og beløb – ret valget, hvis det er forkert, og tryk **Afstem**. Alle CSV-formater kan bruges, også med ekstra kolonner som saldo og status. Linjer uden dato eller beløb (fx saldolinjer) springes over.
 
-## Indstillinger {#indstillinger kræver:settings side:/indstillinger,/indstillinger/rettigheder,/indstillinger/aendringslog}
-Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlemskaber, tilkøb og tilbud til ikke-medlemmer og retter priser med virkning fra en valgt dato. Under **Rettigheder** vælger administrator, hvilke roller der må hvad. **Ændringslog** viser, hvem der har gjort hvad og hvornår.
+## Medlemskaber og tilkøb {#medlemskaber kræver:memberships side:/medlemskaber}
+Under **Medlemskaber og tilkøb** opretter bestyrelsen medlemskaber, tilkøb og tilbud til ikke-medlemmer og retter priser med virkning fra en valgt dato. Pakker slettes ikke, men arkiveres, så tidligere køb og regninger bevares.
+
+## System {#indstillinger kræver:system side:/system,/system/rettigheder,/system/aendringslog}
+Under **System** vælger administrator under **Rettigheder**, hvilke roller der må hvad. **Ændringslog** viser, hvem der har gjort hvad og hvornår. **Kategorier** foldes ud med et tryk: her oprettes, omdøbes og arkiveres aktivitetskategorierne.
 
 # Hjælp
 
-## Farvetemaer {#design kræver:design_manage side:/indstillinger/design}
-Under **Indstillinger → Design** laver du klubbens egne farvetemaer: farver, skrift og runde hjørner. Logoet er altid klubbens. Sidernes opbygning ændres aldrig, så alt virker på både mobil og pc.
+## Farvetemaer {#design kræver:design_manage side:/system/design}
+Under **System → Design** laver du klubbens egne farvetemaer: farver, skrift og runde hjørner. Logoet er altid klubbens. Sidernes opbygning ændres aldrig, så alt virker på både mobil og pc.
 
 - Værktøjslinjen øverst har **Tema**, **Gem**, **Farver** og **Skrift og hjørner**. Et tryk åbner en værktøjsboks oven på forhåndsvisningen. Den kan flyttes ved at trække i overskriften og lukkes med ×.
 - De indbyggede temaer (fx SurfHorsens) kan ikke rettes. Tryk **Åbn kopi** og gem kopien under et nyt navn.
@@ -183,8 +186,8 @@ Under **Indstillinger → Design** laver du klubbens egne farvetemaer: farver, s
 
 Sletter du et tema, får medlemmer, der havde valgt det, Automatisk (SurfHorsens) i stedet.
 
-## Hjemmesiden {#hjemmeside kræver:site_edit side:/indstillinger/hjemmeside}
-Under **Indstillinger → Hjemmeside** retter du klubbens offentlige sider: Forside, Priser og medlemskab, Så meget AlÅha og Kontakt. Siderne er bygget af faste blokke, så de altid virker på både mobil og pc.
+## Hjemmesiden {#hjemmeside kræver:site_edit side:/rediger-hjemmeside}
+Under **Hjemmeside** i menuen retter du klubbens offentlige sider: Forside, Priser og medlemskab, Så meget AlÅha og Kontakt. Siderne er bygget af faste blokke, så de altid virker på både mobil og pc. Hjemmesiden redigeres i browseren på en computer eller tablet – ikke i appen.
 
 - Vælg siden øverst til venstre. Forhåndsvisningen viser siden, som den kommer til at se ud. Skift mellem **Mobil** og **Computer**.
 - **Klik på en blok** i forhåndsvisningen for at rette den. Værktøjsboksen viser kun den blok: billede, tekst og knapper. Boksen kan flyttes ved at trække i overskriften.
