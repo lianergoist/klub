@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('members/{member}/approve', [MemberController::class, 'approve']);
     Route::post('members/{member}/roles', [MemberController::class, 'addRole']);
     Route::put('roles/{role}/end', [MemberController::class, 'endRole']);
+    Route::get('members/{member}/purchase-options', [\App\Http\Controllers\Api\PackageController::class, 'staffOptions']);
+    Route::post('members/{member}/purchases', [\App\Http\Controllers\Api\PackageController::class, 'staffBuy']);
     Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
     Route::put('user-permissions/{grant}/end', [\App\Http\Controllers\Api\PermissionController::class, 'end']);
     Route::get('settings/audit', [\App\Http\Controllers\Api\AuditController::class, 'index']);

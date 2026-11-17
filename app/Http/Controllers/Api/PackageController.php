@@ -151,6 +151,49 @@ class PackageController extends Controller
 
     /* ---------- Bestyrelse og admin ---------- */
 
+    /** Husstandens betaler: den, regningen for et medlems køb går til. */
+    private static function payerOf(User $member): User
+    {
+        return $member->household?->payer ?? $member;
+    }
+
+    /** Pakker, bestyrelsen/kassereren kan oprette for et medlem – også dem, medlemmerne ikke selv kan købe. */
+    public function staffOptions(Request $r, User $member)
+    {
+        abort_unless($r->user()->may('purchases.create'), 403);
+        $payer = self::payerOf($member);
+        $packages = Package::with('slots.category', 'product.resources')->whereIn('kind', ['membership', 'product'])->whereNull('archived_at')
+            ->orderByRaw("kind = 'product'")->orderBy('position')->orderBy('id')->get()
+            // Klippekort kun for ikke-medlemmer vises kun for gæster
+            ->filter(fn ($p) => $p->windowFor(now()) && (! $p->guest_only || $member->status === 'guest'))
+            ->map(fn ($p) => self::offerRow($p) + ['self_service' => $p->self_service, 'guest_only' => $p->guest_only, 'on_sale' => $p->onSale()])->values();
+
+        return [
+            'payer' => ['id' => $payer->id, 'name' => $payer->name],
+            'household' => $payer->managedMembers()->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'age' => $m->age(), 'status' => $m->status])->values(),
+            'packages' => $packages,
+        ];
+    }
+
+    public function staffBuy(Request $r, User $member)
+    {
+        abort_unless($r->user()->may('purchases.create'), 403, 'Du har ikke adgang til at oprette medlemskaber og tilkøb for andre.');
+        $d = $r->validate([
+            'package_id' => ['required', Rule::exists('packages', 'id')->whereIn('kind', ['membership', 'product'])->whereNull('archived_at')],
+            'member_ids' => 'required|array|min:1', 'member_ids.*' => 'integer',
+            'resource_id' => 'nullable|integer',
+        ]);
+        $package = Package::with('slots.category', 'product')->findOrFail($d['package_id']);
+        $payer = self::payerOf($member);
+
+        $purchase = Packages::buy($payer, $package, $d['member_ids'], [], $d['resource_id'] ?? null, staff: true);
+        Packages::settleIfFree($purchase->invoice);
+        $invoice = $purchase->invoice->fresh();
+        Audit::log('package.created_by_staff', $member, ['package' => $package->name, 'payer' => $payer->name, 'amount' => $invoice->amount, 'invoice' => $invoice->id]);
+
+        return ['invoice_id' => $invoice->id, 'amount_fmt' => Money::fmt($invoice->amount), 'paid' => $invoice->status === 'paid', 'payer' => $payer->name];
+    }
+
     private function board(Request $r): void { abort_unless($r->user()->may('packages.manage'), 403, 'Du har ikke adgang til at ændre medlemskaber og tilkøb.'); }
 
     public function admin(Request $r)

@@ -17,8 +17,9 @@
             <button class="btn" @click="approve">Aktivér profilen</button>
         </div>
 
-        <div v-if="m.purchases?.length" class="card">
-            <h3>Medlemskaber og tilkøb</h3>
+        <div v-if="m.purchases?.length || can.purchases_create" class="card">
+            <div class="row between"><h3 style="margin:0">Medlemskaber og tilkøb</h3><button v-if="can.purchases_create" class="btn small" @click="openBuy">Opret medlemskab/tilkøb</button></div>
+            <p v-if="!m.purchases?.length" class="small muted" style="margin:8px 0 0">Ingen endnu.</p>
             <ul class="list">
                 <li v-for="x in m.purchases" :key="x.id" class="row between" style="flex-wrap:nowrap">
                     <span>{{ x.name }} <span class="small muted">· {{ dato(x.valid_from) }}<template v-if="x.valid_to"> – {{ dato(x.valid_to) }}</template><template v-if="x.uses"> · {{ x.uses_left }} af {{ x.uses }} klip tilbage</template><template v-if="x.note"> · {{ x.note }}</template></span></span>
@@ -102,6 +103,32 @@
             <p class="small muted">Også opslag i kartoteket bliver logget (persondata).</p>
         </div>
 
+        <Modal v-if="buy" title="Opret medlemskab eller tilkøb" @close="buy = null">
+            <div v-if="!buy.options" class="spinner"></div>
+            <div v-else class="stack">
+                <label class="field"><span>Pakke</span>
+                    <select v-model="buy.package_id" @change="buy.resource_id = null">
+                        <option :value="null" disabled>Vælg …</option>
+                        <optgroup v-for="g in buyGroups" :key="g.label" :label="g.label">
+                            <option v-for="p in g.items" :key="p.id" :value="p.id">{{ p.name }} – {{ p.price_fmt }}{{ p.self_service ? '' : ' (kun bestyrelsen)' }}</option>
+                        </optgroup>
+                    </select>
+                </label>
+                <template v-if="buyPkg">
+                    <p class="small muted" style="margin:0">{{ buyPkg.composition_label }} · {{ buyPkg.period_label }} · gælder {{ dato(buyPkg.valid_from) }}<template v-if="buyPkg.valid_to"> – {{ dato(buyPkg.valid_to) }}</template><template v-if="!buyPkg.self_service"> · medlemmerne kan ikke selv købe den</template><template v-if="!buyPkg.on_sale"> · uden for salgsperioden</template></p>
+                    <p v-if="buyPkg.description" class="small" style="margin:0">{{ buyPkg.description }}</p>
+                    <div class="field"><span>Personer</span>
+                        <label v-for="h in buy.options.household" :key="h.id" class="check"><input type="checkbox" :value="h.id" v-model="buy.member_ids"> {{ h.name }} <span class="small muted">{{ h.age }} år</span></label>
+                    </div>
+                    <label v-if="buyPkg.needs_resource" class="field"><span>Plads</span>
+                        <select v-model="buy.resource_id"><option :value="null" disabled>Vælg …</option><option v-for="x in buyPkg.free_resources" :key="x.id" :value="x.id">{{ x.label }}</option></select>
+                        <span v-if="!buyPkg.free_resources?.length" class="small muted">Ingen ledige pladser.</span>
+                    </label>
+                    <p class="small muted" style="margin:0">Prisen er pakkens normale pris for de valgte personer. Regningen går til husstandens betaler, {{ buy.options.payer.name }}, som kan betale den i appen. Kontant betaling registreres bagefter med "Registrér betaling".</p>
+                </template>
+                <button class="btn primary block" :disabled="buy.busy || !buyPkg || !buy.member_ids.length || (buyPkg.needs_resource && !buy.resource_id)" @click="createPurchase">Opret og send regning</button>
+            </div>
+        </Modal>
         <RegisterPayment v-if="paying" :invoice="paying" @close="paying = null" @done="paying = null; load()" />
 
         <Modal v-if="showRole" title="Tildel rolle" @close="showRole = false">
@@ -154,6 +181,26 @@ const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', 
 const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });
 async function load() { m.value = await api(`members/${props.id}`); }
+// Medlemskab/tilkøb oprettet af bestyrelsen eller kassereren – også pakker, medlemmerne ikke selv kan købe
+const buy = ref(null);
+const buyPkg = computed(() => buy.value?.options?.packages.find(p => p.id === buy.value.package_id));
+const buyGroups = computed(() => {
+    const ps = buy.value?.options?.packages || [];
+    return [{ label: 'Medlemskaber', items: ps.filter(p => p.kind === 'membership') }, { label: 'Tilkøb', items: ps.filter(p => p.kind === 'product') }].filter(g => g.items.length);
+});
+async function openBuy() {
+    buy.value = { options: null, package_id: null, member_ids: [Number(props.id)], resource_id: null, busy: false };
+    try { buy.value.options = await api(`members/${props.id}/purchase-options`); } catch (e) { toast(e.message, 'error'); buy.value = null; }
+}
+async function createPurchase() {
+    buy.value.busy = true;
+    try {
+        const r = await api(`members/${props.id}/purchases`, { method: 'POST', body: { package_id: buy.value.package_id, member_ids: buy.value.member_ids, resource_id: buy.value.resource_id } });
+        buy.value = null;
+        toast(r.paid ? 'Oprettet (gratis)' : `Oprettet – regning på ${r.amount_fmt} sendt til ${r.payer}`);
+        load();
+    } catch (e) { toast(e.message, 'error'); buy.value.busy = false; }
+}
 onMounted(load); watch(() => props.id, load);
 async function approve() { await api(`members/${props.id}/approve`, { method: 'POST' }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }

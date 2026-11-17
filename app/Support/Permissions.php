@@ -49,6 +49,8 @@ class Permissions
             'Godkende indmeldelser, der venter.', ['board', 'treasurer', 'admin']],
         'members.edit' => ['Medlemmer', 'Rette medlemsoplysninger',
             'Rette navn, kontaktoplysninger, status m.m. på andre medlemmer.', ['admin']],
+        'purchases.create' => ['Medlemmer', 'Oprette medlemskaber og tilkøb for medlemmer',
+            'Oprette et medlemskab eller tilkøb for et medlem til normal pris – også pakker, medlemmerne ikke selv kan købe. Regningen går til husstandens betaler.', ['board', 'treasurer', 'admin']],
         'roles.manage' => ['Medlemmer', 'Tildele roller og rettigheder',
             'Tildele og afslutte roller, give enkelte medlemmer rettigheder og ændre denne oversigt. Er altid administratorens, så ingen kan låse sig selv ude.', ['admin'], true],
         'audit.view' => ['Medlemmer', 'Se den fulde ændringslog',

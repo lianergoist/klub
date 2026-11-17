@@ -148,6 +148,9 @@ Trænere og bestyrelse kan rette udstyrets stand med **Ret stand**: **OK**, **Sk
 ## Medlemmer {#medlemmer kræver:members_view side:/medlemmer,/medlemmer/:id}
 Under **Medlemmer** kan du søge og filtrere i kartoteket, fx alle aktive voksne eller alle med ubetalt kontingent. På medlemmets side ser du oplysninger, husstand, medlemskab og historik. Administrator kan her tildele roller og personlige rettigheder.
 
+## Opret medlemskab eller tilkøb for et medlem {#opret-koeb kræver:purchases_create side:/medlemmer/:id}
+Åbn medlemmet under **Medlemmer** og tryk **Opret medlemskab/tilkøb**. Vælg pakken og de personer i husstanden, den gælder for. Du kan også vælge pakker, medlemmerne ikke selv kan købe (markeret "kun bestyrelsen"). Prisen er pakkens normale pris, og regningen går til husstandens betaler, som kan betale den i appen. Betaler medlemmet kontant, trykker kassereren **Registrér betaling** ved regningen bagefter. Medlemskabet gælder, når regningen er betalt.
+
 ## Økonomi {#okonomi kræver:finance_read side:/okonomi,/okonomi/overblik,/okonomi/posteringer,/okonomi/betalinger,/okonomi/udlaeg,/okonomi/budget,/okonomi/bank}
 Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer, betalinger, udlæg, budget, bankafstemning og årsregnskab. Betalinger fra MobilePay bogføres automatisk. Rettelser sker med en ny postering, aldrig ved at slette. Økonomi findes både på web og i appen. I appen åbnes årsregnskabet i browseren, når det skal udskrives eller gemmes som PDF.
 

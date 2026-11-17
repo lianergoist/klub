@@ -285,6 +285,8 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der er til salg nu. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
 
+- **Kerne:** bestyrelse, kasserer og admin kan oprette et medlemskab eller tilkøb for et medlem fra medlemmets side ("Opret medlemskab/tilkøb"). Her kan de også vælge pakker, medlemmerne ikke selv kan købe, og pakker uden for salgsperioden. Prisen er pakkens normale pris for de valgte personer, og regningen går til husstandens betaler, som kan betale i appen; kontant betaling registreres bagefter. Pakker, medlemmerne ikke selv kan købe, vises aldrig for medlemmerne. Rettigheden hedder "Oprette medlemskaber og tilkøb for medlemmer". (Besluttet 17. nov. 2026.)
+
 - **Kerne:** kassereren fornyer medlemskaberne for en ny sæson med ét tryk: medlemskaber med faste datoer fornyes med samme personer og samme pakke, eller den pakke, den er sat til at fornyes som (fx halv sæson → hel sæson). Passer personerne ikke længere (fx et barn, der er blevet voksen), eller er pakken arkiveret, vises husstanden på en liste, så kassereren kan tage sig af den.
 
 - **Kerne:** betalingsstatus pr. medlem og sæson: ikke opkrævet, opkrævet, betalt, forfalden.
