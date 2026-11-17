@@ -78,7 +78,7 @@ class MessageController extends Controller
 
     public function unread(Request $r)
     {
-        return ['messages' => $r->user()->canUseMessages() ? $r->user()->unreadMessages() : 0, 'notifications' => $r->user()->unreadNotifications()->count()];
+        return ['messages' => $r->user()->canUseMessages() ? $r->user()->unreadMessages() : 0, 'notifications' => $r->user()->unreadNotifications()->count(), 'posts' => $r->user()->unreadPosts()];
     }
 
     /** Alle medlemmer, man kan skrive til (kun navn vises). Medlemmer der har fravalgt beskeder er ikke med. */

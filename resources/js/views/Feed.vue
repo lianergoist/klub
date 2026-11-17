@@ -186,6 +186,7 @@ async function load(older = false) {
     const r = await api(`feed?filter=${filter.value}${before}`);
     const list = r.posts.map(p => ({ ...p, showComments: false, draft: '' }));
     posts.value = older ? [...posts.value, ...list] : list;
+    if (!older && filter.value === 'all' && store.user) store.user.unread_posts = 0; // serveren har markeret tavlen som set
     more.value = r.more; isMod.value = r.is_mod; cats.value = r.categories; notifyLeft.value = r.notify_left; openReports.value = r.open_reports;
 }
 function setFilter(f) { filter.value = f; posts.value = null; load(); }

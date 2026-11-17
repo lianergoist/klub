@@ -178,6 +178,7 @@ class AuthController extends Controller
             'unread' => $u->unreadNotifications()->count(),
             'unread_messages' => $u->canUseMessages() ? $u->unreadMessages() : 0,
             'can_message' => (bool) $u->canUseMessages(),
+            'unread_posts' => $u->unreadPosts(),
             'is_payer' => $u->household?->payer_id === $u->id,
             'must_change_password' => (bool) $u->must_change_password,
             'season' => \App\Support\Season::label(),

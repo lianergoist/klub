@@ -211,6 +211,17 @@ class User extends Authenticatable
             ->where('messages.system', false)->count();
     }
 
+    /** Ulæste opslag: synlige opslag fra andre, nyere end det seneste, medlemmet har set på opslagstavlen */
+    public function unreadPosts(): int
+    {
+        if (! in_array($this->status, ['active', 'passive']) && ! $this->may('feed.moderate')) return 0;
+        $q = Post::whereNull('hidden_at')->where('user_id', '!=', $this->id);
+        // Nye medlemmer, der aldrig har åbnet opslagstavlen: opslag siden de blev oprettet
+        $this->feed_seen_post_id === null ? $q->where('created_at', '>', $this->created_at) : $q->where('id', '>', $this->feed_seen_post_id);
+
+        return $q->count();
+    }
+
     /** Medlemmer som $this kan skrive til (til listen "Ny besked"). */
     public function messageableQuery()
     {

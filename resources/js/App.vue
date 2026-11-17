@@ -5,7 +5,7 @@
             <a href="/" class="brand-logo" style="padding:0 10px 18px;display:block" title="Klubbens hjemmeside" @click="openSite"><img :src="design.logo" alt="SurfHorsens – klubbens hjemmeside" style="width:150px;height:auto;display:block"></a>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
-                <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
+                <RouterLink to="/opslag"><Icon name="chat" /> Opslag <span v-if="postBadge" class="dot">{{ postBadge }}</span></RouterLink>
                 <RouterLink v-if="can.portal" to="/traener"><Icon name="whistle" /> Trænerportal</RouterLink>
                 <RouterLink v-if="can.equipment" to="/udstyr"><Icon name="board" /> Udstyr</RouterLink>
                 <RouterLink :to="inboxLink" :class="{ 'router-link-active': route.path.startsWith('/indbakke') || route.path.startsWith('/beskeder') }"><Icon name="inbox" /> Indbakke <span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
@@ -33,7 +33,7 @@
         </main>
         <nav class="tabbar">
             <RouterLink to="/aktiviteter"><Icon name="cal" />Aktiviteter</RouterLink>
-            <RouterLink to="/opslag"><Icon name="chat" />Opslag</RouterLink>
+            <RouterLink to="/opslag"><Icon name="chat" />Opslag<span v-if="postBadge" class="dot">{{ postBadge }}</span></RouterLink>
             <RouterLink :to="inboxLink" :class="{ 'router-link-active': route.path.startsWith('/indbakke') || route.path.startsWith('/beskeder') }"><Icon name="inbox" />Indbakke<span v-if="badge" class="dot">{{ badge }}</span></RouterLink>
             <RouterLink to="/profil"><Icon name="user" />Profil</RouterLink>
             <RouterLink v-if="hasMore" to="/mere"><Icon name="more" />Mere</RouterLink>
@@ -71,11 +71,13 @@ const inboxLink = computed(() => {
     return !u.unread_messages && u.unread ? '/indbakke' : '/beskeder';
 });
 const badge = computed(() => (store.user?.unread || 0) + (store.user?.unread_messages || 0));
-// Hold ulæst-tælleren opdateret (beskeder fra andre medlemmer)
+// Nye opslag fra andre siden man sidst var på opslagstavlen (ikke mens man står på den)
+const postBadge = computed(() => route.path.startsWith('/opslag') ? 0 : (store.user?.unread_posts || 0));
+// Hold ulæst-tællerne opdateret (beskeder fra andre medlemmer, nye opslag)
 let poll;
 onMounted(() => { poll = setInterval(async () => {
     if (!store.user || document.hidden) return;
-    try { const u = await api('messages/unread'); store.user.unread = u.notifications; store.user.unread_messages = u.messages; } catch {}
+    try { const u = await api('messages/unread'); store.user.unread = u.notifications; store.user.unread_messages = u.messages; if ('posts' in u) store.user.unread_posts = u.posts; } catch {}
 }, 30000); });
 onUnmounted(() => clearInterval(poll));
 

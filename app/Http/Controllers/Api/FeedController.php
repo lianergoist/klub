@@ -61,6 +61,10 @@ class FeedController extends Controller
         };
         if ($before = $r->query('before')) $q->where('id', '<', $before);
         $posts = $q->limit(15)->get();
+        // Første side af hele tavlen er set: nulstil tælleren for ulæste opslag
+        if ($filter === 'all' && ! $before && ($top = (int) $posts->max('id')) > (int) $u->feed_seen_post_id) {
+            DB::table('users')->where('id', $u->id)->update(['feed_seen_post_id' => $top]); // uden updated_at/audit
+        }
 
         $liked = PostLike::where('user_id', $u->id)->whereIn('post_id', $posts->pluck('id'))->pluck('post_id')->flip();
         $reported = PostReport::where('user_id', $u->id)->whereIn('post_id', $posts->pluck('id'))->pluck('post_id')->flip();
