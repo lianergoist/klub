@@ -419,7 +419,7 @@ class DatabaseSeeder extends Seeder
 
         // Medlemskaber og tilkøb
         $pkg = fn ($name) => \App\Models\Package::where('name', $name);
-        // Udstyrsleje/dagsleje giver ikke ret til at booke udstyr, så længe medlemmer ikke må booke (se Rettigheder nedenfor)
+        // Udstyrsleje/dagsleje giver ikke ret til at booke udstyr, så længe medlemmer ikke må booke (standard i Rettigheder)
         \App\Models\Package::query()->update(['equipment_booking' => false]);
         \App\Models\Package::whereIn('name', ['Husstand med 2 personer – hel sæson', 'Husstand med 2 personer – halv sæson', 'Familie: 2 voksne og 1–3 børn',
             'Opbevaring: skab i container', 'Udstyrsleje i sæsonen, 2 personer', 'Adgang til motionsrum, 30 dage'])->update(['archived_at' => $this->now]);
@@ -428,10 +428,7 @@ class DatabaseSeeder extends Seeder
             \App\Support\Prices::set($day->priceCode(), 25000, \App\Support\Season::start($this->now)->addYear()->toDateString(), null);
         }
 
-        // Rettigheder
-        \App\Support\Permissions::setRoles('prices.edit', ['board', 'treasurer']);
-        \App\Support\Permissions::setRoles('members.edit', ['admin']);
-        \App\Support\Permissions::setMembersRule('equipment.book', 'none');
+        // Rettigheder: admins valg (17. nov. 2026) er nu standarden i Permissions::CATALOG/MEMBERS
     }
 
     private function seedMessages(array $p): void

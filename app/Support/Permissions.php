@@ -24,7 +24,7 @@ class Permissions
         'activities.manage' => ['Aktiviteter', 'Oprette og rette aktiviteter',
             'Oprette, rette og aflyse aktiviteter, vælge trænere, registrere fremmøde og tilmelde/afmelde deltagere efter fristen.', ['trainer', 'board', 'admin']],
         'activities.take' => ['Aktiviteter', 'Være træner på aktiviteter',
-            'Står på listen over trænere, kan melde sig som træner på en aktivitet og angive egen utilgængelighed.', ['trainer']],
+            'Står på listen over trænere, kan melde sig som træner på en aktivitet og angive egen utilgængelighed.', ['trainer', 'admin']],
         'trainers.portal' => ['Aktiviteter', 'Se trænerportalen',
             'Trænerportalen med "Mangler træner" og tilgængelighed for alle trænere.', ['trainer', 'board', 'admin']],
         'categories.manage' => ['Aktiviteter', 'Oprette og rette aktivitetskategorier',
@@ -48,7 +48,7 @@ class Permissions
         'members.approve' => ['Medlemmer', 'Godkende nye medlemmer',
             'Godkende indmeldelser, der venter.', ['board', 'treasurer', 'admin']],
         'members.edit' => ['Medlemmer', 'Rette medlemsoplysninger',
-            'Rette navn, kontaktoplysninger, status m.m. på andre medlemmer.', ['admin']],
+            'Rette navn, kontaktoplysninger, status m.m. på andre medlemmer.', ['board', 'treasurer', 'admin']],
         'members.create' => ['Medlemmer', 'Oprette nye medlemmer',
             'Oprette et nyt medlem med medlemskab fra Medlemmer eller Økonomi – også medlemskaber, medlemmerne ikke selv kan vælge. Medlemmet får regningen og bliver aktivt, når den er betalt.', ['board', 'treasurer', 'admin']],
         'purchases.create' => ['Medlemmer', 'Ændre medlemskab og give tilkøb',
@@ -84,7 +84,7 @@ class Permissions
 
     /** Rettigheder med et valg for almindelige medlemmer: key => [standard, [værdi => tekst]] */
     public const MEMBERS = [
-        'equipment.book' => ['rental', [
+        'equipment.book' => ['none', [
             'none' => 'Kan ikke booke',
             'rental' => 'Kun med betalt udstyrsleje eller dagsleje',
             'all' => 'Alle med betalt medlemskab',
