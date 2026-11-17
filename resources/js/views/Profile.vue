@@ -34,7 +34,11 @@
                 <Icon name="help" class="mi" />
                 <span class="mtext"><strong>Hjælp</strong><span class="small muted">Sådan bruger du systemet</span></span>
                 <span class="chev" aria-hidden="true">›</span>
-            </button></li></ul></div>
+            </button></li><li><a href="/" class="mrow" @click="openSite">
+                <Icon name="globe" class="mi" />
+                <span class="mtext"><strong>Klubbens hjemmeside</strong><span class="small muted">Priser, kalender og kontakt</span></span>
+                <span class="chev" aria-hidden="true">›</span>
+            </a></li></ul></div>
             <div class="card"><ThemeSwitch /></div>
             <button class="btn danger block" @click="logout">Log ud</button>
             <p class="small muted" style="margin:12px 4px 0">Logget ind som {{ store.user.name }} ({{ store.user.roles.map(r => roleLabel[r]).join(', ') }})</p>
@@ -260,7 +264,7 @@ import Receipt from './Receipt.vue';
 import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
 import AppVersion from '../components/AppVersion.vue';
-import { api, store, dato, kr, toast, download, roleLabel, IS_APP, logout as doLogout } from '../api';
+import { api, store, dato, kr, toast, download, roleLabel, IS_APP, logout as doLogout, openSite } from '../api';
 
 const props = defineProps({ tab: String });
 const router = useRouter();

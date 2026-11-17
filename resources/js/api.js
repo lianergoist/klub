@@ -152,3 +152,10 @@ export const maanedKort = (iso) => fmt(iso, { month: 'short' });
 export const maanedAar = (iso) => fmt(iso, { month: 'long', year: 'numeric' });
 export const tidspunkt = (iso) => iso ? `${dato(iso)} kl. ${klok(iso)}` : '';
 export const roleLabel = { member: 'Medlem', trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', auditor: 'Revisor', admin: 'Administrator' };
+
+/** Klubbens hjemmeside (forsiden): på weben et almindeligt link til "/", i appen åbnes den i telefonens browser. Bruges som @click på <a href="/">. */
+export function openSite(e) {
+    if (!IS_APP) return;
+    e?.preventDefault();
+    import('./native').then(n => n.openWeb('/'));
+}

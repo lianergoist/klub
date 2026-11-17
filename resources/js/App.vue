@@ -1,8 +1,9 @@
 <template>
     <div v-if="store.user && !route.meta.public && !route.meta.guest && store.user.status !== 'guest'" class="shell">
         <aside class="sidebar">
-            <div class="brandmark brand-default"><img src="/icon.svg" alt=""> Klubben</div>
-            <div class="brand-logo" style="padding:0 10px 18px"><img :src="design.logo" alt="SurfHorsens" style="width:150px;height:auto;display:block"></div>
+            <!-- Logoet åbner klubbens hjemmeside (på weben samme side, i appen telefonens browser) -->
+            <a href="/" class="brandmark brand-default" title="Klubbens hjemmeside" @click="openSite"><img src="/icon.svg" alt=""> Klubben</a>
+            <a href="/" class="brand-logo" style="padding:0 10px 18px;display:block" title="Klubbens hjemmeside" @click="openSite"><img :src="design.logo" alt="SurfHorsens – klubbens hjemmeside" style="width:150px;height:auto;display:block"></a>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>
                 <RouterLink to="/opslag"><Icon name="chat" /> Opslag</RouterLink>
@@ -55,7 +56,7 @@ import ThemeSwitch from './components/ThemeSwitch.vue';
 import AppVersion from './components/AppVersion.vue';
 import HelpPanel from './components/HelpPanel.vue';
 import { help, openHelp } from './help';
-import { store, api, roleLabel, logout as doLogout, IS_APP } from './api';
+import { store, api, roleLabel, logout as doLogout, IS_APP, openSite } from './api';
 
 const route = useRoute();
 const router = useRouter();
