@@ -85,7 +85,7 @@ p { margin: 0 0 .75rem; }
 .tabbar svg { width: 24px; height: 24px; }
 .dot { position: absolute; top: 5px; left: calc(50% + 6px); background: var(--bad); color: #fff; font-size: .62rem; min-width: 16px; height: 16px; border-radius: 8px; display: grid; place-items: center; padding: 0 4px; }
 @media (min-width: 900px) {
-    .sidebar { display: flex; flex-direction: column; width: 236px; flex-shrink: 0; background: var(--brand); color: #d8ecef; padding: 20px 12px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar { display: flex; flex-direction: column; width: 236px; flex-shrink: 0; background: var(--brand); color: #d8ecef; padding: calc(env(safe-area-inset-top, 0px) + 20px) 12px calc(env(safe-area-inset-bottom, 0px) + 20px); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .sidebar .brandmark { color: #fff; padding: 0 10px 18px; }
     .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #cfe5e8; position: relative; }
     .sidebar nav a:hover { background: rgba(255,255,255,.07); }
