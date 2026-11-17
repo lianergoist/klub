@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#7e5a8c">
-    <link rel="icon" href="/favicon.ico" sizes="48x48">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/favicon.ico?v={{ @filemtime(public_path('favicon.ico')) }}" sizes="48x48">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v={{ @filemtime(public_path('apple-touch-icon.png')) }}">
+    <link rel="manifest" href="/manifest.webmanifest?v={{ @filemtime(public_path('manifest.webmanifest')) }}">
     <title>SurfHorsens – adgang</title>
     <style>
         :root { color-scheme: light; --bg:#f4f6f5; --card:#fff; --ink:#10201f; --ink2:#4a5a58; --line:#dde3e1; --accent:#0f7c8c; --bad:#b42318; --badsoft:#fde8e6; }
@@ -28,7 +28,7 @@
         html[data-tema=klub] { --bg:#e3d8d3; --card:#fbf7f5; --ink:#33243a; --ink2:#5e4a66; --line:#d6c8c2; --accent:#7e5a8c; }
         @media (prefers-color-scheme: dark) { html[data-tema=klub] { --bg:#1d1520; --card:#291f2e; --ink:#f3ebef; --ink2:#cbbcd0; --line:#45364c; --accent:#a274c0; } }
         html[data-tema=klub] h1 { color: var(--accent); }
-        .logo-klub { display:inline-block; width:200px; height:auto; border-radius:0; } .logo-std { display:none; }
+        .logo-klub { display:inline-block; width:200px; height:auto; border-radius:0; }
     </style>
     <script>
         (function () {
@@ -41,7 +41,6 @@
 </head>
 <body>
 <div class="box">
-    <img class="logo-std" src="/icon.svg" alt="">
     <img class="logo-klub" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens">
     <h1>SurfHorsens</h1>
     <p>Proof of concept – kun for bestyrelsen.</p>

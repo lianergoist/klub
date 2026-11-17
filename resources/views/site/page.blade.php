@@ -14,7 +14,7 @@
     <meta property="og:title" content="{{ $page->seo_title ?: $page->title }}">
     <meta property="og:type" content="website">
     <meta name="theme-color" content="#e3d8d3">
-    <link rel="icon" href="/hjemmeside/billeder/favicon.webp" type="image/webp">
+    <link rel="icon" href="{{ $v('billeder/favicon.webp') }}" type="image/webp">
     <link rel="preload" href="/hjemmeside/fonts/poppins-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/hjemmeside/fonts/poppins-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ $v('site.css') }}">

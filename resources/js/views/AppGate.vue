@@ -1,7 +1,6 @@
 <template>
     <div class="gate">
         <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:190px;height:auto;margin:0 auto 8px">
-        <img class="brand-default" src="/icon.svg" alt="" width="64" height="64" style="margin:0 auto 8px;border-radius:16px">
         <h1>Klubappen</h1>
         <p class="muted">Testudgave – kun for bestyrelsen.</p>
         <form class="card stack" @submit.prevent="submit">

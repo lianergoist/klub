@@ -1,7 +1,6 @@
 <template>
     <div class="guest">
         <header class="ghead">
-            <img class="brand-default" src="/icon.svg" alt="" width="52" height="52">
             <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:170px;height:auto;margin:0 auto">
             <h1>Klippekort</h1>
             <p class="muted">Ikke medlem, men vil gerne være med til fx SUP-træning? Køb et klippekort, opret et login og tilmeld dig de træninger, du vil med til. Hver gang bruger ét klip.</p>

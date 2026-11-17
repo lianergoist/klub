@@ -1,7 +1,6 @@
 <template>
     <div class="login-wrap">
         <div class="login-hero">
-            <img class="brand-default" src="/icon.svg" alt="" width="64" height="64">
             <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:200px;height:auto;margin:0 auto 6px">
             <h1>Medlemsportal</h1>
             <p>Aktiviteter, medlemskab og betaling samlet ét sted.</p>

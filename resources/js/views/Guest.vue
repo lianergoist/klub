@@ -1,7 +1,6 @@
 <template>
     <div class="guest">
         <header class="ghead">
-            <img class="brand-default" src="/icon.svg" alt="" width="52" height="52">
             <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:170px;height:auto;margin:0 auto">
             <h1>Prøv SurfHorsens</h1>
             <p class="muted">Ikke medlem endnu? {{ intro }}</p>

@@ -2,7 +2,6 @@
     <div v-if="store.user && !route.meta.public && !route.meta.guest && store.user.status !== 'guest'" class="shell">
         <aside class="sidebar">
             <!-- Logoet åbner klubbens hjemmeside (på weben samme side, i appen telefonens browser) -->
-            <a href="/" class="brandmark brand-default" title="Klubbens hjemmeside" @click="openSite"><img src="/icon.svg" alt=""> Klubben</a>
             <a href="/" class="brand-logo" style="padding:0 10px 18px;display:block" title="Klubbens hjemmeside" @click="openSite"><img :src="design.logo" alt="SurfHorsens – klubbens hjemmeside" style="width:150px;height:auto;display:block"></a>
             <nav>
                 <RouterLink to="/aktiviteter"><Icon name="cal" /> Aktiviteter</RouterLink>

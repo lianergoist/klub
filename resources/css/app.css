@@ -153,7 +153,6 @@ html[data-tema=klub] .capacity > i { background: var(--teal); }
 html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
 
 /* Klubbens logo vises i alle temaer */
-.brand-default { display: none; }
 
 /* Komponenter */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
