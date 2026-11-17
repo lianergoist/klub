@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#7e5a8c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Klubben">
+    <meta name="apple-mobile-web-app-title" content="SurfHorsens">
     <title>Klubsystem</title>
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
