@@ -1,7 +1,8 @@
 <template>
     <div class="dpage">
         <div class="topbar">
-            <h1>Hjemmeside <HelpButton topic="hjemmeside" /></h1>
+            <h1>Hjemmeside</h1>
+            <HelpButton topic="hjemmeside" />
         </div>
 
         <div class="toolbar card">

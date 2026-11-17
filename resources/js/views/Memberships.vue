@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1 style="margin-bottom:14px">Medlemskaber og tilkøb<HelpButton topic="medlemskaber" /></h1>
+        <div class="topbar"><h1>Medlemskaber og tilkøb</h1><HelpButton topic="medlemskaber" /></div>
         <PackagesAdmin />
         <div v-if="pr?.groups?.length" class="card">
             <h2>Øvrige priser</h2>

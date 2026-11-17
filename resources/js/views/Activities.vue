@@ -1,8 +1,11 @@
 <template>
     <div>
         <div class="topbar">
-            <div><h1>Aktiviteter<HelpButton topic="aktiviteter" /></h1><p class="muted small" style="margin:0">ALÅHA {{ store.user.name.split(' ')[0] }} 🤙</p></div>
-            <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
+            <div><h1>Aktiviteter</h1><p class="muted small" style="margin:0">ALÅHA {{ store.user.name.split(' ')[0] }} 🤙</p></div>
+            <div class="row" style="gap:8px;flex-wrap:nowrap">
+                <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny</RouterLink>
+                <HelpButton topic="aktiviteter" />
+            </div>
         </div>
 
         <div v-if="store.user.status === 'pending'" class="banner warn row between">

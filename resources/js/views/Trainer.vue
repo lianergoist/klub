@@ -1,8 +1,11 @@
 <template>
     <div>
         <div class="topbar">
-            <h1>Trænerportal<HelpButton topic="traenerportal" /></h1>
-            <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
+            <h1>Trænerportal</h1>
+            <div class="row" style="gap:8px;flex-wrap:nowrap">
+                <RouterLink v-if="store.user.can.activities_manage" to="/aktiviteter/ny" class="btn primary"><Icon name="plus" style="width:18px" /> Ny aktivitet</RouterLink>
+                <HelpButton topic="traenerportal" />
+            </div>
         </div>
         <div class="tabs">
             <button :class="{ on: tab === 'mine' }" @click="tab = 'mine'">Mine aktiviteter</button>

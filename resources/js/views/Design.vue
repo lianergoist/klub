@@ -1,8 +1,11 @@
 <template>
     <div class="dpage">
         <div class="topbar">
-            <h1>Design <HelpButton topic="design" /></h1>
-            <RouterLink to="/system" class="btn small ghost">← System</RouterLink>
+            <h1>Design</h1>
+            <div class="row" style="gap:8px;flex-wrap:nowrap">
+                <RouterLink to="/system" class="btn small ghost">← System</RouterLink>
+                <HelpButton topic="design" />
+            </div>
         </div>
 
         <!-- Værktøjslinjen: et tryk åbner den flydende værktøjsboks, et tryk mere lukker den -->
