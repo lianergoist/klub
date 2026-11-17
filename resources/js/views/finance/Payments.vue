@@ -16,10 +16,12 @@
                 <select v-model="kind" style="max-width:180px"><option value="">Alle typer</option><option value="membership">Kontingent</option><option value="activity">Aktiviteter</option><option value="product">Tilkøb</option></select>
                 </template>
             </div>
-            <div v-if="canWrite" class="row" style="gap:8px">
-                <button v-if="d?.totals.overdue_count" class="btn small" :disabled="reminding" @click="remindAll">Påmind alle forfaldne ({{ d.totals.overdue_count }})</button>
-                <button class="btn primary small" @click="showGen = true">Opkræv kontingent</button>
+            <div v-if="canWrite || store.user.can.members_create" class="row" style="gap:8px">
+                <button v-if="canWrite && d?.totals.overdue_count" class="btn small" :disabled="reminding" @click="remindAll">Påmind alle forfaldne ({{ d.totals.overdue_count }})</button>
+                <button v-if="store.user.can.members_create" class="btn small" @click="showNew = true">Opret medlem</button>
+                <button v-if="canWrite" class="btn primary small" @click="showGen = true">Opkræv kontingent</button>
             </div>
+            <NewMemberModal v-if="showNew" @close="showNew = false" @done="id => router.push(`/medlemmer/${id}`)" />
         </div>
         <!-- Mobil: kort med beløb, status og handlinger -->
         <div class="mobile-only">
@@ -91,8 +93,12 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import Modal from '../../components/Modal.vue';
 import RegisterPayment from '../../components/RegisterPayment.vue';
+import NewMemberModal from '../../components/NewMemberModal.vue';
+import { useRouter } from 'vue-router';
 import { api, store, dato, toast } from '../../api';
 import { isMobile } from '../../mobile';
+const router = useRouter();
+const showNew = ref(false);
 const canWrite = computed(() => store.user.can.finance_write);
 const d = ref(null); const q = ref(''); const status = ref(''); const kind = ref('');
 const manual = ref(null); const reminding = ref(false);

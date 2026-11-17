@@ -18,11 +18,11 @@
         </div>
 
         <div v-if="m.purchases?.length || can.purchases_create" class="card">
-            <div class="row between"><h3 style="margin:0">Medlemskaber og tilkøb</h3><button v-if="can.purchases_create" class="btn small" @click="openBuy">Opret medlemskab/tilkøb</button></div>
+            <div class="row between"><h3 style="margin:0">Medlemskaber og tilkøb</h3><div v-if="can.purchases_create" class="row" style="gap:6px"><button class="btn small" @click="openMs">Rediger medlemskab</button><button class="btn small" @click="openBuy">Tilkøb</button></div></div>
             <p v-if="!m.purchases?.length" class="small muted" style="margin:8px 0 0">Ingen endnu.</p>
             <ul class="list">
                 <li v-for="x in m.purchases" :key="x.id" class="row between" style="flex-wrap:nowrap">
-                    <span>{{ x.name }} <span class="small muted">· {{ dato(x.valid_from) }}<template v-if="x.valid_to"> – {{ dato(x.valid_to) }}</template><template v-if="x.uses"> · {{ x.uses_left }} af {{ x.uses }} klip tilbage</template><template v-if="x.note"> · {{ x.note }}</template></span></span>
+                    <span>{{ x.name }} <span class="small muted">· {{ dato(x.valid_from) }}<template v-if="x.valid_to"> – {{ dato(x.valid_to) }}</template><template v-if="x.uses"> · {{ x.uses_left }} af {{ x.uses }} klip tilbage</template><template v-if="x.renews_as"> · fornyes som {{ x.renews_as }}</template><template v-if="x.note"> · {{ x.note }}</template></span></span>
                     <span :class="['tag', { paid: 'ok', open: 'info', overdue: 'bad' }[x.status] || '']">{{ { paid: 'Betalt', open: 'Ubetalt', overdue: 'Forfalden', cancelled: 'Annulleret' }[x.status] || x.status }}</span>
                 </li>
             </ul>
@@ -103,19 +103,49 @@
             <p class="small muted">Også opslag i kartoteket bliver logget (persondata).</p>
         </div>
 
-        <Modal v-if="buy" title="Opret medlemskab eller tilkøb" @close="buy = null">
+        <Modal v-if="ms" title="Rediger medlemskab" @close="ms = null">
+            <div v-if="!ms.options" class="spinner"></div>
+            <div v-else class="stack">
+                <div v-if="ms.options.current" class="small">
+                    <strong>Nu:</strong> {{ ms.options.current.name }} · {{ dato(ms.options.current.valid_from) }}<template v-if="ms.options.current.valid_to"> – {{ dato(ms.options.current.valid_to) }}</template>
+                    <span v-if="ms.options.current.people.length > 1" class="muted"> · {{ ms.options.current.people.join(', ') }}</span>
+                    <template v-if="ms.options.mode === 'next_renewal'"><br><strong>Næste opkrævning:</strong> {{ ms.options.current.renews_as.name }}</template>
+                </div>
+                <div v-if="ms.options.upcoming" class="small">
+                    <strong>Næste periode:</strong> {{ ms.options.upcoming.name }} · {{ dato(ms.options.upcoming.valid_from) }}<template v-if="ms.options.upcoming.valid_to"> – {{ dato(ms.options.upcoming.valid_to) }}</template> · {{ ms.options.upcoming.paid ? 'betalt' : 'ikke betalt' }}
+                </div>
+                <p v-if="ms.options.mode === 'locked'" class="banner warn" style="margin:0">Medlemskabet for næste periode er allerede betalt og kan ikke ændres her.</p>
+                <p v-else-if="ms.options.mode === 'not_renewable'" class="banner warn" style="margin:0">{{ ms.options.current.name }} fornyes ikke automatisk, så der er ingen næste opkrævning at ændre.</p>
+                <template v-else>
+                    <label class="field"><span>{{ ms.options.mode === 'now' ? 'Medlemskab' : 'Nyt medlemskab' }}</span>
+                        <select v-model="ms.package_id">
+                            <option :value="null" disabled>Vælg …</option>
+                            <option v-for="p in ms.options.memberships" :key="p.id" :value="p.id">{{ p.name }} – {{ p.price_fmt }}{{ p.self_service ? '' : ' (kun bestyrelsen)' }}</option>
+                        </select>
+                    </label>
+                    <p v-if="msPkg" class="small muted" style="margin:0">{{ msPkg.composition_label }} · {{ msPkg.period_label }}</p>
+                    <p class="small muted" style="margin:0">
+                        <template v-if="ms.options.mode === 'next_renewal'">Ændringen gælder fra næste opkrævning, når kassereren opkræver kontingent for næste sæson. Det nuværende medlemskab er uændret.</template>
+                        <template v-else-if="ms.options.mode === 'replace_upcoming'">Regningen for næste periode er sendt, men ikke betalt. Den annulleres, og {{ ms.options.payer }} får en ny regning med den nye type.</template>
+                        <template v-else>{{ m.profile.name.split(' ')[0] }} har intet medlemskab nu. Det oprettes med det samme, og {{ ms.options.payer }} får en regning på den normale pris.</template>
+                    </p>
+                    <button class="btn primary block" :disabled="ms.busy || !ms.package_id" @click="saveMs">{{ ms.options.mode === 'now' ? 'Opret medlemskab' : 'Gem ændring' }}</button>
+                </template>
+            </div>
+        </Modal>
+        <Modal v-if="buy" title="Tilkøb" @close="buy = null">
             <div v-if="!buy.options" class="spinner"></div>
             <div v-else class="stack">
-                <label class="field"><span>Pakke</span>
+                <p class="small muted" style="margin:0">Her vises de tilkøb, medlemmerne ikke selv kan købe. Andre tilkøb køber medlemmet selv i appen.</p>
+                <p v-if="!buy.options.packages.length" class="banner" style="margin:0">Der er ingen tilkøb, som kun bestyrelsen kan give. Fjern krydset "Kan købes af medlemmerne selv" på et tilkøb under Indstillinger → Medlemskaber og tilkøb.</p>
+                <label v-else class="field"><span>Tilkøb</span>
                     <select v-model="buy.package_id" @change="buy.resource_id = null">
                         <option :value="null" disabled>Vælg …</option>
-                        <optgroup v-for="g in buyGroups" :key="g.label" :label="g.label">
-                            <option v-for="p in g.items" :key="p.id" :value="p.id">{{ p.name }} – {{ p.price_fmt }}{{ p.self_service ? '' : ' (kun bestyrelsen)' }}</option>
-                        </optgroup>
+                        <option v-for="p in buy.options.packages" :key="p.id" :value="p.id">{{ p.name }} – {{ p.price_fmt }}</option>
                     </select>
                 </label>
                 <template v-if="buyPkg">
-                    <p class="small muted" style="margin:0">{{ buyPkg.composition_label }} · {{ buyPkg.period_label }} · gælder {{ dato(buyPkg.valid_from) }}<template v-if="buyPkg.valid_to"> – {{ dato(buyPkg.valid_to) }}</template><template v-if="!buyPkg.self_service"> · medlemmerne kan ikke selv købe den</template><template v-if="!buyPkg.on_sale"> · uden for salgsperioden</template></p>
+                    <p class="small muted" style="margin:0">{{ buyPkg.composition_label }} · {{ buyPkg.period_label }} · gælder {{ dato(buyPkg.valid_from) }}<template v-if="buyPkg.valid_to"> – {{ dato(buyPkg.valid_to) }}</template><template v-if="!buyPkg.on_sale"> · uden for salgsperioden</template></p>
                     <p v-if="buyPkg.description" class="small" style="margin:0">{{ buyPkg.description }}</p>
                     <div class="field"><span>Personer</span>
                         <label v-for="h in buy.options.household" :key="h.id" class="check"><input type="checkbox" :value="h.id" v-model="buy.member_ids"> {{ h.name }} <span class="small muted">{{ h.age }} år</span></label>
@@ -126,7 +156,7 @@
                     </label>
                     <p class="small muted" style="margin:0">Prisen er pakkens normale pris for de valgte personer. Regningen går til husstandens betaler, {{ buy.options.payer.name }}, som kan betale den i appen. Kontant betaling registreres bagefter med "Registrér betaling".</p>
                 </template>
-                <button class="btn primary block" :disabled="buy.busy || !buyPkg || !buy.member_ids.length || (buyPkg.needs_resource && !buy.resource_id)" @click="createPurchase">Opret og send regning</button>
+                <button v-if="buy.options.packages.length" class="btn primary block" :disabled="buy.busy || !buyPkg || !buy.member_ids.length || (buyPkg.needs_resource && !buy.resource_id)" @click="createPurchase">Opret og send regning</button>
             </div>
         </Modal>
         <RegisterPayment v-if="paying" :invoice="paying" @close="paying = null" @done="paying = null; load()" />
@@ -181,13 +211,26 @@ const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', 
 const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });
 async function load() { m.value = await api(`members/${props.id}`); }
-// Medlemskab/tilkøb oprettet af bestyrelsen eller kassereren – også pakker, medlemmerne ikke selv kan købe
+// Rediger medlemskab: anden type fra næste opkrævning (bestyrelse/kasserer)
+const ms = ref(null);
+const msPkg = computed(() => ms.value?.options?.memberships.find(p => p.id === ms.value.package_id));
+async function openMs() {
+    ms.value = { options: null, package_id: null, busy: false };
+    try {
+        const o = await api(`members/${props.id}/membership-options`);
+        ms.value.options = o;
+        const pre = o.upcoming?.id ? null : o.current?.renews_as?.id;
+        ms.value.package_id = o.memberships.some(p => p.id === pre) ? pre : null;
+    } catch (e) { toast(e.message, 'error'); ms.value = null; }
+}
+async function saveMs() {
+    ms.value.busy = true;
+    try { const r = await api(`members/${props.id}/membership`, { method: 'PUT', body: { package_id: ms.value.package_id } }); ms.value = null; toast(r.message); load(); }
+    catch (e) { toast(e.message, 'error'); ms.value.busy = false; }
+}
+// Tilkøb, medlemmerne ikke selv kan købe (bestyrelse/kasserer)
 const buy = ref(null);
 const buyPkg = computed(() => buy.value?.options?.packages.find(p => p.id === buy.value.package_id));
-const buyGroups = computed(() => {
-    const ps = buy.value?.options?.packages || [];
-    return [{ label: 'Medlemskaber', items: ps.filter(p => p.kind === 'membership') }, { label: 'Tilkøb', items: ps.filter(p => p.kind === 'product') }].filter(g => g.items.length);
-});
 async function openBuy() {
     buy.value = { options: null, package_id: null, member_ids: [Number(props.id)], resource_id: null, busy: false };
     try { buy.value.options = await api(`members/${props.id}/purchase-options`); } catch (e) { toast(e.message, 'error'); buy.value = null; }
@@ -197,7 +240,7 @@ async function createPurchase() {
     try {
         const r = await api(`members/${props.id}/purchases`, { method: 'POST', body: { package_id: buy.value.package_id, member_ids: buy.value.member_ids, resource_id: buy.value.resource_id } });
         buy.value = null;
-        toast(r.paid ? 'Oprettet (gratis)' : `Oprettet – regning på ${r.amount_fmt} sendt til ${r.payer}`);
+        toast(r.paid ? 'Tilkøbet er givet (gratis)' : `Tilkøbet er givet – regning på ${r.amount_fmt} sendt til ${r.payer}`);
         load();
     } catch (e) { toast(e.message, 'error'); buy.value.busy = false; }
 }

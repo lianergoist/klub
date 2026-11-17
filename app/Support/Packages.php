@@ -246,7 +246,7 @@ class Packages
     public static function renew(int $year): array
     {
         $created = 0; $sum = 0; $skipped = [];
-        $old = Purchase::with('package.renewsTo', 'users', 'payer')
+        $old = Purchase::with('package.renewsTo', 'renewPackage', 'users', 'payer')
             ->whereHas('package', fn ($q) => $q->where('kind', 'membership')->where('period_type', 'dates'))
             ->whereNull('cancelled_at')->whereHas('invoice', fn ($q) => $q->where('status', 'paid'))
             ->where('valid_to', '>=', ($year - 1).'-05-01')->where('valid_to', '<', $year.'-05-01')
@@ -254,36 +254,56 @@ class Packages
             ->get();
 
         foreach ($old as $p) {
-            $target = $p->package->renewsTo ?? $p->package;
+            $target = self::renewalTarget($p);
             $people = $p->users->whereNotIn('status', ['resigned', 'guest'])->values();
             $who = $p->payer->name;
             if (! $people->count()) continue;
             if ($target->archived_at) { $skipped[] = "$who: {$target->name} er arkiveret"; continue; }
             [$from, $to] = $target->dateWindowStartingIn($year);
-            if ($err = $target->compositionError($people->map(fn ($m) => ['name' => $m->name, 'birthdate' => $m->birthdate?->toDateString()])->all(), $from)) {
+            if ($err = $target->compositionError(self::peopleRows($people), $from)) {
                 $skipped[] = "$who: $err"; continue;
             }
             if ($people->contains(fn ($m) => self::overlapping($m, $from, $to))) continue; // har allerede købt
-            DB::transaction(function () use ($p, $target, $people, $from, $to, &$created, &$sum) {
-                $pr = self::priceFor($target, $people->map(fn ($m) => ['name' => $m->name, 'birthdate' => $m->birthdate?->toDateString()])->all(), $from);
-                $amount = $pr['price'];
-                $inv = Invoice::create([
-                    'payer_id' => $p->payer_id, 'member_id' => $people->count() === 1 ? $people->first()->id : null, 'kind' => 'membership',
-                    'description' => $target->name.self::periodText($from, $to).' – '.self::who($people->pluck('name')).($pr['capped'] ? ' (højst '.$people->count().' × enkeltkontingent)' : ''),
-                    'amount' => $amount, 'due_on' => now()->max($from)->addDays(14), 'period' => Season::label($from),
-                    'account_id' => $target->account_id, 'payload' => ['action' => 'purchase', 'package_id' => $target->id, 'renewal' => true],
-                ]);
-                $n = Purchase::create(['package_id' => $target->id, 'payer_id' => $p->payer_id, 'invoice_id' => $inv->id,
-                    'valid_from' => $from, 'valid_to' => $to, 'renewed_from_id' => $p->id]);
-                $n->users()->attach($people->pluck('id'));
-                $inv->update(['payload' => $inv->payload + ['purchase_id' => $n->id]]);
-                $p->payer->notify(new ClubMessage('Kontingent '.Season::label($from), 'Der er oprettet en opkrævning på '.Money::fmt($amount).' ('.$target->name.') med betaling senest '.$inv->due_on->format('d.m.Y').'.', '/profil/regninger'));
-                $created++; $sum += $amount;
-            });
+            $inv = self::createRenewal($p, $target, $people, $from, $to);
+            $created++; $sum += $inv->amount;
         }
         Audit::log('membership.generated', null, ['year' => $year, 'count' => $created, 'skipped' => count($skipped)]);
 
         return ['created' => $created, 'total' => Money::fmt($sum), 'season' => Season::label(Carbon::parse($year.'-05-01')), 'skipped' => $skipped];
+    }
+
+    /** Den pakke, et medlemskab fornyes som: bestyrelsens valg på købet, ellers pakkens "fornyes som", ellers samme pakke. */
+    public static function renewalTarget(Purchase $p): Package
+    {
+        return $p->renewPackage ?? $p->package->renewsTo ?? $p->package;
+    }
+
+    public static function peopleRows($people): array
+    {
+        return collect($people)->map(fn ($m) => ['name' => $m->name, 'birthdate' => $m->birthdate?->toDateString()])->values()->all();
+    }
+
+    /** Opret fornyelsen (køb + regning) af $p som $target for perioden og giv betaleren besked. */
+    public static function createRenewal(Purchase $p, Package $target, $people, Carbon $from, Carbon $to, array $extra = []): Invoice
+    {
+        return DB::transaction(function () use ($p, $target, $people, $from, $to, $extra) {
+            $pr = self::priceFor($target, self::peopleRows($people), $from);
+            $amount = $pr['price'];
+            $inv = Invoice::create([
+                'payer_id' => $p->payer_id, 'member_id' => $people->count() === 1 ? $people->first()->id : null, 'kind' => 'membership',
+                'description' => $target->name.self::periodText($from, $to).' – '.self::who($people->pluck('name')).($pr['capped'] ? ' (højst '.$people->count().' × enkeltkontingent)' : ''),
+                // copy(): Carbon::max() returnerer selve \$from, og addDays() ville ellers flytte periodens start
+                'amount' => $amount, 'due_on' => now()->max($from)->copy()->addDays(14), 'period' => Season::label($from),
+                'account_id' => $target->account_id, 'payload' => ['action' => 'purchase', 'package_id' => $target->id, 'renewal' => true],
+            ]);
+            $n = Purchase::create($extra + ['package_id' => $target->id, 'payer_id' => $p->payer_id, 'invoice_id' => $inv->id,
+                'valid_from' => $from, 'valid_to' => $to, 'renewed_from_id' => $p->id]);
+            $n->users()->attach($people->pluck('id'));
+            $inv->update(['payload' => $inv->payload + ['purchase_id' => $n->id]]);
+            $p->payer->notify(new ClubMessage('Kontingent '.Season::label($from), 'Der er oprettet en opkrævning på '.Money::fmt($amount).' ('.$target->name.') med betaling senest '.$inv->due_on->format('d.m.Y').'.', '/profil/regninger'));
+
+            return $inv;
+        });
     }
 
     /* ---------- Visning ---------- */

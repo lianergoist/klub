@@ -148,8 +148,14 @@ Trænere og bestyrelse kan rette udstyrets stand med **Ret stand**: **OK**, **Sk
 ## Medlemmer {#medlemmer kræver:members_view side:/medlemmer,/medlemmer/:id}
 Under **Medlemmer** kan du søge og filtrere i kartoteket, fx alle aktive voksne eller alle med ubetalt kontingent. På medlemmets side ser du oplysninger, husstand, medlemskab og historik. Administrator kan her tildele roller og personlige rettigheder.
 
-## Opret medlemskab eller tilkøb for et medlem {#opret-koeb kræver:purchases_create side:/medlemmer/:id}
-Åbn medlemmet under **Medlemmer** og tryk **Opret medlemskab/tilkøb**. Vælg pakken og de personer i husstanden, den gælder for. Du kan også vælge pakker, medlemmerne ikke selv kan købe (markeret "kun bestyrelsen"). Prisen er pakkens normale pris, og regningen går til husstandens betaler, som kan betale den i appen. Betaler medlemmet kontant, trykker kassereren **Registrér betaling** ved regningen bagefter. Medlemskabet gælder, når regningen er betalt.
+## Opret et nyt medlem {#opret-medlem kræver:members_create side:/medlemmer,/okonomi/betalinger}
+Tryk **Opret medlem** under **Medlemmer** eller **Økonomi → Betalinger**. Udfyld navn, fødselsdato og medlemskab, og bekræft samtykket. E-mail er valgfri; med e-mail kan medlemmet selv logge ind via "Glemt adgangskode". Medlemmet får en regning og bliver aktivt, når den er betalt. Betaler medlemmet kontant, trykker kassereren **Registrér betaling** på medlemmets side.
+
+## Rediger medlemskab {#rediger-medlemskab kræver:purchases_create side:/medlemmer/:id}
+På medlemmets side under **Medlemskaber og tilkøb** ændrer **Rediger medlemskab** medlemskabet til en anden type fra næste opkrævning. Det nuværende medlemskab er uændret; den nye type bruges, når kassereren opkræver kontingent for næste sæson. Er regningen for næste sæson allerede sendt, men ikke betalt, skiftes den ud med det samme. Har medlemmet intet medlemskab, oprettes det med det samme.
+
+## Giv et tilkøb {#tilkob-bestyrelse kræver:purchases_create side:/medlemmer/:id}
+**Tilkøb** på medlemmets side viser de tilkøb, medlemmerne ikke selv kan købe. Vælg tilkøbet og personerne; regningen går til husstandens betaler.
 
 ## Økonomi {#okonomi kræver:finance_read side:/okonomi,/okonomi/overblik,/okonomi/posteringer,/okonomi/betalinger,/okonomi/udlaeg,/okonomi/budget,/okonomi/bank}
 Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer, betalinger, udlæg, budget, bankafstemning og årsregnskab. Betalinger fra MobilePay bogføres automatisk. Rettelser sker med en ny postering, aldrig ved at slette. Økonomi findes både på web og i appen. I appen åbnes årsregnskabet i browseren, når det skal udskrives eller gemmes som PDF.

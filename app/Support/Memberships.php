@@ -210,7 +210,7 @@ class Memberships
         $label = Season::label($season);
         $account = FinanceController::accountId('1000');
         $created = 0; $sum = 0;
-        $due = now()->max($season)->addDays(14);
+        $due = now()->max($season)->copy()->addDays(14); // copy(): max() kan returnere selve $season
 
         $payers = User::with('household')->whereIn('status', ['active', 'passive'])->get()->map(fn ($u) => $u->payer())->unique('id');
         foreach ($payers as $payer) {

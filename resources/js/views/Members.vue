@@ -2,8 +2,12 @@
     <div>
         <div class="topbar">
             <h1>Medlemmer</h1>
-            <button class="btn small" @click="download('members/export?' + qs, 'medlemsliste.csv')"><Icon name="download" style="width:16px" /> Eksportér</button>
+            <div class="row" style="gap:8px">
+                <button v-if="store.user.can.members_create" class="btn primary small" @click="showNew = true">Opret medlem</button>
+                <button class="btn small" @click="download('members/export?' + qs, 'medlemsliste.csv')"><Icon name="download" style="width:16px" /> Eksportér</button>
+            </div>
         </div>
+        <NewMemberModal v-if="showNew" @close="showNew = false" @done="id => router.push(`/medlemmer/${id}`)" />
         <div v-if="pending.length" class="banner warn">
             <strong>{{ pending.length }} har meldt sig ind, men ikke betalt:</strong>
             <RouterLink v-for="m in pending" :key="m.id" :to="`/medlemmer/${m.id}`" style="margin-left:8px">{{ m.name }}</RouterLink>
@@ -62,9 +66,13 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import Icon from '../components/Icon.vue';
+import NewMemberModal from '../components/NewMemberModal.vue';
+import { useRouter } from 'vue-router';
 import { api, download, roleLabel } from '../api';
 import { store } from '../api';
 import { isMobile } from '../mobile';
+const router = useRouter();
+const showNew = ref(false);
 const showFilters = ref(false); const shown = ref(50);
 const f = reactive({ q: '', status: '', age: '', role: '', unpaid: false });
 const list = ref([]); const pending = ref([]);
