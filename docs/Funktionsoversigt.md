@@ -479,7 +479,7 @@ En forenings regnskab handler grundlæggende om tre ting: at **alle indtægter o
 
 - **Kerne:** rettelser sker ved en ny postering, der udligner den gamle, og ikke ved at slette. Alt har dato, og hvem der indtastede det.
 
-- **Kerne:** bankafstemning: kassereren kan uploade kontoudtog (CSV fra banken) og matche det mod posteringerne for at se, om noget mangler eller afviger.
+- **Kerne:** bankafstemning: kassereren kan uploade kontoudtog (CSV fra banken) og matche det mod posteringerne for at se, om noget mangler eller afviger. Alle CSV-formater kan bruges: tegnsæt (UTF-8 eller Windows) og skilletegn (semikolon, komma, tabulator) genkendes, og efter upload vises de første linjer, så man vælger, hvilke kolonner der er dato, tekst og beløb (systemet gætter ud fra overskrifterne). Ekstra kolonner som saldo og status ignoreres, og linjer uden gyldig dato eller beløb springes over.
 
 **Overblik og kontrol**
 

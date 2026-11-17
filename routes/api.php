@@ -193,6 +193,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('entries', [FinanceController::class, 'storeEntry']);
         Route::post('entries/{entry}/reverse', [FinanceController::class, 'reverseEntry']);
         Route::get('entries/{entry}/attachment', [FinanceController::class, 'attachment']);
+        Route::post('reconcile/preview', [FinanceController::class, 'reconcilePreview']);
         Route::post('reconcile', [FinanceController::class, 'reconcile']);
         Route::get('prices', [FinanceController::class, 'prices']);
         Route::post('prices', [FinanceController::class, 'setPrice']);

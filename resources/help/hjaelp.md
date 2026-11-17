@@ -163,6 +163,9 @@ På medlemmets side under **Medlemskaber og tilkøb** ændrer **Rediger medlemsk
 ## Økonomi {#okonomi kræver:finance_read side:/okonomi,/okonomi/overblik,/okonomi/posteringer,/okonomi/betalinger,/okonomi/udlaeg,/okonomi/budget,/okonomi/bank}
 Under **Økonomi** finder kasserer, bestyrelse og revisor overblik, posteringer, betalinger, udlæg, budget, bankafstemning og årsregnskab. Betalinger fra MobilePay bogføres automatisk. Rettelser sker med en ny postering, aldrig ved at slette. Økonomi findes både på web og i appen. I appen åbnes årsregnskabet i browseren, når det skal udskrives eller gemmes som PDF.
 
+## Bankafstemning {#bankafstemning kræver:finance_read side:/okonomi/bank}
+Hent kontoudtoget som CSV i netbanken og vælg filen under **Økonomi → Bankafstemning**. Systemet viser de første linjer og gætter, hvilke kolonner der er dato, tekst og beløb – ret valget, hvis det er forkert, og tryk **Afstem**. Alle CSV-formater kan bruges, også med ekstra kolonner som saldo og status. Linjer uden dato eller beløb (fx saldolinjer) springes over.
+
 ## Indstillinger {#indstillinger kræver:settings side:/indstillinger,/indstillinger/rettigheder,/indstillinger/aendringslog}
 Under **Indstillinger** opretter bestyrelse og administrator kategorier, medlemskaber, tilkøb og tilbud til ikke-medlemmer og retter priser med virkning fra en valgt dato. Under **Rettigheder** vælger administrator, hvilke roller der må hvad. **Ændringslog** viser, hvem der har gjort hvad og hvornår.
 

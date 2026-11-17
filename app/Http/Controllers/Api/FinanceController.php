@@ -310,28 +310,48 @@ class FinanceController extends Controller
      * 2) Øvrige linjer matches mod enkeltposteringer (samme beløb, ±3 dage).
      * Posteringer der hører til MobilePay-/kortbetalinger afstemmes kun via udbetalinger.
      */
-    public function reconcile(Request $r)
+    /** Første linjer af et kontoudtog + gæt på kolonnerne, så brugeren kan vælge dato, tekst og beløb. */
+    public function reconcilePreview(Request $r)
     {
         $this->read($r);
         $r->validate(['file' => 'required|file|max:2048']);
+        $csv = \App\Support\BankCsv::read($r->file('file')->get());
+        abort_unless($csv['columns'] && $csv['rows'], 422, 'Filen indeholder ingen linjer med data. Er det en CSV-fil fra netbanken?');
+
+        return [
+            'columns' => $csv['columns'], 'rows' => array_slice($csv['rows'], 0, 6), 'total' => count($csv['rows']),
+            'guess' => \App\Support\BankCsv::guess($csv['columns'], $csv['rows']),
+            'encoding' => $csv['encoding'], 'delimiter' => ["\t" => 'tabulator', ';' => 'semikolon', ',' => 'komma', '|' => 'lodret streg'][$csv['delimiter']],
+        ];
+    }
+
+    public function reconcile(Request $r)
+    {
+        $this->read($r);
+        $r->validate(['file' => 'required|file|max:2048', 'date_col' => 'nullable|integer|min:0', 'text_col' => 'nullable|integer|min:0', 'amount_col' => 'nullable|integer|min:0']);
         $persist = $r->user()->may('finance.write');
-        $lines = preg_split('/\r?\n/', trim(preg_replace('/^\xEF\xBB\xBF/', '', $r->file('file')->get())));
+        $csv = \App\Support\BankCsv::read($r->file('file')->get());
+        abort_unless($csv['columns'], 422, 'Filen er tom eller ikke en CSV-fil.');
+        // Valgte kolonner; ellers gættet (fx fra en ældre app, der kun sender filen)
+        $guess = \App\Support\BankCsv::guess($csv['columns'], $csv['rows']);
+        $col = fn ($k) => $r->filled($k.'_col') ? (int) $r->input($k.'_col') : $guess[$k];
+        [$dc, $tc, $ac] = [$col('date'), $col('text'), $col('amount')];
+        $width = count($csv['columns']);
+        abort_if($dc === null || $ac === null, 422, 'Vælg, hvilke kolonner der er dato og beløb.');
+        abort_if(max($dc, $ac, $tc ?? 0) >= $width, 422, 'Den valgte kolonne findes ikke i filen.');
+        abort_if($dc === $ac, 422, 'Dato og beløb skal være forskellige kolonner.');
+        $skipped = 0;
 
         // Posteringer der afstemmes via udbetalinger (ikke enkeltvis)
         $viaPayout = Entry::whereIn('payment_id', Payment::whereIn('method', \App\Support\MobilePay\Settlements::METHODS)->select('id'))
             ->pluck('id')->merge(Payout::whereNotNull('fee_entry_id')->pluck('fee_entry_id'))->all();
 
         $usedEntries = []; $usedPayouts = []; $out = [];
-        foreach ($lines as $line) {
-            $cols = str_getcsv($line, str_contains($line, ';') ? ';' : ',', '"', '');
-            if (count($cols) < 3) continue;
-            try {
-                $date = Carbon::createFromFormat(str_contains($cols[0], '-') && strlen(explode('-', $cols[0])[0]) === 4 ? 'Y-m-d' : 'd-m-Y', str_replace('.', '-', trim($cols[0])));
-            } catch (\Throwable) {
-                continue; // overskrift o.l.
-            }
-            $text = trim($cols[1]);
-            $amount = (int) round((float) str_replace(',', '.', str_replace('.', '', trim($cols[2]))) * 100);
+        foreach ($csv['rows'] as $cols) {
+            $date = \App\Support\BankCsv::date($cols[$dc] ?? '');
+            $amount = \App\Support\BankCsv::amount($cols[$ac] ?? '');
+            if (! $date || $amount === null) { $skipped++; continue; } // fx saldo-, sum- eller tomme linjer
+            $text = $tc !== null ? mb_substr($cols[$tc] ?? '', 0, 300) : '';
             $row = ['date' => $date->toDateString(), 'text' => $text, 'amount' => $amount, 'match' => null];
 
             $payout = Payout::whereNotIn('id', $usedPayouts)->get()->first(fn ($p) => str_contains($text, $p->provider_payout_id))
@@ -362,7 +382,7 @@ class FinanceController extends Controller
         $unmatchedPayouts = $from ? Payout::whereBetween('payout_date', [$from, $to])->whereNotIn('id', $usedPayouts)->get()
             ->map(fn ($p) => ['id' => $p->id, 'date' => $p->payout_date->toDateString(), 'ref' => $p->provider_payout_id, 'net' => $p->net, 'count' => $p->payment_count]) : [];
 
-        return ['lines' => $out, 'unmatched_entries' => $unmatchedEntries, 'unmatched_payouts' => $unmatchedPayouts, 'saved' => $persist];
+        return ['lines' => $out, 'unmatched_entries' => $unmatchedEntries, 'unmatched_payouts' => $unmatchedPayouts, 'saved' => $persist, 'skipped' => $skipped];
     }
 
     /* ---------- MobilePay-udbetalinger ---------- */
