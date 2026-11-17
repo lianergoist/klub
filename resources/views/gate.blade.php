@@ -8,7 +8,7 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.webmanifest">
-    <title>Klubsystem – adgang</title>
+    <title>SurfHorsens – adgang</title>
     <style>
         :root { color-scheme: light; --bg:#f4f6f5; --card:#fff; --ink:#10201f; --ink2:#4a5a58; --line:#dde3e1; --accent:#0f7c8c; --bad:#b42318; --badsoft:#fde8e6; }
         @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --bg:#0d1716; --card:#15211f; --ink:#e9efee; --ink2:#b3c0be; --line:#2a3a38; --accent:#4cc2cf; --bad:#ff8a80; --badsoft:#3a1714; } }
