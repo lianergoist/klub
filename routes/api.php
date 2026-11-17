@@ -58,6 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('profile/password', [ProfileController::class, 'password'])->middleware('throttle:password-change');
     Route::get('profile/packages', [\App\Http\Controllers\Api\PackageController::class, 'mine']);
     Route::post('profile/purchases', [\App\Http\Controllers\Api\PackageController::class, 'buy']);
+    Route::post('profile/membership-change/options', [\App\Http\Controllers\Api\PackageController::class, 'changeOptions']);
+    Route::post('profile/membership-change', [\App\Http\Controllers\Api\PackageController::class, 'change']);
     Route::post('profile/purchases/{purchase}/cancel', [\App\Http\Controllers\Api\PackageController::class, 'cancel']);
     Route::get('profile/categories', [ProfileController::class, 'categories']);
     Route::put('profile/categories', [ProfileController::class, 'saveCategories']);

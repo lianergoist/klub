@@ -103,7 +103,7 @@
 
                 <form v-if="store.user.status !== 'pending' && (shop.can_add_people || withoutMembership.length)" class="card stack" @submit.prevent="buyMembership">
                     <h2>Køb medlemskab</h2>
-                    <p class="small muted" style="margin:0">Vælg hvem medlemskabet skal dække. Skal der tilføjes et barn eller en partner til husstanden, gør du det her. Har resten af familien allerede medlemskab, købes et medlemskab til den nye person.</p>
+                    <p class="small muted" style="margin:0">Vælg hvem medlemskabet skal dække. Skal der tilføjes et barn eller en partner til husstanden, gør du det her. Har I allerede et medlemskab, kan I udvide det, så det dækker jer alle – med det samme eller fra næste sæson – eller købe et eget medlemskab til den nye person.</p>
                     <div v-if="withoutMembership.length">
                         <span class="lbl">Personer i husstanden uden medlemskab</span>
                         <label v-for="m in withoutMembership" :key="m.id" class="check"><input type="checkbox" :value="m.id" v-model="ms.member_ids"> {{ m.name }} <span class="muted small">({{ m.age }} år)</span></label>
@@ -121,12 +121,35 @@
                         </div>
                         <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', consent: false }); track('familie', 'tilfoej_person')">+ Tilføj ny person</button>
                     </div>
+                    <!-- Udvid husstandens medlemskab: alle på det nuværende + de nye, med det samme (betal differencen) eller fra næste sæson -->
+                    <div v-if="msPeople.length && chg && (chg.now.length || chg.next.length)">
+                        <span class="lbl">Udvid jeres medlemskab</span>
+                        <p class="small muted" style="margin:0 0 8px">I har <strong>{{ chg.base.name }}</strong> ({{ chg.base.people.join(', ') }}). Vælg et medlemskab, der dækker jer alle.</p>
+                        <div class="chips" style="margin-bottom:8px">
+                            <button v-if="chg.now.length" type="button" :class="['chip', { on: ms.when === 'now' }]" @click="setWhen('now')">Med det samme</button>
+                            <button v-if="chg.next.length" type="button" :class="['chip', { on: ms.when === 'next' }]" @click="setWhen('next')">Fra næste sæson ({{ dato(chg.next_from) }})</button>
+                        </div>
+                        <div class="pkgs">
+                            <label v-for="o in chg[ms.when]" :key="o.package_id" :class="['pkg', { on: ms.change === o.package_id }]">
+                                <input type="radio" :checked="ms.change === o.package_id" @change="ms.change = o.package_id; ms.package_id = null">
+                                <span class="pbody">
+                                    <span class="row between" style="flex-wrap:nowrap;align-items:flex-start;gap:10px"><strong>{{ o.name }}</strong><strong class="num">{{ o.amount_fmt }}</strong></span>
+                                    <span class="small muted">{{ o.persons }} personer · {{ dato(o.valid_from) }} – {{ dato(o.valid_to) }}</span>
+                                    <span v-if="o.credit" class="small muted">{{ o.price_fmt }} − {{ o.credit_fmt }} I allerede har betalt = {{ o.amount_fmt }}</span>
+                                    <span v-if="o.capped" class="small ok-txt">Prisen er sat ned, så den ikke er højere end jeres enkeltkontingenter tilsammen.</span>
+                                    <span v-if="ms.when === 'now' && o.also_next" class="small muted">Næste sæsons kontingent er allerede oprettet. Det rettes også til {{ o.name }}, når der er betalt.</span>
+                                    <span v-if="ms.when === 'next' && chg.next_base && chg.next_base.status === 'open'" class="small muted">Erstatter det oprettede kontingent for næste sæson ({{ chg.next_base.name }}).</span>
+                                </span>
+                            </label>
+                        </div>
+                        <p v-if="ms.when === 'next'" class="small muted" style="margin:6px 0 0">Jeres nuværende medlemskab er uændret resten af sæsonen. {{ msPeople.map(x => x.name || 'Den nye').join(', ') }} bliver først medlem fra {{ dato(chg.next_from) }}.</p>
+                    </div>
                     <div v-if="msPeople.length">
-                        <span class="lbl">Vælg medlemskab</span>
-                        <PackageList v-model="ms.package_id" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" :price-of="(x) => priceFor(x, msPeople, shop.categories, shop.singles)" />
+                        <span class="lbl">{{ chg && (chg.now.length || chg.next.length) ? 'Eller et eget medlemskab til ' + msPeople.map(x => x.name || 'den nye').join(', ') : 'Vælg medlemskab' }}</span>
+                        <PackageList :model-value="ms.package_id" @update:model-value="(v) => { ms.package_id = v; ms.change = null; }" :packages="shop.memberships" :fits="(x) => compositionError(x, msPeople, shop.categories)" :price-of="(x) => priceFor(x, msPeople, shop.categories, shop.singles)" />
                     </div>
                     <p v-if="msError" class="banner warn small" style="margin-bottom:0">{{ msError }}</p>
-                    <button class="btn primary" :disabled="!msPkg || !!msError || busy">{{ msPkg ? `Køb og betal ${kr(priceFor(msPkg, msPeople, shop.categories, shop.singles).price)}` : 'Vælg personer og medlemskab' }}</button>
+                    <button class="btn primary" :disabled="(!msPkg && !msChange) || !!msError || busy">{{ msChange ? (msChange.amount ? `Skift og betal ${msChange.amount_fmt}` : `Skift til ${msChange.name}`) : msPkg ? `Køb og betal ${kr(priceFor(msPkg, msPeople, shop.categories, shop.singles).price)}` : 'Vælg personer og medlemskab' }}</button>
                 </form>
                 <div v-if="store.user.status === 'pending'" class="banner warn">Betal først dit eget medlemskab. Derefter kan du købe medlemskab til andre i husstanden.</div>
             </template>
@@ -268,13 +291,33 @@ const stCls = (s) => ({ paid: 'ok', open: 'info', overdue: 'bad', refunded: '', 
 
 const p = ref(null); const f = reactive({}); const cats = ref([]); const invoices = ref(null); const shop = ref(null); const busy = ref(false);
 const buy = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
-const ms = reactive({ member_ids: [], new_members: [], package_id: null });
+const ms = reactive({ member_ids: [], new_members: [], package_id: null, change: null, when: 'now' });
+// Skift af husstandens medlemskab: muligheder hentes fra serveren, når personerne ændres (kræver fødselsdatoer)
+const chg = ref(null);
+const msChange = computed(() => chg.value && ms.change ? chg.value[ms.when].find(o => o.package_id === ms.change) || null : null);
+function setWhen(w) { ms.when = w; if (!chg.value?.[w].some(o => o.package_id === ms.change)) ms.change = null; }
+let chgT, chgSeq = 0;
+watch(() => [ms.member_ids.slice(), ms.new_members.map(n => n.birthdate)], () => {
+    clearTimeout(chgT);
+    if (!ms.member_ids.length && !ms.new_members.length) { chg.value = null; ms.change = null; return; }
+    if (ms.new_members.some(n => !n.birthdate)) return;
+    chgT = setTimeout(async () => {
+        const seq = ++chgSeq;
+        try {
+            const r = await api('profile/membership-change/options', { method: 'POST', body: { member_ids: ms.member_ids, new_members: ms.new_members.map(n => ({ name: n.name || null, birthdate: n.birthdate })) } });
+            if (seq !== chgSeq) return;
+            chg.value = r.options;
+            if (chg.value && !chg.value[ms.when].length) ms.when = chg.value.now.length ? 'now' : 'next';
+            if (ms.change && !chg.value?.[ms.when].some(o => o.package_id === ms.change)) ms.change = null;
+        } catch { if (seq === chgSeq) chg.value = null; }
+    }, 300);
+}, { deep: true });
 
 const withoutMembership = computed(() => shop.value ? shop.value.household.filter(m => !m.membership && !m.upcoming && !openPurchases('membership').some(x => x.people.includes(m.name))) : []);
 const openPurchases = (kind) => shop.value ? shop.value.purchases.filter(x => x.kind === kind && ['open', 'overdue'].includes(x.status)) : [];
 const msPeople = computed(() => [...shop.value.household.filter(m => ms.member_ids.includes(m.id)), ...ms.new_members]);
 const msPkg = computed(() => shop.value?.memberships.find(x => x.id === ms.package_id) || null);
-const msError = computed(() => msPkg.value && msPeople.value.length ? compositionError(msPkg.value, msPeople.value, shop.value.categories) : null);
+const msError = computed(() => !msChange.value && msPkg.value && msPeople.value.length ? compositionError(msPkg.value, msPeople.value, shop.value.categories) : null);
 const buyError = computed(() => {
     if (!buy.value) return null;
     const people = shop.value.household.filter(m => buyMembers.value.includes(m.id));
@@ -291,12 +334,16 @@ async function saveCats() { await api('profile/categories', { method: 'PUT', bod
 async function loadShop() { shop.value = await api('profile/packages'); }
 async function buyMembership() {
     busy.value = true;
+    const change = msChange.value;
     try {
-        const r = await api('profile/purchases', { method: 'POST', body: { package_id: ms.package_id, member_ids: ms.member_ids, new_members: ms.new_members.map(n => ({ ...n, email: n.email || null })) } });
-        track('medlemskab', 'ok', { personer: ms.member_ids.length + ms.new_members.length, nye: ms.new_members.length, betaling: !r.paid });
-        Object.assign(ms, { member_ids: [], new_members: [], package_id: null });
+        const body = { member_ids: ms.member_ids, new_members: ms.new_members.map(n => ({ ...n, email: n.email || null })) };
+        const r = change
+            ? await api('profile/membership-change', { method: 'POST', body: { ...body, package_id: change.package_id, when: ms.when } })
+            : await api('profile/purchases', { method: 'POST', body: { ...body, package_id: ms.package_id } });
+        track('medlemskab', 'ok', { personer: ms.member_ids.length + ms.new_members.length, nye: ms.new_members.length, betaling: !r.paid, ...(change ? { skift: ms.when } : {}) });
+        Object.assign(ms, { member_ids: [], new_members: [], package_id: null, change: null }); chg.value = null;
         if (!r.paid) return router.push(`/betal/${r.invoice_id}`);
-        toast('Medlemskabet er oprettet'); loadShop(); load();
+        toast(change ? 'Medlemskabet er skiftet' : 'Medlemskabet er oprettet'); loadShop(); load();
     } catch (e) { toast(e.message, 'error'); track('medlemskab', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function cancelPurchase(x) {
@@ -349,5 +396,11 @@ button.mrow { width: 100%; background: none; border: 0; font: inherit; text-alig
 .mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .mtext .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chev { color: var(--ink-3); font-size: 1.4rem; line-height: 1; }
+.pkgs { display: grid; gap: 8px; }
+.pkg { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; }
+.pkg.on { border-color: var(--accent); background: var(--accent-soft); }
+.pkg input { width: 20px; height: 20px; min-height: 0; margin: 2px 0 0; padding: 0; flex: 0 0 auto; accent-color: var(--accent); }
+.pbody { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ok-txt { color: var(--ok); }
 .newp { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; display: grid; gap: 8px; }
 </style>

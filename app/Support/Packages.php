@@ -201,6 +201,7 @@ class Packages
                     self::notifyBoard('Nyt medlem: '.$m->name, $m->name.' har meldt sig ind og betalt ('.$package->name.').', '/medlemmer/'.$m->id);
                 }
             }
+            MembershipChange::onPaid($purchase, $invoice->fresh());
             if ($added) {
                 $purchase->payer->notify(new ClubMessage('Husstanden er udvidet',
                     implode(', ', array_map(fn ($u) => $u->name, $added)).' er tilføjet med '.$package->name.'.', '/profil/familie'));
@@ -217,6 +218,7 @@ class Packages
         DB::transaction(function () use ($purchase) {
             $purchase->invoice->update(['status' => 'cancelled']);
             $purchase->update(['cancelled_at' => now()]);
+            MembershipChange::onCancelled($purchase);
         });
         Audit::log('package.purchase_cancelled', $purchase, ['by' => $by->name]);
     }
@@ -251,6 +253,8 @@ class Packages
             ->whereNull('cancelled_at')->whereHas('invoice', fn ($q) => $q->where('status', 'paid'))
             ->where('valid_to', '>=', ($year - 1).'-05-01')->where('valid_to', '<', $year.'-05-01')
             ->whereNotExists(fn ($q) => $q->from('purchases as n')->whereColumn('n.renewed_from_id', 'purchases.id'))
+            // erstattet af et skift af medlemskab (fx familie med 3 → 4 eller flere): det nye køb fornyes i stedet
+            ->whereNotExists(fn ($q) => $q->from('purchases as r')->whereColumn('r.replaces_id', 'purchases.id')->whereNull('r.cancelled_at'))
             ->get();
 
         foreach ($old as $p) {

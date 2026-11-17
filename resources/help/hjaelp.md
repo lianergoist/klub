@@ -66,7 +66,12 @@ Dit medlemskab og hvornår det udløber, ser du under **Profil → Familie**.
 ## Familie og husstand {#familie side:/profil/:tab?}
 Under **Profil → Familie** kan husstandens betaler tilføje børn eller en partner med **+ Tilføj ny person**. Personen bliver først tilføjet, når medlemskabet til vedkommende er betalt.
 
-Har du et enkeltmedlemskab og tilføjer en person, kan husstanden skifte til familiekontingent. Så betaler du kun forskellen for resten af sæsonen.
+Har husstanden allerede et medlemskab, viser **Udvid jeres medlemskab** de medlemskaber, der dækker jer alle – fx fra Familie med 3 personer til Familie med 4 eller flere. Vælg om det skal gælde:
+
+- **Med det samme:** du betaler forskellen mellem det nye medlemskab og det, I allerede har betalt. Den nye person er medlem, så snart der er betalt.
+- **Fra næste sæson:** jeres nuværende medlemskab er uændret, og den nye person bliver medlem, når næste sæson begynder.
+
+Du kan også vælge et eget medlemskab til den nye person, fx enkeltmedlemskab eller støttemedlem.
 
 ## Tilkøb {#tilkob side:/profil/:tab?}
 Under **Profil → Tilkøb** kan du købe udstyrsleje, dagsleje, opbevaringsplads og andre tilkøb. Hvert tilkøb bliver en regning, som betales som kontingent. Nogle tilkøb kræver, at du er medlem.

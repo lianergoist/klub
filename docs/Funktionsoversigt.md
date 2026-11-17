@@ -283,7 +283,7 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** bestyrelse, kasserer og admin kan lægge en ny pris ind på en pakke med virkning fra en valgt dato (i dag eller senere – aldrig bagud). Den gamle pris bevares som historik, regninger der allerede er sendt ændres ikke, og en kommende pris kan fortrydes, indtil den træder i kraft. Alle ændringer skrives i ændringsloggen.
 
-- **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der er til salg nu. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til midt i perioden, købes en ekstra pakke til vedkommende. Nye personer oprettes først, når der er betalt.
+- **Kerne:** ved indmeldelse vælger man selv medlemskab blandt de pakker, der er til salg nu. Senere køber husstandens betaler medlemskab til nye personer under Profil → Familie. Kommer der en person til, kan betaleren enten købe en ekstra pakke til vedkommende eller **udvide husstandens medlemskab** (se nedenfor). Nye personer oprettes først, når der er betalt.
 
 - **Kerne:** bestyrelse, kasserer og admin kan oprette et nyt medlem med "Opret medlem" under Medlemmer og under Økonomi → Betalinger (navn, fødselsdato, e-mail, kontaktoplysninger, nødkontakt, medlemskab og bekræftet samtykke). E-mail er påkrævet, fordi medlemmet bliver betaler i sin egen husstand og skal kunne logge ind; børn uden egen e-mail tilføjes i stedet til forælderens husstand. Alle medlemskaber kan vælges – også dem, medlemmerne ikke selv kan vælge. Medlemmet får en regning på den normale pris og bliver aktivt, når den er betalt. Medlemmet logger ind med en midlertidig adgangskode fra administrator eller via "Glemt adgangskode". (Besluttet 17. nov. 2026.)
 - **Kerne:** administrator kan give et medlem en e-mail ("Ret oplysninger") og lave en **midlertidig adgangskode** på medlemmets side. Koden vises én gang og gives til medlemmet mundtligt eller på SMS; medlemmet skal vælge sin egen ved første login, og tidligere logins logges ud. Rettigheden "Lave midlertidig adgangskode" kan gives til andre roller; en administrators kode kan kun laves af en, der må tildele roller. Bruges, indtil klubben har en mailudbyder, så "Glemt adgangskode" virker. (Besluttet 17. nov. 2026.)
@@ -316,7 +316,10 @@ Kontingent er klubbens faste indtægt. Systemet skal kunne beregne, opkræve og 
 
 - **Kerne:** ved indmeldelse spørges der først, om andre i husstanden også skal være medlemmer. Svarer man nej, vises kun medlemskaber, der passer til én person. Svarer man ja, tilføjer man personerne og får derefter vist de medlemskaber, der passer, med det billigste først.
 
-- **Senere:** opgradering med modregning (fx fra "1 voksen og 1 barn" til en familiepakke midt i sæsonen, hvor det betalte trækkes fra). Indtil videre købes en ekstra pakke til den nye person.
+- **Kerne (17. nov. 2026):** **udvid medlemskab.** Tilføjer husstandens betaler personer under Profil → Familie, tilbydes de medlemskaber, der dækker både de nuværende og de nye personer (fx Familie med 3 personer → Familie med 4 eller flere), og desuden et eget medlemskab til de nye (fx enkelt eller støttemedlem). Kun pakker, hvis antal personer passer, tilbydes (enkelt + 1 person giver altså ikke familiepakkerne, så længe der ikke er en pakke til 2 personer). Betaleren vælger:
+  - **Med det samme:** det nye medlemskab gælder fra i dag til sæsonens slutning, og der betales forskellen mellem dets pris og det, der er betalt for det nuværende. Det gamle medlemskab afsluttes, når der er betalt. Er næste sæsons kontingent allerede oprettet, rettes det også (ubetalt: erstattes; betalt: forskellen opkræves).
+  - **Fra næste sæson:** det nuværende medlemskab er uændret; næste sæsons kontingent bliver det nye medlemskab (et oprettet, ubetalt kontingent erstattes, og genoprettes hvis skiftet fortrydes).
+- **Afklares:** skal der betales fuld forskel, når man skifter sent i sæsonen, eller en forholdsmæssig del? Indtil videre betales fuld forskel.
 
 - **Kerne:** aktiviteter (og evt. dele af systemet) kan kræve gyldigt medlemskab, dvs. betalt kontingent for den aktuelle sæson.
 

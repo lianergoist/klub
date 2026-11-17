@@ -10,6 +10,7 @@ use App\Models\Purchase;
 use App\Models\User;
 use App\Support\Audit;
 use App\Support\Money;
+use App\Support\MembershipChange;
 use App\Support\Packages;
 use App\Support\Prices;
 use Illuminate\Http\Request;
@@ -137,6 +138,46 @@ class PackageController extends Controller
 
         $purchase = Packages::buy($u, $package, $d['member_ids'] ?? [], $new, $d['resource_id'] ?? null);
         Packages::settleIfFree($purchase->invoice);
+
+        return ['invoice_id' => $purchase->invoice_id, 'paid' => $purchase->invoice->fresh()->status === 'paid'];
+    }
+
+    /** Personer, der skal med: eksisterende i husstanden (uden medlemskab) og nye. Fælles for køb og skift. */
+    private static function people(Request $r, bool $full): array
+    {
+        $u = $r->user();
+        $d = $r->validate([
+            'member_ids' => 'array', 'member_ids.*' => 'integer',
+            'new_members' => 'array|max:10',
+            'new_members.*.name' => ($full ? 'required' : 'nullable').'|string|max:120',
+            'new_members.*.birthdate' => 'required|date|before:today',
+        ] + ($full ? ['new_members.*.email' => 'nullable|email|unique:users,email', 'new_members.*.consent' => 'accepted'] : []),
+            ['new_members.*.consent.accepted' => 'Giv samtykke for de personer, du tilføjer.'], ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato']);
+        $household = $u->managedMembers()->keyBy('id');
+        $members = collect($d['member_ids'] ?? [])->unique()->map(fn ($id) => $household[$id] ?? abort(403, 'Du kan kun vælge personer i din husstand.'))->values();
+        $new = collect($d['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'] ?? 'Ny person', 'birthdate' => Carbon::parse($p['birthdate'])->toDateString(),
+            'email' => $p['email'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
+        abort_if($new && $u->household_id && $u->household?->payer_id !== $u->id, 403, 'Kun husstandens betaler kan tilføje personer.');
+
+        return [$members, $new];
+    }
+
+    /** Hvad kan husstandens medlemskab skiftes til, når de valgte personer kommer med? */
+    public function changeOptions(Request $r)
+    {
+        [$members, $new] = self::people($r, false);
+
+        return ['options' => MembershipChange::options($r->user(), $members, $new)];
+    }
+
+    /** Skift husstandens medlemskab (med det samme eller fra næste sæson) og få de nye personer med. */
+    public function change(Request $r)
+    {
+        $d = $r->validate(['package_id' => 'required|exists:packages,id', 'when' => 'required|in:now,next']);
+        abort_if($r->user()->status === 'pending', 422, 'Betal først dit eget medlemskab.');
+        [$members, $new] = self::people($r, true);
+        abort_if($members->isEmpty() && ! $new, 422, 'Vælg mindst én person, der skal med.');
+        $purchase = MembershipChange::change($r->user(), Package::with('slots.category')->findOrFail($d['package_id']), $d['when'], $members, $new);
 
         return ['invoice_id' => $purchase->invoice_id, 'paid' => $purchase->invoice->fresh()->status === 'paid'];
     }
