@@ -43,7 +43,7 @@
 <div class="box">
     <img class="logo-std" src="/icon.svg" alt="">
     <img class="logo-klub" src="/brand/surfhorsens-logo.webp" alt="SurfHorsens">
-    <h1>Klubsystem</h1>
+    <h1>SurfHorsens</h1>
     <p>Proof of concept – kun for bestyrelsen.</p>
     <form method="post" action="/adgang">
         @csrf
