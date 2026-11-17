@@ -144,7 +144,10 @@ import RegisterPayment from '../components/RegisterPayment.vue';
 import { auditLabels } from '../auditLabels';
 import { api, store, dato, tidspunkt, toast } from '../api';
 const props = defineProps({ id: String });
-const year = new Date().getFullYear(); const today = new Date().toISOString().slice(0, 10);
+const year = new Date().getFullYear(); const localDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = localDate(new Date());
+// Slutdatoer gælder til og med – "Afslut" stopper derfor i går, så det virker med det samme
+const yesterday = localDate(new Date(Date.now() - 864e5));
 const can = computed(() => store.user.can);
 const paying = ref(null);
 const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', auditor: 'Revisor', admin: 'Administrator' };
@@ -154,7 +157,7 @@ async function load() { m.value = await api(`members/${props.id}`); }
 onMounted(load); watch(() => props.id, load);
 async function approve() { await api(`members/${props.id}/approve`, { method: 'POST' }); toast('Medlemmet er aktiveret og har fået besked'); load(); }
 async function addRole() { try { await api(`members/${props.id}/roles`, { method: 'POST', body: nr }); showRole.value = false; toast('Rolle tildelt'); load(); } catch (e) { toast(e.message, 'error'); } }
-async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rollen er afsluttet'); load(); }
+async function endRole(r) { await api(`roles/${r.id}/end`, { method: 'PUT', body: { ends_on: yesterday } }); toast('Rollen er afsluttet'); load(); }
 const grant = ref(null); const perms = ref([]);
 const grantGroups = computed(() => perms.value.filter(p => !p.locked).reduce((g, p) => ((g[p.group] ||= []).push(p), g), {}));
 const grantInfo = computed(() => perms.value.find(p => p.key === grant.value?.permission));
@@ -166,6 +169,6 @@ async function saveGrant() {
     try { await api(`members/${props.id}/permissions`, { method: 'POST', body: { ...grant.value, ends_on: grant.value.ends_on || null } }); grant.value = null; toast('Rettigheden er givet'); load(); }
     catch (e) { toast(e.message, 'error'); }
 }
-async function endGrant(p) { await api(`user-permissions/${p.id}/end`, { method: 'PUT', body: { ends_on: today } }); toast('Rettigheden er afsluttet'); load(); }
+async function endGrant(p) { await api(`user-permissions/${p.id}/end`, { method: 'PUT', body: { ends_on: yesterday } }); toast('Rettigheden er afsluttet'); load(); }
 async function saveEdit() { try { await api(`members/${props.id}`, { method: 'PUT', body: edit.value }); edit.value = null; toast('Gemt'); load(); } catch (e) { toast(e.message, 'error'); } }
 </script>

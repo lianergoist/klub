@@ -157,7 +157,8 @@ class MemberController extends Controller
     {
         abort_unless($r->user()->may('roles.manage'), 403, 'Kun administrator kan fjerne roller.');
         $d = $r->validate(['ends_on' => 'required|date']);
-        $role->update($d);
+        // Slutter den, før den er begyndt, fjernes den helt
+        $d['ends_on'] < $role->starts_on->toDateString() ? $role->delete() : $role->update($d);
         Audit::log('role.ended', $role->user, ['role' => $role->role] + $d);
 
         return ['ok' => true];
