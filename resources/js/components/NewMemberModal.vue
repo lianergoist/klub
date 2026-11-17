@@ -7,8 +7,8 @@
                 <label class="field"><span>Fødselsdato</span><input v-model="f.birthdate" type="date" required></label>
                 <label class="field"><span>Telefon</span><input v-model="f.phone" type="tel" autocomplete="off"></label>
             </div>
-            <label class="field"><span>E-mail (valgfri)</span><input v-model="f.email" type="email" autocomplete="off">
-                <span class="small muted">Med e-mail kan medlemmet selv logge ind via "Glemt adgangskode".</span></label>
+            <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="off">
+                <span class="small muted">Bruges til at logge ind. Giv bagefter medlemmet en midlertidig adgangskode på medlemmets side.</span></label>
             <label class="field"><span>Adresse</span><input v-model="f.address" autocomplete="off"></label>
             <div class="grid c2" style="gap:8px">
                 <label class="field"><span>Postnr.</span><input v-model="f.postal_code" autocomplete="off"></label>

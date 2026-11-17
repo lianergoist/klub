@@ -149,10 +149,10 @@ Trænere og bestyrelse kan rette udstyrets stand med **Ret stand**: **OK**, **Sk
 Under **Medlemmer** kan du søge og filtrere i kartoteket, fx alle aktive voksne eller alle med ubetalt kontingent. På medlemmets side ser du oplysninger, husstand, medlemskab og historik. Administrator kan her tildele roller og personlige rettigheder.
 
 ## Opret et nyt medlem {#opret-medlem kræver:members_create side:/medlemmer,/okonomi/betalinger}
-Tryk **Opret medlem** under **Medlemmer** eller **Økonomi → Betalinger**. Udfyld navn, fødselsdato og medlemskab, og bekræft samtykket. E-mail er valgfri; med e-mail kan medlemmet selv logge ind via "Glemt adgangskode". Medlemmet får en regning og bliver aktivt, når den er betalt. Betaler medlemmet kontant, trykker kassereren **Registrér betaling** på medlemmets side.
+Tryk **Opret medlem** under **Medlemmer** eller **Økonomi → Betalinger**. Udfyld navn, fødselsdato, e-mail og medlemskab, og bekræft samtykket. E-mailen bruges til at logge ind; giv bagefter medlemmet en midlertidig adgangskode på medlemmets side. Medlemmet får en regning og bliver aktivt, når den er betalt. Betaler medlemmet kontant, trykker kassereren **Registrér betaling** på medlemmets side.
 
 ## Midlertidig adgangskode {#midlertidig-adgangskode kræver:members_password side:/medlemmer/:id}
-Er et medlem oprettet uden e-mail, giver du først medlemmet en e-mail med **Ret oplysninger**. Tryk derefter **Midlertidig adgangskode** på medlemmets side. Koden vises én gang – giv den til medlemmet mundtligt eller på SMS. Medlemmet logger ind med e-mailen og koden og skal så vælge sin egen adgangskode. Mister medlemmet koden, laver du bare en ny.
+Har medlemmet ingen e-mail, giver du først medlemmet en e-mail med **Ret oplysninger**. Tryk derefter **Midlertidig adgangskode** på medlemmets side. Koden vises én gang – giv den til medlemmet mundtligt eller på SMS. Medlemmet logger ind med e-mailen og koden og skal så vælge sin egen adgangskode. Mister medlemmet koden, laver du bare en ny.
 
 ## Rediger medlemskab {#rediger-medlemskab kræver:purchases_create side:/medlemmer/:id}
 På medlemmets side under **Medlemskaber og tilkøb** ændrer **Rediger medlemskab** medlemskabet til en anden type fra næste opkrævning. Det nuværende medlemskab er uændret; den nye type bruges, når kassereren opkræver kontingent for næste sæson. Er regningen for næste sæson allerede sendt, men ikke betalt, skiftes den ud med det samme. Har medlemmet intet medlemskab, oprettes det med det samme.

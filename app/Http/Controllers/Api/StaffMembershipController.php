@@ -61,13 +61,14 @@ class StaffMembershipController extends Controller
         $d = $r->validate([
             'name' => 'required|string|max:120',
             'birthdate' => 'required|date|before:today',
-            'email' => ['nullable', 'email', Rule::unique('users', 'email')->where(fn ($q) => $q->where('status', '!=', 'guest'))],
+            // Medlemmet bliver betaler i sin egen husstand og skal kunne logge ind og betale
+            'email' => ['required', 'email', Rule::unique('users', 'email')->where(fn ($q) => $q->where('status', '!=', 'guest'))],
             'phone' => 'nullable|string|max:30',
             'address' => 'nullable|string|max:200', 'postal_code' => 'nullable|string|max:10', 'city' => 'nullable|string|max:100',
             'emergency_name' => 'nullable|string|max:120', 'emergency_phone' => 'nullable|string|max:30',
             'package_id' => ['required', Rule::exists('packages', 'id')->where('kind', 'membership')->whereNull('archived_at')],
             'consent' => 'accepted',
-        ], ['consent.accepted' => 'Bekræft, at medlemmet har givet samtykke.', 'package_id.required' => 'Vælg et medlemskab.', 'email.unique' => 'Der findes allerede et medlem med den e-mail.']);
+        ], ['consent.accepted' => 'Bekræft, at medlemmet har givet samtykke.', 'package_id.required' => 'Vælg et medlemskab.', 'email.unique' => 'Der findes allerede et medlem med den e-mail.', 'email.required' => 'Skriv medlemmets e-mail – den bruges til at logge ind.', 'email.email' => 'E-mailen ser forkert ud.']);
 
         $package = Package::with('slots.category')->findOrFail($d['package_id']);
         abort_unless($package->windowFor(now()), 422, $package->name.' kan kun købes i perioden '.$package->periodLabel().'.');
@@ -76,7 +77,7 @@ class StaffMembershipController extends Controller
 
         [$member, $invoice] = DB::transaction(function () use ($d, $package, $r) {
             // En gæsteprofil (prøvetræning/klippekort) med samme e-mail bliver til medlemsprofilen
-            $member = ! empty($d['email']) ? User::where('email', $d['email'])->where('status', 'guest')->first() : null;
+            $member = User::where('email', $d['email'])->where('status', 'guest')->first();
             $member ? $member->update($d + ['status' => 'pending', 'consent_at' => now()]) : $member = User::create($d + ['status' => 'pending', 'consent_at' => now()]);
             if (! $member->household_id) {
                 $member->update(['household_id' => Household::create(['name' => 'Husstand '.$member->name, 'payer_id' => $member->id])->id]);
