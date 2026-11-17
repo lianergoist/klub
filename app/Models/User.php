@@ -42,6 +42,7 @@ class User extends Authenticatable
             'resigned_on' => 'date',
             'consent_at' => 'datetime',
             'notify_email' => 'boolean',
+            'must_change_password' => 'boolean',
             'notify_push' => 'boolean',
             'notify_posts' => 'boolean',
             'allow_messages' => 'boolean',

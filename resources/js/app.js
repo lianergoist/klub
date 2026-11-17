@@ -19,6 +19,7 @@ const v = (name) => views[`./views/${name}.vue`];
 const routes = [
     { path: '/', redirect: '/aktiviteter' },
     { path: '/login', component: v('Login'), meta: { public: true } },
+    { path: '/skift-adgangskode', component: v('PasswordChangeRequired') },
     { path: '/glemt-adgangskode', component: v('PasswordForgot'), meta: { public: true } },
     { path: '/nulstil-adgangskode', component: v('PasswordReset'), meta: { public: true } },
     { path: '/bliv-medlem', component: v('Register'), meta: { public: true } },
@@ -75,6 +76,8 @@ router.beforeEach(async (to, from) => {
     const toLogin = to.path === '/aktiviteter' ? '/login' : { path: '/login', query: { til: to.fullPath } };
     if (!store.token) return toLogin;
     if (!store.user) { try { await refreshMe(); } catch { return toLogin; } }
+    // Midlertidig adgangskode fra administrator: vælg egen kode, før man kan andet
+    if (store.user?.must_change_password && to.path !== '/skift-adgangskode') return '/skift-adgangskode';
     // Gæster (prøvetræning/SUP-kursus) har kun adgang til betaling og deres kvittering
     // Gæster (ikke-medlemmer) har kun adgang til deres klippekort-side, betaling og kvittering
     if (store.user?.status === 'guest' && !to.meta.guest && !to.path.startsWith('/betal')) return '/klip';

@@ -145,18 +145,21 @@ class ProfileController extends Controller
         $u = $r->user();
         abort_if(\App\Http\Controllers\Api\AuthController::isDemoAccount($u), 403, 'Demokontoens adgangskode kan ikke ændres, så andre stadig kan prøve systemet.');
         $data = $r->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:8|max:200|confirmed|different:current_password',
+            // Med en midlertidig kode fra administrator er man lige logget ind med den, så den skal ikke gentages
+            'current_password' => $u->must_change_password ? 'nullable|string' : 'required|string',
+            'password' => 'required|string|min:8|max:200|confirmed'.($u->must_change_password ? '' : '|different:current_password'),
         ], [
+            'current_password.required' => 'Skriv din nuværende adgangskode.',
             'password.min' => 'Den nye adgangskode skal være på mindst 8 tegn.',
             'password.confirmed' => 'De to nye adgangskoder er ikke ens.',
             'password.different' => 'Den nye adgangskode skal være en anden end den nuværende.',
         ]);
-        if (! $u->password || ! \Illuminate\Support\Facades\Hash::check($data['current_password'], $u->password)) {
+        if (! $u->must_change_password && (! $u->password || ! \Illuminate\Support\Facades\Hash::check($data['current_password'], $u->password))) {
             throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => 'Den nuværende adgangskode er forkert.']);
         }
 
-        $u->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($data['password'])])->save();
+        abort_if($u->must_change_password && \Illuminate\Support\Facades\Hash::check($data['password'], $u->password), 422, 'Vælg en anden adgangskode end den midlertidige.');
+        $u->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($data['password']), 'must_change_password' => false])->save();
         $current = $u->currentAccessToken();
         $u->tokens()->when($current && isset($current->id), fn ($q) => $q->where('id', '!=', $current->id))->delete();
         Audit::log('member.password_changed', $u);

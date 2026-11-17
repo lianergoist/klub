@@ -8,7 +8,10 @@
                 <span v-if="m.profile.membership_type" class="tag ok">{{ m.profile.membership_type }}</span>
                 <span v-else-if="['active', 'passive'].includes(m.profile.status)" class="tag bad">Intet gyldigt medlemskab</span>
             </div>
-            <button v-if="can.members_edit" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
+            <div class="row" style="gap:6px;justify-content:flex-end">
+                <button v-if="can.members_edit" class="btn small" @click="edit = { ...m.profile }">Ret oplysninger</button>
+                <button v-if="can.members_password" class="btn small" @click="tempPw = { step: 'confirm' }">Midlertidig adgangskode</button>
+            </div>
         </div>
 
         <div v-if="m.profile.status === 'pending' && can.members_approve" class="card" style="border-color:var(--warn)">
@@ -103,6 +106,23 @@
             <p class="small muted">Også opslag i kartoteket bliver logget (persondata).</p>
         </div>
 
+        <Modal v-if="tempPw" title="Midlertidig adgangskode" @close="tempPw = null">
+            <div v-if="tempPw.step === 'confirm'" class="stack">
+                <p v-if="!m.profile.email" class="banner warn" style="margin:0">{{ m.profile.name.split(' ')[0] }} har ingen e-mail. Giv først medlemmet en e-mail med "Ret oplysninger" – den bruges til at logge ind.</p>
+                <template v-else>
+                    <p style="margin:0">Der laves en ny adgangskode til <strong>{{ m.profile.name }}</strong> ({{ m.profile.email }}). Den vises kun én gang, så giv den til medlemmet mundtligt eller på SMS.</p>
+                    <p class="small muted" style="margin:0">Medlemmet skal vælge sin egen adgangskode ved første login. En eventuel tidligere adgangskode holder op med at virke, og medlemmet bliver logget ud alle steder.</p>
+                    <button class="btn primary block" :disabled="tempPw.busy" @click="makeTempPw">Lav adgangskode</button>
+                </template>
+            </div>
+            <div v-else class="stack">
+                <p style="margin:0">Log ind med</p>
+                <p style="margin:0">E-mail: <strong>{{ tempPw.email }}</strong></p>
+                <p style="margin:0">Adgangskode: <strong style="font-family:ui-monospace,monospace;font-size:1.25em;letter-spacing:.04em">{{ tempPw.password }}</strong></p>
+                <button class="btn block" @click="copyTempPw">Kopiér</button>
+                <p class="small muted" style="margin:0">Koden vises ikke igen. Mister medlemmet den, laver du bare en ny.</p>
+            </div>
+        </Modal>
         <Modal v-if="ms" title="Rediger medlemskab" @close="ms = null">
             <div v-if="!ms.options" class="spinner"></div>
             <div v-else class="stack">
@@ -211,6 +231,17 @@ const roles = { trainer: 'Træner', board: 'Bestyrelse', treasurer: 'Kasserer', 
 const m = ref(null); const showRole = ref(false); const edit = ref(null);
 const nr = reactive({ role: 'trainer', starts_on: today });
 async function load() { m.value = await api(`members/${props.id}`); }
+// Midlertidig adgangskode (administrator): vises én gang, medlemmet vælger sin egen ved første login
+const tempPw = ref(null);
+async function makeTempPw() {
+    tempPw.value.busy = true;
+    try { const r = await api(`members/${props.id}/temp-password`, { method: 'POST' }); tempPw.value = { step: 'show', ...r }; load(); }
+    catch (e) { toast(e.message, 'error'); tempPw.value.busy = false; }
+}
+async function copyTempPw() {
+    const t = `E-mail: ${tempPw.value.email}\nMidlertidig adgangskode: ${tempPw.value.password}`;
+    try { await navigator.clipboard.writeText(t); toast('Kopieret'); } catch { toast('Kunne ikke kopiere – skriv koden af', 'error'); }
+}
 // Rediger medlemskab: anden type fra næste opkrævning (bestyrelse/kasserer)
 const ms = ref(null);
 const msPkg = computed(() => ms.value?.options?.memberships.find(p => p.id === ms.value.package_id));

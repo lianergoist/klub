@@ -144,6 +144,25 @@ class MemberController extends Controller
         return ['ok' => true];
     }
 
+    /** Midlertidig adgangskode, som vises én gang; medlemmet skal skifte den ved første login. */
+    public function tempPassword(Request $r, User $member)
+    {
+        abort_unless($r->user()->may('members.password'), 403, 'Du har ikke adgang til at lave adgangskoder.');
+        abort_unless($member->email, 422, 'Giv først medlemmet en e-mail med "Ret oplysninger" – den bruges til at logge ind.');
+        abort_if(AuthController::isDemoAccount($member), 403, 'Demokontoens adgangskode kan ikke ændres.');
+        abort_if(in_array($member->status, ['resigned', 'guest']), 422, 'Medlemmet er ikke aktivt.');
+        abort_if($member->may('roles.manage') && ! $r->user()->may('roles.manage'), 403, 'Kun administrator kan lave en adgangskode til en administrator.');
+
+        // Uden tegn, der let forveksles (0/O, 1/l/I), i grupper på 4, så den er nem at læse op
+        $chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+        $code = implode('-', array_map(fn () => implode('', array_map(fn () => $chars[random_int(0, strlen($chars) - 1)], range(1, 4))), range(1, 3)));
+        $member->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($code), 'must_change_password' => true])->save();
+        $member->tokens()->delete(); // log ud overalt
+        Audit::log('member.temp_password', $member, ['by' => $r->user()->name]);
+
+        return ['password' => $code, 'email' => $member->email];
+    }
+
     public function addRole(Request $r, User $member)
     {
         abort_unless($r->user()->may('roles.manage'), 403, 'Kun administrator kan tildele roller.');

@@ -164,6 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('members/{member}/purchases', [\App\Http\Controllers\Api\StaffMembershipController::class, 'addonBuy']);
     Route::get('members/{member}/membership-options', [\App\Http\Controllers\Api\StaffMembershipController::class, 'membershipOptions']);
     Route::put('members/{member}/membership', [\App\Http\Controllers\Api\StaffMembershipController::class, 'changeMembership']);
+    Route::post('members/{member}/temp-password', [MemberController::class, 'tempPassword']);
     Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
     Route::put('user-permissions/{grant}/end', [\App\Http\Controllers\Api\PermissionController::class, 'end']);
     Route::get('settings/audit', [\App\Http\Controllers\Api\AuditController::class, 'index']);

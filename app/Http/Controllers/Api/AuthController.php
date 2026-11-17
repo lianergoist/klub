@@ -71,7 +71,7 @@ class AuthController extends Controller
         $done = null;
         $status = \Illuminate\Support\Facades\Password::broker()->reset($data, function (User $user, string $password) use (&$done) {
             abort_if(self::isDemoAccount($user), 403, 'Demokontoens adgangskode kan ikke ændres.');
-            $user->forceFill(['password' => Hash::make($password)])->save();
+            $user->forceFill(['password' => Hash::make($password), 'must_change_password' => false])->save();
             $user->tokens()->delete();
             Audit::log('member.password_reset', $user);
             $done = $user;
@@ -179,6 +179,7 @@ class AuthController extends Controller
             'unread_messages' => $u->canUseMessages() ? $u->unreadMessages() : 0,
             'can_message' => (bool) $u->canUseMessages(),
             'is_payer' => $u->household?->payer_id === $u->id,
+            'must_change_password' => (bool) $u->must_change_password,
             'season' => \App\Support\Season::label(),
             'can' => ($can = \App\Support\Permissions::flags($u)) + [
                 // Indstillinger vises, hvis man må mindst én af tingene dér

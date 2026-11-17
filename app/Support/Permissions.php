@@ -53,6 +53,8 @@ class Permissions
             'Oprette et nyt medlem med medlemskab fra Medlemmer eller Økonomi – også medlemskaber, medlemmerne ikke selv kan vælge. Medlemmet får regningen og bliver aktivt, når den er betalt.', ['board', 'treasurer', 'admin']],
         'purchases.create' => ['Medlemmer', 'Ændre medlemskab og give tilkøb',
             'Ændre et medlems medlemskab til en anden type fra næste opkrævning og give tilkøb, medlemmerne ikke selv kan købe. Altid til normal pris; regningen går til husstandens betaler.', ['board', 'treasurer', 'admin']],
+        'members.password' => ['Medlemmer', 'Lave midlertidig adgangskode',
+            'Lave en midlertidig adgangskode til et medlem, fx når medlemmet er oprettet uden e-mail. Koden vises én gang, og medlemmet skal vælge sin egen ved første login. Administratorens kode kan kun laves af en, der må tildele roller.', ['admin']],
         'roles.manage' => ['Medlemmer', 'Tildele roller og rettigheder',
             'Tildele og afslutte roller, give enkelte medlemmer rettigheder og ændre denne oversigt. Er altid administratorens, så ingen kan låse sig selv ude.', ['admin'], true],
         'audit.view' => ['Medlemmer', 'Se den fulde ændringslog',
