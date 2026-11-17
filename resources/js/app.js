@@ -85,6 +85,27 @@ router.beforeEach(async (to, from) => {
     return true;
 });
 
+// Efter en opdatering af siden findes de gamle sidefiler ikke længere. Har man siden åben fra før og skifter side,
+// fejler hentningen i stilhed, og siden virker død. Så genindlæses siden én gang (til den side, man ville til).
+const CHUNK_ERROR = /dynamically imported module|Importing a module script failed|error loading dynamically imported|Unable to preload CSS|Loading (CSS )?chunk|MIME type/i;
+function reloadForNewVersion(path) {
+    let last = 0;
+    try { last = Number(sessionStorage.getItem('klub_reload_at')) || 0; } catch {}
+    if (Date.now() - last < 15000) return false; // genindlæst for nylig – undgå en løkke, hvis noget andet er galt
+    try { sessionStorage.setItem('klub_reload_at', String(Date.now())); } catch {}
+    if (path && path !== location.pathname + location.search) location.assign(path); else location.reload();
+    return true;
+}
+// Siden, man er på vej til (så genindlæsningen lander dér og ikke på den gamle side)
+let pendingPath = null;
+router.beforeEach((to) => { pendingPath = to.fullPath; });
+router.afterEach(() => { pendingPath = null; });
+window.addEventListener('vite:preloadError', (e) => { if (reloadForNewVersion(pendingPath)) e.preventDefault(); });
+router.onError((err, to) => {
+    if (CHUNK_ERROR.test(String(err?.message || err)) && reloadForNewVersion(to?.fullPath)) return;
+    console.error(err);
+});
+
 const app = createApp(App).use(router);
 if (!PREVIEW) initUsage(router, app); // forhåndsvisningen i Design tæller ikke med i brugsloggen
 app.mount('#app');

@@ -37,14 +37,16 @@
             <RouterLink v-if="hasMore" to="/mere"><Icon name="more" />Mere</RouterLink>
         </nav>
     </div>
-    <RouterView v-else />
+    <!-- Sider, der kræver login, vises kun med en bruger (ellers går de ned, fx lige efter log ud eller udløbet session) -->
+    <RouterView v-else-if="store.user || route.meta.public" />
+    <div v-else class="spinner"></div>
     <HelpPanel v-if="help.open" />
     <div v-if="store.toast" :class="['toast', store.toast.kind]" role="status">{{ store.toast.text }}</div>
 </template>
 
 <script setup>
 import { design } from './design';
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Icon from './components/Icon.vue';
 import ThemeSwitch from './components/ThemeSwitch.vue';
@@ -81,6 +83,10 @@ const onFocusOut = () => { typingT = setTimeout(() => { if (!isTextField(documen
 onMounted(() => { document.addEventListener('focusin', onFocusIn); document.addEventListener('focusout', onFocusOut); });
 onUnmounted(() => { document.removeEventListener('focusin', onFocusIn); document.removeEventListener('focusout', onFocusOut); });
 
+// Forsvinder brugeren (log ud, udløbet session), mens en side, der kræver login, er åben: gå til login
+watch(() => store.user, (u, before) => {
+    if (!u && before && !route.meta.public) router.replace({ path: '/login', query: route.path === '/aktiviteter' ? {} : { til: route.fullPath } });
+});
 async function logout() {
     await doLogout();
     router.push('/login');

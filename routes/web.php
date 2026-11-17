@@ -10,4 +10,4 @@ Route::get('/', [\App\Http\Controllers\SiteController::class, 'show']);
 Route::get('/{page}', [\App\Http\Controllers\SiteController::class, 'show'])->whereIn('page', ['priser-og-medlemskab', 'kalender', 'kontakt', 'read-me']);
 
 // Alt andet end /api håndteres af webappen (Vue)
-Route::view('/{any?}', 'app')->where('any', '^(?!api|up|adgang|hjemmeside/).*$');
+Route::view('/{any?}', 'app')->where('any', '^(?!api|up|adgang|hjemmeside/|build/).*$'); // manglende sidefiler under build/ skal give 404, ikke appen
