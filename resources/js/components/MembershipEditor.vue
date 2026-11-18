@@ -18,7 +18,7 @@
                     <div class="muted">{{ peopleNow(g) }}</div>
                 </div>
                 <div class="small" style="margin-top:4px">
-                    <strong>Næste sæson:</strong>
+                    <strong>Næste sæson:</strong>&nbsp;
                     <template v-if="g.upcoming">{{ g.upcoming.name }} · {{ dato(g.upcoming.valid_from) }} · {{ g.upcoming.paid ? 'betalt' : 'ikke betalt (' + g.upcoming.amount_fmt + ')' }} · {{ g.people.map(p => p.name).join(', ') }}</template>
                     <template v-else-if="g.mode === 'not_renewable'">fornyes ikke automatisk</template>
                     <template v-else>{{ nextText(g) }}</template>
