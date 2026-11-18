@@ -15,6 +15,9 @@
     <meta property="og:type" content="website">
     <meta name="theme-color" content="#e3d8d3">
     <link rel="icon" href="{{ $v('billeder/favicon.webp') }}" type="image/webp">
+    {{-- Ikon, når siden gemmes på hjemmeskærmen (samme som appens; favicon'et er for lille) --}}
+    <link rel="icon" href="/icon-192.png?v={{ @filemtime(public_path('icon-192.png')) }}" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v={{ @filemtime(public_path('apple-touch-icon.png')) }}">
     <link rel="preload" href="/hjemmeside/fonts/poppins-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/hjemmeside/fonts/poppins-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ $v('site.css') }}">
