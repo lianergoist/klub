@@ -84,12 +84,25 @@
                     <ul class="list">
                         <li v-for="m in shop.household" :key="m.id" class="row between" style="flex-wrap:nowrap">
                             <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år</span>
-                                <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : m.upcoming ? m.upcoming.name + ' · fra ' + dato(m.upcoming.valid_from) : 'Intet gyldigt medlemskab' }}</span></span>
+                                <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : m.upcoming ? m.upcoming.name + ' · fra ' + dato(m.upcoming.valid_from) : 'Intet gyldigt medlemskab' }}<template v-if="shop.next_plan?.mode === 'next_renewal' && shop.next_plan.people.some(x => x.id === m.id && !x.renews)"> · ikke med fra {{ dato(shop.next_plan.next_from) }}</template></span></span>
                             <span :class="['tag', m.membership ? 'ok' : m.upcoming ? 'info' : m.status === 'pending' ? 'warn' : 'bad']">{{ m.membership ? 'Medlem' : m.upcoming ? 'Medlem fra ' + dato(m.upcoming.valid_from) : m.status === 'pending' ? 'Afventer betaling' : 'Ikke medlem' }}</span>
                         </li>
                     </ul>
                 </div>
                 <p class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
+
+                <!-- Næste sæson: betaleren kan fjerne personer fra husstandens medlemskab (penge flyttes ikke) -->
+                <div v-if="shop.next_plan && shop.next_plan.mode !== 'not_renewable'" class="card stack">
+                    <h2 style="margin:0">Næste sæson</h2>
+                    <template v-if="shop.next_plan.mode === 'next_renewal'">
+                        <p class="small muted" style="margin:0">Fra {{ dato(shop.next_plan.next_from) }} fornyes jeres medlemskab som <strong>{{ nextText }}</strong>.
+                            Skal nogen ikke være med fra næste sæson, kan du fjerne dem her. De er med resten af denne sæson.</p>
+                        <button v-if="!nextEdit" class="btn small" style="align-self:flex-start" @click="nextEdit = true">Ret hvem der er med</button>
+                        <NextSeasonEditor v-else :plan="shop.next_plan" url="profile/membership-next/options" save-url="profile/membership-next" @saved="nextEdit = false; loadShop()" />
+                    </template>
+                    <p v-else class="small muted" style="margin:0">Næste sæsons kontingent er opkrævet ({{ shop.next_plan.upcoming.name }}). Skal nogen ikke være med, så <RouterLink to="/beskeder">skriv til bestyrelsen</RouterLink>.</p>
+                    <p class="small muted" style="margin:0">Skal nogen stoppe med det samme eller have penge tilbage, så <RouterLink to="/beskeder">skriv til bestyrelsen</RouterLink>.</p>
+                </div>
 
                 <div v-if="openPurchases('membership').length" class="card" style="border-color:var(--warn)">
                     <h2>Afventer betaling</h2>
@@ -260,6 +273,7 @@ import { useRouter } from 'vue-router';
 import Icon from '../components/Icon.vue';
 import Modal from '../components/Modal.vue';
 import PackageList from '../components/PackageList.vue';
+import NextSeasonEditor from '../components/NextSeasonEditor.vue';
 import Receipt from './Receipt.vue';
 import { compositionError, priceFor } from '../packages';
 import ThemeSwitch from '../components/ThemeSwitch.vue';
@@ -298,6 +312,13 @@ const buy = ref(null); const buyMembers = ref([]); const buyRes = ref(null);
 const ms = reactive({ member_ids: [], new_members: [], package_id: null, change: null, when: 'now' });
 // Skift af husstandens medlemskab: muligheder hentes fra serveren, når personerne ændres (kræver fødselsdatoer)
 const chg = ref(null);
+const nextEdit = ref(false);
+const nextText = computed(() => {
+    const n = shop.value?.next_plan; if (!n) return '';
+    const on = n.people.filter(p => p.renews); const stop = n.people.filter(p => !p.renews).map(p => p.name.split(' ')[0]);
+    const what = n.split ? on.map(p => `${p.own?.name} (${p.name.split(' ')[0]})`).join(', ') : n.next_as.name;
+    return what + (stop.length ? ` – uden ${stop.join(' og ')}` : '');
+});
 const msChange = computed(() => chg.value && ms.change ? chg.value[ms.when].find(o => o.package_id === ms.change) || null : null);
 function setWhen(w) { ms.when = w; if (!chg.value?.[w].some(o => o.package_id === ms.change)) ms.change = null; }
 let chgT, chgSeq = 0;

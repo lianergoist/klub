@@ -115,7 +115,7 @@ class User extends Authenticatable
     }
 
     /** Betalt kontingent for træningssæsonen (1. maj – 30. april), fx "2026/27". */
-    public function purchases() { return $this->belongsToMany(Purchase::class); }
+    public function purchases() { return $this->belongsToMany(Purchase::class)->withPivot('renew', 'renew_package_id'); }
 
     /**
      * Gyldigt medlemskab = med i et betalt medlemskab, der dækker dags dato.

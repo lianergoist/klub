@@ -41,10 +41,11 @@ class MembershipChange
         return [$cur, $next];
     }
 
-    /** Personerne på et køb, der stadig er med (ikke udmeldt). */
-    public static function people(Purchase $p): Collection
+    /** Personerne på et køb, der stadig er med (ikke udmeldt). $forNext: kun dem, der fortsætter ved fornyelse. */
+    public static function people(Purchase $p, bool $forNext = false): Collection
     {
-        return $p->users->whereNotIn('status', ['resigned', 'guest'])->values();
+        return $p->users->whereNotIn('status', ['resigned', 'guest'])
+            ->filter(fn ($u) => ! $forNext || ($u->pivot->renew ?? true))->values();
     }
 
     /** Det, der er betalt for købet (fuld pris før modregning). Ubetalt = 0. */
@@ -56,10 +57,12 @@ class MembershipChange
         return (int) ($pl['value'] ?? $pl['price'] ?? $p->invoice->amount);
     }
 
-    private static function targets(): Collection
+    /** Medlemskaber, husstanden kan skifte til. $staff: også dem, medlemmerne ikke selv kan vælge. */
+    private static function targets(bool $staff = false): Collection
     {
         return Package::with('slots.category')->where('kind', 'membership')->where('period_type', 'dates')
-            ->where('self_service', true)->whereNull('archived_at')->get()->reject(fn ($p) => $p->isOffer())->values();
+            ->when(! $staff, fn ($q) => $q->where('self_service', true))->whereNull('archived_at')
+            ->orderBy('position')->orderBy('id')->get()->reject(fn ($p) => $p->isOffer())->values();
     }
 
     /** Næste sæsons periode for pakken ud fra husstandens medlemskaber. */
@@ -74,7 +77,7 @@ class MembershipChange
      * Hvad kan husstandens medlemskab skiftes til, når $members (uden medlemskab) og $newPeople kommer med?
      * @param  Collection<User>  $members
      */
-    public static function options(User $payer, Collection $members, array $newPeople): ?array
+    public static function options(User $payer, Collection $members, array $newPeople, bool $staff = false): ?array
     {
         [$cur, $next] = self::bases($payer);
         if (! $cur && ! $next) return null;
@@ -85,7 +88,7 @@ class MembershipChange
             'now' => [], 'next' => [], 'next_from' => null,
         ];
 
-        foreach (self::targets() as $t) {
+        foreach (self::targets($staff) as $t) {
             if ($cur) {
                 $people = array_merge(Packages::peopleRows(self::people($cur)), $added);
                 $from = now()->startOfDay();
@@ -97,7 +100,7 @@ class MembershipChange
             }
             $base = $next ?? $cur;
             [$from, $to] = self::nextWindow($t, $cur, $next);
-            $people = array_merge(Packages::peopleRows(self::people($base)), $added);
+            $people = array_merge(Packages::peopleRows(self::people($base, ! $next)), $added);
             if (! $t->compositionError($people, $from)) {
                 $out['next'][] = self::row($t, Packages::priceFor($t, $people, $from), self::paidValue($next), $from, $to, count($people));
                 $out['next_from'] = $from->toDateString();
@@ -118,16 +121,16 @@ class MembershipChange
     {
         $amount = max(0, $price['price'] - $credit);
 
-        return ['package_id' => $t->id, 'name' => $t->name, 'gives_access' => (bool) $t->gives_access, 'persons' => $n,
+        return ['package_id' => $t->id, 'name' => $t->name, 'gives_access' => (bool) $t->gives_access, 'persons' => $n, 'self_service' => (bool) $t->self_service,
             'valid_from' => $from->toDateString(), 'valid_to' => $to->toDateString(),
             'price' => $price['price'], 'price_fmt' => Money::fmt($price['price']), 'capped' => $price['capped'],
             'credit' => $credit, 'credit_fmt' => Money::fmt($credit), 'amount' => $amount, 'amount_fmt' => Money::fmt($amount)];
     }
 
     /** Skift husstandens medlemskab. Returnerer det nye køb (med regning). */
-    public static function change(User $payer, Package $target, string $when, Collection $members, array $newPeople): Purchase
+    public static function change(User $payer, Package $target, string $when, Collection $members, array $newPeople, bool $staff = false): Purchase
     {
-        abort_unless($target->isMembership() && $target->self_service && ! $target->archived_at && ! $target->isOffer() && $target->period_type === 'dates', 422, 'Medlemskabet kan ikke vælges her.');
+        abort_unless($target->isMembership() && ($target->self_service || $staff) && ! $target->archived_at && ! $target->isOffer() && $target->period_type === 'dates', 422, 'Medlemskabet kan ikke vælges her.');
         [$cur, $next] = self::bases($payer);
         abort_unless($cur || $next, 422, 'Husstanden har ikke et medlemskab, der kan udvides.');
         foreach ($members as $m) {
@@ -142,7 +145,7 @@ class MembershipChange
             $base = $next ?? $cur;
             [$from, $to] = self::nextWindow($target, $cur, $next);
         }
-        $people = self::people($base)->merge($members)->unique('id')->values();
+        $people = self::people($base, $when === 'next' && ! $next)->merge($members)->unique('id')->values();
         $rows = array_merge(Packages::peopleRows($people), $newPeople);
         if ($err = $target->compositionError($rows, $from)) abort(422, $err);
 
@@ -184,7 +187,9 @@ class MembershipChange
             'package_id' => $target->id, 'payer_id' => $payer->id, 'invoice_id' => $invoice->id,
             'valid_from' => $from, 'valid_to' => $to, 'replaces_id' => $replaces?->id, 'renewed_from_id' => $renewedFrom,
         ]);
-        $purchase->users()->attach($people->pluck('id'));
+        // Den, der er fjernet fra næste sæson, fortsætter heller ikke, når det nye medlemskab fornyes
+        $stops = $base->users->filter(fn ($u) => ! ($u->pivot->renew ?? true))->pluck('id');
+        $purchase->users()->attach($people->pluck('id')->mapWithKeys(fn ($id) => [$id => ['renew' => ! $stops->contains($id)]])->all());
         $invoice->update(['payload' => $invoice->payload + ['purchase_id' => $purchase->id]]);
         Audit::log('membership.change_ordered', $purchase, ['from' => $base->package->name, 'to' => $target->name,
             'when' => $change['when'] ?? null, 'amount' => $amount, 'credit' => $credit, 'persons' => $names->all()]);
@@ -238,6 +243,151 @@ class MembershipChange
         if ($old?->invoice?->status === 'cancelled') {
             $old->invoice->update(['status' => 'open']); $old->update(['cancelled_at' => null]);
         }
+    }
+
+    /* ---------- Hvem er med næste sæson (fjern personer, skift type, del op) ---------- */
+
+    /**
+     * Næste sæson bygger på næste sæsons kontingent, hvis det er oprettet, ellers på det nuværende medlemskab.
+     * Mode: next_renewal (gemmes på det nuværende og bruges ved fornyelse), replace_upcoming (ubetalt regning skiftes ud),
+     * locked (næste sæson er betalt), not_renewable (fornyes ikke automatisk).
+     */
+    public static function nextPlan(?Purchase $cur, ?Purchase $up): array
+    {
+        $base = $up ?? $cur;
+        $mode = $up ? ($up->isPaid() ? 'locked' : 'replace_upcoming') : ($cur->package->period_type === 'dates' && $cur->valid_to ? 'next_renewal' : 'not_renewable');
+        $target = $up ? $up->package : Packages::renewalTarget($cur);
+        $own = $up ? collect() : self::people($cur, true)->filter(fn ($u) => $u->pivot->renew_package_id)
+            ->mapWithKeys(fn ($u) => [$u->id => Package::find($u->pivot->renew_package_id)]);
+        $row = fn (Purchase $p) => ['id' => $p->id, 'name' => $p->package->name, 'valid_from' => $p->valid_from->toDateString(),
+            'valid_to' => $p->valid_to?->toDateString(), 'paid' => $p->isPaid(), 'payer' => $p->payer?->name,
+            'amount_fmt' => $p->invoice ? Money::fmt($p->invoice->amount) : null, 'people' => self::people($p)->pluck('name')->values()];
+
+        return [
+            'mode' => $mode, 'current' => $cur ? $row($cur) : null, 'upcoming' => $up ? $row($up) : null,
+            'split' => $own->isNotEmpty(),
+            'next_as' => ['id' => $target->id, 'name' => $target->name, 'changed' => ! $up && (bool) $cur->renew_package_id],
+            'next_from' => in_array($mode, ['next_renewal', 'replace_upcoming']) ? self::nextFrom($target, $cur, $up)->toDateString() : null,
+            'people' => self::people($base)->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'age' => $u->age(),
+                'renews' => $up ? true : (bool) ($u->pivot->renew ?? true),
+                'own' => isset($own[$u->id]) ? ['id' => $own[$u->id]->id, 'name' => $own[$u->id]->name] : null])->values(),
+        ];
+    }
+
+    private static function nextFrom(Package $t, ?Purchase $cur, ?Purchase $up): Carbon
+    {
+        return $t->dateWindowStartingIn($up ? $up->valid_from->year : $cur->valid_to->copy()->addDay()->year)[0];
+    }
+
+    /** De valgte personer (skal være med på medlemskabet nu). */
+    private static function chosen(?Purchase $cur, ?Purchase $up, array $ids): Collection
+    {
+        $all = self::people($up ?? $cur);
+        abort_if(array_diff($ids, $all->pluck('id')->all()), 422, 'Der kan kun vælges personer, som er med på medlemskabet. Nye personer tilføjes med "Tilføj person".');
+        $people = $all->whereIn('id', $ids)->values();
+        abort_if($people->isEmpty(), 422, 'Mindst én person skal fortsætte. Skal hele medlemskabet stoppe, så kontakt bestyrelsen.');
+
+        return $people;
+    }
+
+    /** Medlemskaber, der passer til $people næste sæson (med pris). */
+    private static function fitting(?Purchase $cur, ?Purchase $up, Collection $people, bool $staff): array
+    {
+        $current = $up ? $up->package : Packages::renewalTarget($cur);
+        // Pakker, der selv fornyes som en anden (fx halv sæson → hel sæson), giver ikke mening for en hel næste sæson
+        $targets = self::targets($staff)->reject(fn ($t) => $t->renews_to_id && $t->id !== $current->id);
+        if (! $targets->contains('id', $current->id) && ! $current->archived_at) $targets->push($current->load('slots.category'));
+        $rows = Packages::peopleRows($people);
+        $out = [];
+        foreach ($targets as $t) {
+            $from = self::nextFrom($t, $cur, $up);
+            if ($t->compositionError($rows, $from)) continue;
+            $pr = Packages::priceFor($t, $rows, $from);
+            $out[] = ['package_id' => $t->id, 'name' => $t->name, 'current' => $t->id === $current->id, 'self_service' => (bool) $t->self_service,
+                'composition_label' => $t->compositionLabel(), 'price' => $pr['price'], 'price_fmt' => Money::fmt($pr['price']), 'capped' => $pr['capped']];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Medlemskaber for dem, der fortsætter: samlet (ét medlemskab til alle) og hver for sig (et eget til hver person).
+     * @return array{together: array, single: array<int, array>}
+     */
+    public static function nextOptions(?Purchase $cur, ?Purchase $up, array $ids, bool $staff): array
+    {
+        $people = self::chosen($cur, $up, $ids);
+
+        return [
+            'together' => self::fitting($cur, $up, $people, $staff),
+            'single' => $people->count() > 1 ? $people->mapWithKeys(fn ($u) => [$u->id => self::fitting($cur, $up, collect([$u]), $staff)])->all() : (object) [],
+        ];
+    }
+
+    /**
+     * Gem, hvem der er med næste sæson, og som hvilket medlemskab: samlet ($packageId) eller hver for sig ($split: person => pakke).
+     * Returnerer en besked til brugeren.
+     */
+    public static function setNext(?Purchase $cur, ?Purchase $up, array $ids, ?int $packageId, ?array $split, User $by, bool $staff): string
+    {
+        $plan = self::nextPlan($cur, $up);
+        if ($plan['mode'] === 'locked') abort(422, 'Medlemskabet for næste sæson ('.$up->package->name.') er allerede betalt og kan ikke ændres her.');
+        if ($plan['mode'] === 'not_renewable') abort(422, $cur->package->name.' fornyes ikke automatisk.');
+        $people = self::chosen($cur, $up, $ids);
+        $opts = self::nextOptions($cur, $up, $ids, $staff);
+
+        // Grupper: [pakke, personer]
+        if ($split && $people->count() > 1) {
+            $groups = $people->map(function ($u) use ($split, $opts) {
+                $pid = (int) ($split[$u->id] ?? 0);
+                abort_unless(collect($opts['single'][$u->id] ?? [])->contains('package_id', $pid), 422, 'Vælg et medlemskab, der passer til '.$u->name.'.');
+
+                return [Package::with('slots.category')->find($pid), collect([$u])];
+            })->all();
+        } else {
+            abort_unless($packageId && collect($opts['together'])->contains('package_id', $packageId), 422,
+                $opts['together'] ? 'Vælg et medlemskab, der passer til de valgte personer.' : 'Intet medlemskab passer til alle de valgte personer. Vælg "Hver sit medlemskab".');
+            $groups = [[Package::with('slots.category')->find($packageId), $people]];
+        }
+        $stops = collect($plan['people'])->whereNotIn('id', $ids)->pluck('name');
+        $payer = ($up ?? $cur)->payer;
+        $label = collect($groups)->map(fn ($g) => $g[0]->name.(count($groups) > 1 ? ' ('.$g[1]->first()->name.')' : ''))->join(', ', ' og ');
+
+        if ($up) {
+            $before = $up->package->name;
+            if (count($groups) === 1 && $groups[0][0]->id === $up->package_id && $stops->isEmpty()) return 'Ingen ændringer.';
+            $sum = DB::transaction(function () use ($up, $groups, $by) {
+                Packages::cancel($up, $by);
+                $sum = 0;
+                foreach ($groups as [$target, $ppl]) {
+                    [$from, $to] = $target->dateWindowStartingIn($up->valid_from->year);
+                    $sum += Packages::createRenewal($up, $target, $ppl, $from, $to, ['renewed_from_id' => $up->renewed_from_id, 'access_from' => $up->access_from])->amount;
+                }
+
+                return $sum;
+            });
+            $from = self::nextFrom($groups[0][0], $cur, $up);
+            $msg = 'Regningen for '.Season::label($from).' er skiftet ud: '.$label.', i alt '.Money::fmt($sum).'.';
+        } else {
+            $before = Packages::renewalTarget($cur)->name;
+            $default = $cur->package->renewsTo ?? $cur->package;
+            $together = count($groups) === 1 && $groups[0][1]->count() === $people->count() && ! $split ? $groups[0][0] : null;
+            $own = [];
+            if (! $together) foreach ($groups as [$target, $ppl]) foreach ($ppl as $u) $own[$u->id] = $target->id;
+            DB::transaction(function () use ($cur, $ids, $together, $default, $own) {
+                foreach (self::people($cur) as $u) {
+                    $cur->users()->updateExistingPivot($u->id, ['renew' => in_array($u->id, $ids), 'renew_package_id' => $own[$u->id] ?? null]);
+                }
+                $cur->update(['renew_package_id' => $together && $together->id !== $default->id ? $together->id : null]);
+            });
+            $from = self::nextFrom($groups[0][0], $cur, null);
+            $msg = 'Fra '.Season::label($from).' fornyes medlemskabet som '.$label.'.';
+        }
+        if ($stops->isNotEmpty()) $msg .= ' '.self::who($stops).' er ikke med fra '.$from->locale('da')->isoFormat('D. MMMM YYYY').'.';
+        Audit::log('membership.next_changed', $payer, ['by' => $by->name, 'from' => $before, 'to' => $label,
+            'season' => Season::label($from), 'stops' => $stops->values()->all(), 'continues' => $people->pluck('name')->all()]);
+
+        return $msg;
     }
 
     private static function who($names): string

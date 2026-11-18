@@ -258,18 +258,21 @@ class Packages
             ->get();
 
         foreach ($old as $p) {
-            $target = self::renewalTarget($p);
-            $people = $p->users->whereNotIn('status', ['resigned', 'guest'])->values();
             $who = $p->payer->name;
-            if (! $people->count()) continue;
-            if ($target->archived_at) { $skipped[] = "$who: {$target->name} er arkiveret"; continue; }
-            [$from, $to] = $target->dateWindowStartingIn($year);
-            if ($err = $target->compositionError(self::peopleRows($people), $from)) {
-                $skipped[] = "$who: $err"; continue;
+            $all = MembershipChange::people($p, forNext: true); // uden dem, der er fjernet fra næste sæson
+            // Er medlemskabet delt op, fornyes hver person på sit eget medlemskab
+            foreach ($all->groupBy(fn ($u) => $u->pivot->renew_package_id ? 'u'.$u->id : 'samlet') as $people) {
+                $own = $people->first()->pivot->renew_package_id;
+                $target = $own ? Package::find($own) : self::renewalTarget($p);
+                if ($target->archived_at) { $skipped[] = "$who: {$target->name} er arkiveret"; continue; }
+                [$from, $to] = $target->dateWindowStartingIn($year);
+                if ($err = $target->compositionError(self::peopleRows($people), $from)) {
+                    $skipped[] = "$who: $err"; continue;
+                }
+                if ($people->contains(fn ($m) => self::overlapping($m, $from, $to))) continue; // har allerede købt
+                $inv = self::createRenewal($p, $target, $people->values(), $from, $to);
+                $created++; $sum += $inv->amount;
             }
-            if ($people->contains(fn ($m) => self::overlapping($m, $from, $to))) continue; // har allerede købt
-            $inv = self::createRenewal($p, $target, $people, $from, $to);
-            $created++; $sum += $inv->amount;
         }
         Audit::log('membership.generated', null, ['year' => $year, 'count' => $created, 'skipped' => count($skipped)]);
 
@@ -326,7 +329,7 @@ class Packages
         return $names->count() <= 2 ? $names->join(' og ') : $names->count().' personer ('.$names->map(fn ($n) => explode(' ', $n)[0])->join(', ', ' og ').')';
     }
 
-    private static function notifyBoard(string $title, string $body, string $link): void
+    public static function notifyBoard(string $title, string $body, string $link): void
     {
         User::whereHas('roleAssignments', fn ($q) => $q->whereIn('role', ['board', 'treasurer'])->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now())))
             ->get()->each->notify(new ClubMessage($title, $body, $link));

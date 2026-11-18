@@ -14,7 +14,7 @@ class Purchase extends Model
     public function payer() { return $this->belongsTo(User::class, 'payer_id'); }
     public function invoice() { return $this->belongsTo(Invoice::class); }
     public function resource() { return $this->belongsTo(Resource::class); }
-    public function users() { return $this->belongsToMany(User::class); }
+    public function users() { return $this->belongsToMany(User::class)->withPivot('renew', 'renew_package_id'); }
     /** Medlemskab, købet fornyes som ved næste opkrævning (sat af bestyrelse/kasserer). */
     public function renewPackage() { return $this->belongsTo(Package::class, 'renew_package_id'); }
 

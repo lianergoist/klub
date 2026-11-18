@@ -79,6 +79,7 @@ class MemberController extends Controller
             'household' => $member->household ? [
                 'name' => $member->household->name,
                 'payer' => $member->household->payer?->name,
+                'payer_id' => $member->household->payer_id,
                 'members' => $member->household->members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'age' => $m->age()]),
             ] : null,
             'roles' => $member->roleAssignments->sortByDesc('starts_on')->map(fn ($ra) => [
@@ -98,11 +99,12 @@ class MemberController extends Controller
             ]),
             'invoices' => $r->user()->may('members.view') ? Invoice::where('payer_id', $member->id)->orWhere('member_id', $member->id)->latest()->get()->map(fn ($i) => FinanceController::invoiceRow($i)) : [],
             'membership_valid' => $member->hasValidMembership(),
-            'purchases' => $member->purchases()->with('package', 'invoice', 'renewPackage')->latest('valid_from')->limit(20)->get()->map(fn ($p) => [
+            'purchases' => $member->purchases()->with('package', 'invoice', 'renewPackage', 'payer')->latest('valid_from')->limit(20)->get()->map(fn ($p) => [
                 'id' => $p->id, 'name' => $p->package->name, 'kind' => $p->package->kind, 'valid_from' => $p->valid_from->toDateString(),
                 'valid_to' => $p->valid_to?->toDateString(), 'status' => $p->cancelled_at ? 'cancelled' : ($p->invoice ? $p->invoice->displayStatus() : 'paid'),
                 'uses_left' => $p->package->uses ? $p->uses_left : null, 'uses' => $p->package->uses, 'note' => $p->note,
-                'renews_as' => $p->cancelled_at ? null : $p->renewPackage?->name,
+                'renews_as' => $p->cancelled_at || ! $p->pivot->renew ? null : ($p->pivot->renew_package_id ? \App\Models\Package::find($p->pivot->renew_package_id)?->name : $p->renewPackage?->name),
+                'stops' => ! $p->cancelled_at && ! $p->pivot->renew, 'payer' => $p->payer?->name,
             ]),
             // Opslag i kartoteket samles til én linje, så de ikke fylder hele loggen
             'log' => \App\Models\AuditLog::with('user')->where('subject_type', 'User')->where('subject_id', $member->id)->where('action', '!=', 'member.viewed')->latest('id')->limit(30)->get()

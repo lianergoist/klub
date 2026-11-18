@@ -60,6 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('profile/purchases', [\App\Http\Controllers\Api\PackageController::class, 'buy']);
     Route::post('profile/membership-change/options', [\App\Http\Controllers\Api\PackageController::class, 'changeOptions']);
     Route::post('profile/membership-change', [\App\Http\Controllers\Api\PackageController::class, 'change']);
+    Route::post('profile/membership-next/options', [\App\Http\Controllers\Api\PackageController::class, 'nextOptions']);
+    Route::put('profile/membership-next', [\App\Http\Controllers\Api\PackageController::class, 'setNext']);
     Route::post('profile/purchases/{purchase}/cancel', [\App\Http\Controllers\Api\PackageController::class, 'cancel']);
     Route::get('profile/categories', [ProfileController::class, 'categories']);
     Route::put('profile/categories', [ProfileController::class, 'saveCategories']);
@@ -166,6 +168,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('members/{member}/purchases', [\App\Http\Controllers\Api\StaffMembershipController::class, 'addonBuy']);
     Route::get('members/{member}/membership-options', [\App\Http\Controllers\Api\StaffMembershipController::class, 'membershipOptions']);
     Route::put('members/{member}/membership', [\App\Http\Controllers\Api\StaffMembershipController::class, 'changeMembership']);
+    Route::post('members/{member}/membership-next-options', [\App\Http\Controllers\Api\StaffMembershipController::class, 'nextOptions']);
+    Route::post('members/{member}/membership-add-options', [\App\Http\Controllers\Api\StaffMembershipController::class, 'addOptions']);
+    Route::post('members/{member}/membership-add', [\App\Http\Controllers\Api\StaffMembershipController::class, 'addPerson']);
     Route::post('members/{member}/temp-password', [MemberController::class, 'tempPassword']);
     Route::post('members/{member}/permissions', [\App\Http\Controllers\Api\PermissionController::class, 'grant']);
     Route::put('user-permissions/{grant}/end', [\App\Http\Controllers\Api\PermissionController::class, 'end']);

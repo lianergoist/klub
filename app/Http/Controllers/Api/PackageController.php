@@ -97,6 +97,7 @@ class PackageController extends Controller
             'singles' => self::singles(),
             'products' => $u->status === 'pending' ? [] : self::offers('product'),
             'can_add_people' => ! $u->household_id || $u->household?->payer_id === $u->id,
+            'next_plan' => (! $u->household_id || $u->household?->payer_id === $u->id) && (($b = MembershipChange::bases($u))[0] || $b[1]) ? MembershipChange::nextPlan(...$b) : null,
             'household' => $household->map(fn ($m) => [
                 'id' => $m->id, 'name' => $m->name, 'birthdate' => $m->birthdate?->toDateString(), 'age' => $m->age(), 'status' => $m->status,
                 'membership' => ($c = $m->currentMembership()) ? ['name' => $c->package->name, 'valid_to' => $c->valid_to?->toDateString()] : null,
@@ -180,6 +181,42 @@ class PackageController extends Controller
         $purchase = MembershipChange::change($r->user(), Package::with('slots.category')->findOrFail($d['package_id']), $d['when'], $members, $new);
 
         return ['invoice_id' => $purchase->invoice_id, 'paid' => $purchase->invoice->fresh()->status === 'paid'];
+    }
+
+    /* ---------- Næste sæson: betaleren fjerner personer fra husstandens medlemskab ---------- */
+
+    /** Husstandens medlemskab, som betaleren kan rette for næste sæson. @return array{0:?Purchase,1:?Purchase} */
+    private static function nextBase(User $u): array
+    {
+        abort_if($u->household_id && $u->household?->payer_id !== $u->id, 403, 'Kun husstandens betaler kan ændre medlemskabet.');
+        [$cur, $next] = MembershipChange::bases($u);
+        abort_unless($cur || $next, 422, 'Husstanden har ikke et medlemskab, der kan ændres.');
+        abort_if($next, 422, 'Næste sæsons kontingent er allerede opkrævet. Skriv til bestyrelsen, hvis det skal ændres.');
+
+        return [$cur, $next];
+    }
+
+    public function nextOptions(Request $r)
+    {
+        $d = $r->validate(['member_ids' => 'array', 'member_ids.*' => 'integer']);
+        [$cur, $next] = self::nextBase($r->user());
+
+        return MembershipChange::nextOptions($cur, $next, $d['member_ids'] ?? [], staff: false);
+    }
+
+    public function setNext(Request $r)
+    {
+        $d = $r->validate(['member_ids' => 'array', 'member_ids.*' => 'integer', 'package_id' => 'nullable|required_without:split|integer', 'split' => 'nullable|array']);
+        $u = $r->user();
+        [$cur, $next] = self::nextBase($u);
+        $before = MembershipChange::nextPlan($cur, $next);
+        $msg = MembershipChange::setNext($cur, $next, $d['member_ids'] ?? [], $d['package_id'] ?? null, $d['split'] ?? null, $u, staff: false);
+        $stops = collect($before['people'])->whereNotIn('id', $d['member_ids'] ?? [])->where('renews', true)->pluck('name');
+        if ($stops->isNotEmpty()) {
+            Packages::notifyBoard('Fjernet fra næste sæson', $u->name.' har fjernet '.$stops->join(', ', ' og ').' fra husstandens medlemskab fra næste sæson.', '/medlemmer/'.$u->id);
+        }
+
+        return ['message' => $msg];
     }
 
     public function cancel(Request $r, Purchase $purchase)
