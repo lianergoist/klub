@@ -100,6 +100,7 @@ class PackageController extends Controller
             'next_plan' => (! $u->household_id || $u->household?->payer_id === $u->id) && (($b = MembershipChange::bases($u))[0] || $b[1]) ? MembershipChange::nextPlan(...$b) : null,
             'household' => $household->map(fn ($m) => [
                 'id' => $m->id, 'name' => $m->name, 'birthdate' => $m->birthdate?->toDateString(), 'age' => $m->age(), 'status' => $m->status,
+                'email' => $m->email, 'phone' => $m->phone, 'can_login' => (bool) \App\Support\TempPassword::loginOf($m), 'has_password' => (bool) $m->password,
                 'membership' => ($c = $m->currentMembership()) ? ['name' => $c->package->name, 'valid_to' => $c->valid_to?->toDateString()] : null,
                 'upcoming' => ($n = $m->upcomingMembership()) ? ['name' => $n->package->name, 'valid_from' => $n->valid_from->toDateString()] : null,
             ])->values(),
@@ -124,15 +125,16 @@ class PackageController extends Controller
             'new_members' => 'array|max:10',
             'new_members.*.name' => 'required|string|max:120',
             'new_members.*.birthdate' => 'required|date|before:today',
-            'new_members.*.email' => 'nullable|email|unique:users,email',
+            'new_members.*.email' => 'nullable|email|distinct|unique:users,email',
+            'new_members.*.phone' => ['nullable', 'string', 'max:30', 'distinct', \App\Support\Phone::rule()],
             'new_members.*.consent' => 'accepted',
             'resource_id' => 'nullable|integer',
-        ], ['new_members.*.consent.accepted' => 'Giv samtykke for de personer, du tilføjer.'], ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato']);
+        ], ['new_members.*.consent.accepted' => 'Giv samtykke for de personer, du tilføjer.'], ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato', 'new_members.*.email' => 'e-mail', 'new_members.*.phone' => 'telefonnummer']);
         $package = Package::with('slots.category', 'product')->findOrFail($d['package_id']);
         $allowed = $u->managedMembers()->pluck('id');
         abort_if(collect($d['member_ids'] ?? [])->diff($allowed)->isNotEmpty(), 403, 'Du kan kun købe til personer i din husstand.');
         $new = collect($d['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'], 'birthdate' => Carbon::parse($p['birthdate'])->toDateString(),
-            'email' => $p['email'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
+            'email' => $p['email'] ?? null, 'phone' => $p['phone'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
         abort_if($new && $u->household_id && $u->household?->payer_id !== $u->id, 403, 'Kun husstandens betaler kan tilføje personer.');
         abort_if($package->isOffer() || $package->archived_at, 422, 'Pakken kan ikke købes her.');
         abort_if($u->status === 'pending' && $package->kind === 'product', 422, 'Betal først dit kontingent.');
@@ -152,12 +154,13 @@ class PackageController extends Controller
             'new_members' => 'array|max:10',
             'new_members.*.name' => ($full ? 'required' : 'nullable').'|string|max:120',
             'new_members.*.birthdate' => 'required|date|before:today',
-        ] + ($full ? ['new_members.*.email' => 'nullable|email|unique:users,email', 'new_members.*.consent' => 'accepted'] : []),
-            ['new_members.*.consent.accepted' => 'Giv samtykke for de personer, du tilføjer.'], ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato']);
+        ] + ($full ? ['new_members.*.email' => 'nullable|email|distinct|unique:users,email', 'new_members.*.phone' => ['nullable', 'string', 'max:30', 'distinct', \App\Support\Phone::rule()],
+            'new_members.*.consent' => 'accepted'] : []),
+            ['new_members.*.consent.accepted' => 'Giv samtykke for de personer, du tilføjer.'], ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato', 'new_members.*.email' => 'e-mail', 'new_members.*.phone' => 'telefonnummer']);
         $household = $u->managedMembers()->keyBy('id');
         $members = collect($d['member_ids'] ?? [])->unique()->map(fn ($id) => $household[$id] ?? abort(403, 'Du kan kun vælge personer i din husstand.'))->values();
         $new = collect($d['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'] ?? 'Ny person', 'birthdate' => Carbon::parse($p['birthdate'])->toDateString(),
-            'email' => $p['email'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
+            'email' => $p['email'] ?? null, 'phone' => $p['phone'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
         abort_if($new && $u->household_id && $u->household?->payer_id !== $u->id, 403, 'Kun husstandens betaler kan tilføje personer.');
 
         return [$members, $new];

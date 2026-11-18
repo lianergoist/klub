@@ -16,13 +16,17 @@ class AuthController extends Controller
 {
     public function login(Request $r)
     {
-        $data = $r->validate(['email' => 'required|email', 'password' => 'required']);
-        $user = User::where('email', $data['email'])->first();
+        // "login" er e-mail eller telefonnummer (ældre app-versioner sender "email")
+        $data = $r->validate(['login' => 'required_without:email|nullable|string|max:190', 'email' => 'nullable|string|max:190', 'password' => 'required'],
+            ['login.required_without' => 'Skriv din e-mail eller dit telefonnummer.']);
+        $id = trim($data['login'] ?? $data['email']);
+        $user = str_contains($id, '@') ? User::where('email', $id)->first()
+            : (($n = \App\Support\Phone::normalize($id)) ? User::where('login_phone', $n)->first() : null);
         if (! $user || ! $user->password || ! Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages(['email' => 'Forkert e-mail eller adgangskode.']);
+            throw ValidationException::withMessages(['login' => 'Forkert e-mail/telefonnummer eller adgangskode.']);
         }
         if ($user->status === 'resigned') {
-            throw ValidationException::withMessages(['email' => 'Medlemskabet er afsluttet.']);
+            throw ValidationException::withMessages(['login' => 'Medlemskabet er afsluttet.']);
         }
 
         return ['token' => $user->createToken('app')->plainTextToken, 'user' => self::me($user)];
@@ -110,7 +114,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:120',
             'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->where(fn ($q) => $q->where('status', '!=', 'guest'))],
             'password' => 'required|min:8',
-            'phone' => 'nullable|string|max:30',
+            'phone' => ['nullable', 'string', 'max:30', \App\Support\Phone::rule(User::where('email', $r->input('email'))->where('status', 'guest')->value('id'))],
             'address' => 'nullable|string|max:200',
             'postal_code' => 'nullable|string|max:10',
             'city' => 'nullable|string|max:100',
@@ -120,12 +124,15 @@ class AuthController extends Controller
             'new_members' => 'array|max:10',
             'new_members.*.name' => 'required|string|max:120',
             'new_members.*.birthdate' => 'required|date|before:today',
+            'new_members.*.email' => 'nullable|email|distinct|different:email|unique:users,email',
+            'new_members.*.phone' => ['nullable', 'string', 'max:30', 'distinct', \App\Support\Phone::rule()],
         ], ['consent.accepted' => 'Du skal give samtykke for at kunne melde dig ind.', 'package_id.required' => 'Vælg et medlemskab.'],
-           ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato']);
+           ['new_members.*.name' => 'navn', 'new_members.*.birthdate' => 'fødselsdato', 'new_members.*.email' => 'e-mail', 'new_members.*.phone' => 'telefonnummer']);
 
         $package = \App\Models\Package::with('slots.category')->where('kind', 'membership')->whereNull('archived_at')->find($data['package_id']);
         abort_unless($package, 422, 'Vælg et medlemskab.');
-        $new = collect($data['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'], 'birthdate' => \Illuminate\Support\Carbon::parse($p['birthdate'])->toDateString(), 'consent_at' => now()->toIso8601String()])->all();
+        $new = collect($data['new_members'] ?? [])->map(fn ($p) => ['name' => $p['name'], 'birthdate' => \Illuminate\Support\Carbon::parse($p['birthdate'])->toDateString(),
+            'email' => $p['email'] ?? null, 'phone' => $p['phone'] ?? null, 'consent_at' => now()->toIso8601String()])->all();
         // Tjek sammensætningen, før der oprettes noget
         if ($err = $package->compositionError(array_merge([['name' => $data['name'], 'birthdate' => $data['birthdate']]], $new))) abort(422, $err);
         unset($data['consent'], $data['package_id'], $data['new_members']);

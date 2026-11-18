@@ -8,9 +8,9 @@
         <div class="card login-card">
             <form @submit.prevent="login" class="stack">
                 <p v-if="activityTarget" class="banner info">Log ind for at se aktiviteten og tilmelde dig. Er du ikke medlem, kan du melde dig ind nedenfor.</p>
-                <label class="field"><span>E-mail</span><input v-model="email" name="email" id="email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
+                <label class="field"><span>E-mail eller telefonnummer</span><input v-model="email" name="username" id="email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" required></label>
                 <label class="field"><span>Adgangskode</span><input v-model="password" name="password" id="password" type="password" autocomplete="current-password" required></label>
-                <RouterLink :to="{ path: '/glemt-adgangskode', query: email ? { email } : {} }" class="small forgot">Glemt adgangskode?</RouterLink>
+                <RouterLink :to="{ path: '/glemt-adgangskode', query: email.includes('@') ? { email } : {} }" class="small forgot">Glemt adgangskode?</RouterLink>
                 <p v-if="error" class="banner bad">{{ error }}</p>
                 <button class="btn primary block" :disabled="busy">Log ind</button>
                 <p class="small muted" style="text-align:center">Ikke medlem endnu? <RouterLink :to="{ path: '/bliv-medlem', query: til ? { til } : {} }">Meld dig ind</RouterLink></p>
@@ -60,7 +60,7 @@ async function openWeb(path) { (await import('../native')).openWeb(path); }
 async function done(res) { setSession(res.token, res.user); router.push(target); }
 async function login() {
     busy.value = true; error.value = '';
-    try { await done(await api('login', { method: 'POST', body: { email: email.value, password: password.value } })); }
+    try { await done(await api('login', { method: 'POST', body: { login: email.value.trim(), password: password.value } })); }
     catch (e) { error.value = e.message; } finally { busy.value = false; }
 }
 async function demoLogin(e) { await done(await api('demo-login', { method: 'POST', body: { email: e } })); }

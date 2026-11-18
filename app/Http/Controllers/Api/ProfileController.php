@@ -55,8 +55,9 @@ class ProfileController extends Controller
         $u = $r->user();
         $data = $r->validate([
             'name' => 'required|string|max:120',
-            'email' => 'required|email|unique:users,email,'.$u->id,
-            'phone' => 'nullable|string|max:30',
+            // Betaleren skal have e-mail (regninger, glemt adgangskode); andre i husstanden logger ind med e-mail eller telefon
+            'email' => [$u->payer()->id === $u->id ? 'required' : 'required_without:phone', 'nullable', 'email', 'unique:users,email,'.$u->id],
+            'phone' => ['nullable', 'string', 'max:30', \App\Support\Phone::rule($u->id)],
             'address' => 'nullable|string|max:200',
             'postal_code' => 'nullable|string|max:10',
             'city' => 'nullable|string|max:100',
@@ -67,12 +68,53 @@ class ProfileController extends Controller
             'notify_push' => 'boolean',
             'notify_posts' => 'boolean',
             'allow_messages' => 'boolean',
-        ]);
+        ], ['email.required' => 'Som betaler for husstanden skal du have en e-mail (regninger og glemt adgangskode).',
+            'email.required_without' => 'Skriv din e-mail eller dit telefonnummer – du logger ind med det.']);
         $before = $u->only(array_keys($data));
         $u->update($data);
         Audit::log('member.updated', $u, ['before' => $before, 'after' => $u->only(array_keys($data))]);
 
         return self::profile($u->fresh());
+    }
+
+    /* ---------- Eget login til personer i husstanden (betaleren) ---------- */
+
+    private static function householdMember(Request $r, User $member): User
+    {
+        $u = $r->user();
+        abort_unless($u->household_id && $u->household?->payer_id === $u->id && $member->household_id === $u->household_id && $member->id !== $u->id,
+            403, 'Kun husstandens betaler kan give personer i husstanden eget login.');
+        abort_if(in_array($member->status, ['resigned', 'guest']), 422, $member->name.' er ikke aktivt medlem.');
+
+        return $member;
+    }
+
+    /** E-mail og telefonnummer, som personen selv logger ind med (skal være personens egne – ikke forælderens). */
+    public function householdLogin(Request $r, User $member)
+    {
+        $m = self::householdMember($r, $member);
+        $d = $r->validate([
+            'email' => ['nullable', 'email', 'unique:users,email,'.$m->id],
+            'phone' => ['nullable', 'string', 'max:30', \App\Support\Phone::rule($m->id)],
+        ], ['email.unique' => 'E-mailen bruges allerede af et andet medlem. Barnet skal have sin egen.']);
+        $before = $m->only('email', 'phone');
+        $m->update($d + ['notify_email' => (bool) ($d['email'] ?? null)]);
+        Audit::log('member.updated', $m, ['before' => $before, 'after' => $m->only('email', 'phone'), 'by' => $r->user()->name]);
+
+        return ['ok' => true, 'can_login' => (bool) \App\Support\TempPassword::loginOf($m->fresh())];
+    }
+
+    /** Midlertidig adgangskode til en person i husstanden; vises én gang, personen vælger sin egen ved første login. */
+    public function householdPassword(Request $r, User $member)
+    {
+        $m = self::householdMember($r, $member);
+        $login = \App\Support\TempPassword::loginOf($m);
+        abort_unless($login, 422, 'Giv først '.$m->name.' sin egen e-mail eller sit eget telefonnummer.');
+        abort_if(AuthController::isDemoAccount($m), 403, 'Demokontoens adgangskode kan ikke ændres.');
+        $code = \App\Support\TempPassword::make($m);
+        Audit::log('member.temp_password', $m, ['by' => $r->user()->name]);
+
+        return ['password' => $code, 'login' => $login];
     }
 
     public function categories(Request $r)

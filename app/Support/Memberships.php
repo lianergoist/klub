@@ -151,10 +151,10 @@ class Memberships
         $added = [];
         foreach ($people as $p) {
             $added[] = User::create([
-                'name' => $p['name'], 'birthdate' => $p['birthdate'], 'email' => $p['email'] ?? null,
+                'name' => $p['name'], 'birthdate' => $p['birthdate'], 'email' => $p['email'] ?? null, 'phone' => $p['phone'] ?? null,
                 'emergency_name' => $p['emergency_name'] ?? $payer->name, 'emergency_phone' => $p['emergency_phone'] ?? $payer->phone,
                 'household_id' => $payer->household_id, 'membership_type_id' => self::type('single')->id, 'status' => 'active',
-                'joined_on' => now(), 'consent_at' => $p['consent_at'] ?? now(), 'notify_email' => false,
+                'joined_on' => now(), 'consent_at' => $p['consent_at'] ?? now(), 'notify_email' => ! empty($p['email']),
                 'address' => $payer->address, 'postal_code' => $payer->postal_code, 'city' => $payer->city,
             ]);
         }

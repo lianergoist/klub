@@ -109,16 +109,16 @@
 
         <Modal v-if="tempPw" title="Midlertidig adgangskode" @close="tempPw = null">
             <div v-if="tempPw.step === 'confirm'" class="stack">
-                <p v-if="!m.profile.email" class="banner warn" style="margin:0">{{ m.profile.name.split(' ')[0] }} har ingen e-mail. Giv først medlemmet en e-mail med "Ret oplysninger" – den bruges til at logge ind.</p>
+                <p v-if="!m.profile.email && !m.profile.phone" class="banner warn" style="margin:0">{{ m.profile.name.split(' ')[0] }} har hverken e-mail eller telefonnummer. Giv først medlemmet sin egen e-mail eller sit eget telefonnummer med "Ret oplysninger" – det bruges til at logge ind.</p>
                 <template v-else>
-                    <p style="margin:0">Der laves en ny adgangskode til <strong>{{ m.profile.name }}</strong> ({{ m.profile.email }}). Den vises kun én gang, så giv den til medlemmet mundtligt eller på SMS.</p>
+                    <p style="margin:0">Der laves en ny adgangskode til <strong>{{ m.profile.name }}</strong> ({{ m.profile.email || m.profile.phone }}). Den vises kun én gang, så giv den til medlemmet mundtligt eller på SMS.</p>
                     <p class="small muted" style="margin:0">Medlemmet skal vælge sin egen adgangskode ved første login. En eventuel tidligere adgangskode holder op med at virke, og medlemmet bliver logget ud alle steder.</p>
                     <button class="btn primary block" :disabled="tempPw.busy" @click="makeTempPw">Lav adgangskode</button>
                 </template>
             </div>
             <div v-else class="stack">
                 <p style="margin:0">Log ind med</p>
-                <p style="margin:0">E-mail: <strong>{{ tempPw.email }}</strong></p>
+                <p style="margin:0">{{ tempPw.login.includes('@') ? 'E-mail' : 'Telefonnummer' }}: <strong>{{ tempPw.login }}</strong></p>
                 <p style="margin:0">Adgangskode: <strong style="font-family:ui-monospace,monospace;font-size:1.25em;letter-spacing:.04em">{{ tempPw.password }}</strong></p>
                 <button class="btn block" @click="copyTempPw">Kopiér</button>
                 <p class="small muted" style="margin:0">Koden vises ikke igen. Mister medlemmet den, laver du bare en ny.</p>
@@ -181,6 +181,7 @@
                 <label class="field"><span>Navn</span><input v-model="edit.name"></label>
                 <label class="field"><span>E-mail</span><input v-model="edit.email"></label>
                 <label class="field"><span>Telefon</span><input v-model="edit.phone"></label>
+                <p class="small muted" style="margin:0">Medlemmet logger ind med sin e-mail eller sit telefonnummer. Begge skal være medlemmets egne – ikke en forælders.</p>
                 <label class="field"><span>Status</span><select v-model="edit.status"><option value="pending">Afventer</option><option value="active">Aktiv</option><option value="passive">Passiv</option><option value="resigned">Udmeldt</option></select></label>
 
                 <button class="btn primary block" @click="saveEdit">Gem</button>
@@ -215,7 +216,7 @@ async function makeTempPw() {
     catch (e) { toast(e.message, 'error'); tempPw.value.busy = false; }
 }
 async function copyTempPw() {
-    const t = `E-mail: ${tempPw.value.email}\nMidlertidig adgangskode: ${tempPw.value.password}`;
+    const t = `Log ind med: ${tempPw.value.login}\nMidlertidig adgangskode: ${tempPw.value.password}`;
     try { await navigator.clipboard.writeText(t); toast('Kopieret'); } catch { toast('Kunne ikke kopiere – skriv koden af', 'error'); }
 }
 // Rediger medlemskab (bestyrelse/kasserer): kun hos husstandens betaler; andre henvises dertil (?medlemskab=1 åbner det)

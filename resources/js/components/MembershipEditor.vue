@@ -47,11 +47,15 @@
                         <label class="field"><span>Navn</span><input v-model="n.name"></label>
                         <label class="field"><span>Fødselsdato</span><input v-model="n.birthdate" type="date"></label>
                     </div>
-                    <label class="field"><span>E-mail (kun hvis vedkommende skal have eget login)</span><input v-model="n.email" type="email"></label>
+                    <div class="grid c2">
+                        <label class="field"><span>Egen e-mail (valgfri)</span><input v-model="n.email" type="email" autocapitalize="off"></label>
+                        <label class="field"><span>Eget telefonnummer (valgfrit)</span><input v-model="n.phone" type="tel"></label>
+                    </div>
                     <div class="row between"><label class="check small"><input type="checkbox" v-model="n.consent"> Forælder/værge har givet samtykke</label>
                         <button type="button" class="btn small ghost danger" @click="add.new_members.splice(i, 1)">Fjern</button></div>
                 </div>
-                <button type="button" class="btn small" @click="add.new_members.push({ name: '', birthdate: '', email: '', consent: false })">+ Ny person</button>
+                <p class="small muted" style="margin:0 0 8px">Egen e-mail eller eget telefonnummer (ikke forælderens) skal kun gives, hvis personen selv skal kunne logge ind i appen og få notifikationer.</p>
+                <button type="button" class="btn small" @click="add.new_members.push({ name: '', birthdate: '', email: '', phone: '', consent: false })">+ Ny person</button>
             </div>
             <div v-if="addBusy" class="spinner"></div>
             <div v-else-if="addOpts" class="field"><span>Medlemskab</span>
@@ -101,7 +105,7 @@ async function createNow() {
 // Tilføj personer
 const adding = ref(false); const addOpts = ref(null); const addBusy = ref(false);
 const add = reactive({ member_ids: [], new_members: [], choice: null });
-function startAdd() { Object.assign(add, { member_ids: [], new_members: o.value.without.length ? [] : [{ name: '', birthdate: '', email: '', consent: false }], choice: null }); addOpts.value = null; adding.value = true; }
+function startAdd() { Object.assign(add, { member_ids: [], new_members: o.value.without.length ? [] : [{ name: '', birthdate: '', email: '', phone: '', consent: false }], choice: null }); addOpts.value = null; adding.value = true; }
 const addKey = computed(() => JSON.stringify([add.member_ids, add.new_members.map(n => n.birthdate)]));
 let t = null;
 watch(addKey, () => {

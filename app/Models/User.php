@@ -32,6 +32,16 @@ class User extends Authenticatable
         'guest' => 'Gæst (ikke medlem)',
     ];
 
+    /** Telefonnummeret som login (ens form). Bruger et andet medlem det allerede, kan det ikke bruges til login her. */
+    protected static function booted(): void
+    {
+        static::saving(function (User $u) {
+            if ($u->exists && ! $u->isDirty('phone')) return;
+            $n = \App\Support\Phone::normalize($u->phone);
+            $u->login_phone = $n && ! \App\Support\Phone::takenBy($n, $u->id) ? $n : null;
+        });
+    }
+
     protected function casts(): array
     {
         return [

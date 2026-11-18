@@ -28,12 +28,19 @@
 
                 <template v-if="flere === true">
                     <h3 style="margin-top:16px">Hvem skal ellers med?</h3>
-                    <div v-for="(m, i) in others" :key="i" class="grid other">
-                        <label class="field"><span>Navn</span><input v-model="m.name" :name="`other-name-${i}`" autocomplete="off" data-1p-ignore data-lpignore="true" required></label>
-                        <label class="field"><span>Fødselsdato</span><input v-model="m.birthdate" :name="`other-bday-${i}`" type="date" autocomplete="off" required></label>
-                        <button v-if="others.length > 1" type="button" class="btn small ghost danger" style="align-self:end" @click="others.splice(i, 1)">Fjern</button>
+                    <p class="small muted" style="margin:0 0 8px">Du klarer tilmelding og betaling for dem. Skal en af dem selv kunne logge ind i appen og få notifikationer, skal vedkommende have sin egen e-mail eller sit eget telefonnummer – ikke dit. Det kan også gives senere under Profil → Familie.</p>
+                    <div v-for="(m, i) in others" :key="i" class="otherp">
+                        <div class="grid other">
+                            <label class="field"><span>Navn</span><input v-model="m.name" :name="`other-name-${i}`" autocomplete="off" data-1p-ignore data-lpignore="true" required></label>
+                            <label class="field"><span>Fødselsdato</span><input v-model="m.birthdate" :name="`other-bday-${i}`" type="date" autocomplete="off" required></label>
+                            <button v-if="others.length > 1" type="button" class="btn small ghost danger" style="align-self:end" @click="others.splice(i, 1)">Fjern</button>
+                        </div>
+                        <div class="grid c2 other-login">
+                            <label class="field"><span>Egen e-mail (valgfri)</span><input v-model="m.email" :name="`other-email-${i}`" type="email" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true"></label>
+                            <label class="field"><span>Eget telefonnummer (valgfrit)</span><input v-model="m.phone" :name="`other-phone-${i}`" type="tel" autocomplete="off" data-1p-ignore data-lpignore="true"></label>
+                        </div>
                     </div>
-                    <button type="button" class="btn small" @click="others.push({ name: '', birthdate: '' })">+ Tilføj person</button>
+                    <button type="button" class="btn small" @click="others.push({ name: '', birthdate: '', email: '', phone: '' })">+ Tilføj person</button>
                 </template>
 
                 <template v-if="flere !== null">
@@ -85,7 +92,7 @@ onMounted(async () => {
 const flere = ref(null); // null = ikke svaret endnu
 function setFlere(v) {
     flere.value = v; f.package_id = null;
-    others.value = v ? (others.value.length ? others.value : [{ name: '', birthdate: '' }]) : [];
+    others.value = v ? (others.value.length ? others.value : [{ name: '', birthdate: '', email: '', phone: '' }]) : [];
 }
 const othersReady = computed(() => others.value.length && others.value.every(m => m.name && m.birthdate));
 const pkg = computed(() => offer.value?.packages.find(p => p.id === f.package_id) || null);
@@ -103,7 +110,7 @@ const toPay = computed(() => price.value - credit.value);
 async function submit() {
     busy.value = true; error.value = '';
     try {
-        const r = await api('register', { method: 'POST', body: { ...f, new_members: others.value } }); setSession(r.token, r.user);
+        const r = await api('register', { method: 'POST', body: { ...f, new_members: others.value.map(m => ({ ...m, email: m.email?.trim() || null, phone: m.phone?.trim() || null })) } }); setSession(r.token, r.user);
         track('indmeldelse', 'ok', { betaling: !r.paid, personer: 1 + others.value.length });
         if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push(til || '/aktiviteter'); }
         else router.push({ path: `/betal/${r.invoice_id}`, query: til ? { til } : {} });
@@ -115,6 +122,8 @@ async function submit() {
 /* Postnr. og By på samme linje på mobil */
 @media (max-width: 699.98px) { .addr { grid-template-columns: 1fr 2fr; } }
 .other { grid-template-columns: 1fr 150px auto; gap: 8px; margin-bottom: 6px; }
+.otherp { border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 10px; }
+.other-login { gap: 8px; }
 .yn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .yn .btn { min-height: 48px; }
 .yn .btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }

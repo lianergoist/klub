@@ -48,7 +48,7 @@
         <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="saveProfile">
             <label class="field"><span>Navn</span><input v-model="f.name" required autocomplete="name"></label>
             <div class="grid c2">
-                <label class="field"><span>E-mail</span><input v-model="f.email" type="email" required autocomplete="email" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><span>E-mail</span><input v-model="f.email" type="email" :required="!f.phone" autocomplete="email" autocapitalize="off" spellcheck="false"></label>
                 <label class="field"><span>Telefon</span><input v-model="f.phone" type="tel" inputmode="tel" autocomplete="tel"></label>
             </div>
             <label class="field"><span>Adresse</span><input v-model="f.address" autocomplete="address-line1"></label>
@@ -66,7 +66,7 @@
         </form>
         <form v-if="cur === 'oplysninger'" class="card stack" @submit.prevent="changePassword">
             <div class="row between"><h3 style="margin:0">Skift adgangskode</h3><HelpButton topic="adgangskode" /></div>
-            <input type="email" :value="f.email" autocomplete="username" hidden readonly>
+            <input type="email" :value="f.email || f.phone" autocomplete="username" hidden readonly>
             <label class="field"><span>Nuværende adgangskode</span><input v-model="pw.current_password" type="password" autocomplete="current-password" required></label>
             <div class="grid c2">
                 <label class="field"><span>Ny adgangskode</span><input v-model="pw.password" type="password" autocomplete="new-password" minlength="8" required></label>
@@ -85,7 +85,10 @@
                         <li v-for="m in shop.household" :key="m.id" class="row between" style="flex-wrap:nowrap">
                             <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år</span>
                                 <span class="small muted" style="display:block">{{ m.membership ? m.membership.name + (m.membership.valid_to ? ' · til ' + dato(m.membership.valid_to) : '') : m.upcoming ? m.upcoming.name + ' · fra ' + dato(m.upcoming.valid_from) : 'Intet gyldigt medlemskab' }}<template v-if="shop.next_plan?.mode === 'next_renewal' && shop.next_plan.people.some(x => x.id === m.id && !x.renews)"> · ikke med fra {{ dato(shop.next_plan.next_from) }}</template></span></span>
+                            <span class="row" style="gap:6px;flex-wrap:nowrap">
+                            <button v-if="m.id !== p.profile.id && shop.can_add_people && !['resigned', 'guest'].includes(m.status)" class="btn small ghost" @click="openLogin(m)">{{ m.can_login ? 'Login' : 'Eget login' }}</button>
                             <span :class="['tag', m.membership ? 'ok' : m.upcoming ? 'info' : m.status === 'pending' ? 'warn' : 'bad']">{{ m.membership ? 'Medlem' : m.upcoming ? 'Medlem fra ' + dato(m.upcoming.valid_from) : m.status === 'pending' ? 'Afventer betaling' : 'Ikke medlem' }}</span>
+                            </span>
                         </li>
                     </ul>
                 </div>
@@ -132,11 +135,15 @@
                                 <label class="field"><span>Navn</span><input v-model="n.name" required></label>
                                 <label class="field"><span>Fødselsdato</span><input v-model="n.birthdate" type="date" required></label>
                             </div>
-                            <label class="field"><span>E-mail (kun hvis vedkommende skal have eget login)</span><input v-model="n.email" type="email"></label>
+                            <div class="grid c2">
+                                <label class="field"><span>Egen e-mail (valgfri)</span><input v-model="n.email" type="email" autocapitalize="off"></label>
+                                <label class="field"><span>Eget telefonnummer (valgfrit)</span><input v-model="n.phone" type="tel"></label>
+                            </div>
                             <div class="row between"><label class="check small"><input type="checkbox" v-model="n.consent" required> Jeg giver som forælder/værge samtykke til, at klubben behandler oplysningerne.</label>
                                 <button type="button" class="btn small ghost danger" @click="ms.new_members.splice(i, 1)">Fjern</button></div>
                         </div>
-                        <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', consent: false }); track('familie', 'tilfoej_person')">+ Tilføj ny person</button>
+                        <p class="small muted" style="margin:0 0 8px">Skal personen selv kunne logge ind i appen og få notifikationer, skal vedkommende have sin egen e-mail eller sit eget telefonnummer – ikke dit. Ellers klarer du alt for personen.</p>
+                        <button type="button" class="btn small" @click="ms.new_members.push({ name: '', birthdate: '', email: '', phone: '', consent: false }); track('familie', 'tilfoej_person')">+ Tilføj ny person</button>
                     </div>
                     <!-- Udvid husstandens medlemskab: alle på det nuværende + de nye, med det samme (betal differencen) eller fra næste sæson -->
                     <div v-if="msPeople.length && chg && (chg.now.length || chg.next.length)">
@@ -248,6 +255,26 @@
             <div v-if="!isMobile" class="card"><h2>Udseende</h2><ThemeSwitch /></div>
         </div>
 
+        <!-- Eget login til en person i husstanden (betaleren): egen e-mail/telefon + midlertidig adgangskode -->
+        <Modal v-if="lg" :title="`Login – ${lg.name}`" @close="lg = null">
+            <div v-if="!lg.code" class="stack">
+                <p class="small muted" style="margin:0">Skal {{ lg.first }} selv kunne logge ind i appen og få notifikationer, skal {{ lg.first }} have sin egen e-mail eller sit eget telefonnummer – ikke dit. Ellers klarer du tilmelding og betaling for {{ lg.first }}.</p>
+                <label class="field"><span>Egen e-mail</span><input v-model="lg.email" type="email" autocapitalize="off" spellcheck="false"></label>
+                <label class="field"><span>Eget telefonnummer</span><input v-model="lg.phone" type="tel"></label>
+                <button class="btn block" :disabled="lg.busy" @click="saveLogin">Gem</button>
+                <template v-if="lg.can_login">
+                    <p class="small muted" style="margin:8px 0 0">{{ lg.has_password ? `${lg.first} har en adgangskode. Har ${lg.first} glemt den, kan du lave en ny midlertidig her.` : `Lav en midlertidig adgangskode, som ${lg.first} logger ind med første gang og derefter skifter.` }}</p>
+                    <button class="btn primary block" :disabled="lg.busy" @click="makeLoginCode">Lav midlertidig adgangskode</button>
+                </template>
+            </div>
+            <div v-else class="stack">
+                <p style="margin:0">{{ lg.first }} logger ind med</p>
+                <p style="margin:0"><strong>{{ lg.code.login }}</strong></p>
+                <p style="margin:0">Adgangskode: <strong style="font-family:ui-monospace,monospace;font-size:1.25em;letter-spacing:.04em">{{ lg.code.password }}</strong></p>
+                <p class="small muted" style="margin:0">Koden vises kun denne ene gang. {{ lg.first }} skal vælge sin egen adgangskode ved første login.</p>
+                <button class="btn block" @click="lg = null">Luk</button>
+            </div>
+        </Modal>
         <Modal v-if="buy" :title="buy.name" @close="buy = null">
             <div class="stack">
                 <div>
@@ -313,6 +340,21 @@ const ms = reactive({ member_ids: [], new_members: [], package_id: null, change:
 // Skift af husstandens medlemskab: muligheder hentes fra serveren, når personerne ændres (kræver fødselsdatoer)
 const chg = ref(null);
 const nextEdit = ref(false);
+// Eget login til en person i husstanden
+const lg = ref(null);
+function openLogin(m) { lg.value = { id: m.id, name: m.name, first: m.name.split(' ')[0], email: m.email || '', phone: m.phone || '', can_login: m.can_login, has_password: m.has_password, busy: false, code: null }; }
+async function saveLogin() {
+    lg.value.busy = true;
+    try {
+        const r = await api(`profile/household/${lg.value.id}/login`, { method: 'PUT', body: { email: lg.value.email.trim() || null, phone: lg.value.phone.trim() || null } });
+        lg.value.can_login = r.can_login; toast('Gemt'); loadShop();
+    } catch (e) { toast(e.message, 'error'); } finally { lg.value.busy = false; }
+}
+async function makeLoginCode() {
+    lg.value.busy = true;
+    try { lg.value.code = await api(`profile/household/${lg.value.id}/temp-password`, { method: 'POST' }); loadShop(); }
+    catch (e) { toast(e.message, 'error'); } finally { if (lg.value) lg.value.busy = false; }
+}
 const nextText = computed(() => {
     const n = shop.value?.next_plan; if (!n) return '';
     const on = n.people.filter(p => p.renews); const stop = n.people.filter(p => !p.renews).map(p => p.name.split(' ')[0]);

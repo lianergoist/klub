@@ -132,7 +132,7 @@ class MemberController extends Controller
         abort_unless($r->user()->may('members.edit'), 403);
         $d = $r->validate([
             'name' => 'required|string|max:120', 'email' => 'nullable|email|unique:users,email,'.$member->id,
-            'phone' => 'nullable|string', 'address' => 'nullable|string', 'postal_code' => 'nullable|string', 'city' => 'nullable|string',
+            'phone' => ['nullable', 'string', 'max:30', \App\Support\Phone::rule($member->id)], 'address' => 'nullable|string', 'postal_code' => 'nullable|string', 'city' => 'nullable|string',
             'birthdate' => 'nullable|date', 'status' => 'required|in:pending,active,passive,resigned',
             'emergency_name' => 'nullable|string', 'emergency_phone' => 'nullable|string',
         ]);
@@ -150,19 +150,16 @@ class MemberController extends Controller
     public function tempPassword(Request $r, User $member)
     {
         abort_unless($r->user()->may('members.password'), 403, 'Du har ikke adgang til at lave adgangskoder.');
-        abort_unless($member->email, 422, 'Giv først medlemmet en e-mail med "Ret oplysninger" – den bruges til at logge ind.');
+        $login = \App\Support\TempPassword::loginOf($member);
+        abort_unless($login, 422, 'Giv først medlemmet sin egen e-mail eller sit eget telefonnummer med "Ret oplysninger" – det bruges til at logge ind.');
         abort_if(AuthController::isDemoAccount($member), 403, 'Demokontoens adgangskode kan ikke ændres.');
         abort_if(in_array($member->status, ['resigned', 'guest']), 422, 'Medlemmet er ikke aktivt.');
         abort_if($member->may('roles.manage') && ! $r->user()->may('roles.manage'), 403, 'Kun administrator kan lave en adgangskode til en administrator.');
 
-        // Uden tegn, der let forveksles (0/O, 1/l/I), i grupper på 4, så den er nem at læse op
-        $chars = 'abcdefghjkmnpqrstuvwxyz23456789';
-        $code = implode('-', array_map(fn () => implode('', array_map(fn () => $chars[random_int(0, strlen($chars) - 1)], range(1, 4))), range(1, 3)));
-        $member->forceFill(['password' => \Illuminate\Support\Facades\Hash::make($code), 'must_change_password' => true])->save();
-        $member->tokens()->delete(); // log ud overalt
+        $code = \App\Support\TempPassword::make($member);
         Audit::log('member.temp_password', $member, ['by' => $r->user()->name]);
 
-        return ['password' => $code, 'email' => $member->email];
+        return ['password' => $code, 'login' => $login];
     }
 
     public function addRole(Request $r, User $member)

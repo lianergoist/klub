@@ -178,10 +178,10 @@ class Packages
                 $payer->update(['household_id' => Household::create(['name' => 'Husstand '.$payer->name, 'payer_id' => $payer->id])->id]);
             }
             $added[] = $u = User::create([
-                'name' => $p['name'], 'birthdate' => $p['birthdate'], 'email' => $p['email'] ?? null,
+                'name' => $p['name'], 'birthdate' => $p['birthdate'], 'email' => $p['email'] ?? null, 'phone' => $p['phone'] ?? null,
                 'emergency_name' => $p['emergency_name'] ?? $payer->name, 'emergency_phone' => $p['emergency_phone'] ?? $payer->phone,
                 'household_id' => $payer->household_id, 'status' => $package->gives_access ? 'active' : 'passive',
-                'joined_on' => now(), 'consent_at' => $p['consent_at'] ?? now(), 'notify_email' => false,
+                'joined_on' => now(), 'consent_at' => $p['consent_at'] ?? now(), 'notify_email' => ! empty($p['email']),
                 'address' => $payer->address, 'postal_code' => $payer->postal_code, 'city' => $payer->city,
             ]);
             $purchase->users()->attach($u->id);

@@ -66,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile/categories', [ProfileController::class, 'categories']);
     Route::put('profile/categories', [ProfileController::class, 'saveCategories']);
     Route::get('profile/invoices', [ProfileController::class, 'invoices']);
+    Route::put('profile/household/{member}/login', [ProfileController::class, 'householdLogin']);
+    Route::post('profile/household/{member}/temp-password', [ProfileController::class, 'householdPassword'])->middleware('throttle:10,1');
     Route::get('profile/export', [ProfileController::class, 'export']);
     Route::get('settings/design', [\App\Http\Controllers\Api\DesignController::class, 'admin']);
     Route::post('settings/design/themes', [\App\Http\Controllers\Api\DesignController::class, 'store']);
