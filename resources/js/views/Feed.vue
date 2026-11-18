@@ -216,7 +216,9 @@ function removeImage(i) { URL.revokeObjectURL(previews.value[i]); files.value.sp
 
 async function post() {
     if ((files.value.length || videos.value.length) && !consent.value) return toast(`Bekræft, at personerne på ${mediaWord.value} er okay med at blive vist.`, 'error');
-    busy.value = true; progress.value = videos.value.length ? 0 : null;
+    // Billeder og video: statuslinje med "Uploader n %" (det kan tage lidt tid på mobilnet)
+    const hasMedia = files.value.length > 0 || videos.value.length > 0;
+    busy.value = true; progress.value = hasMedia ? 0 : null;
     const fd = new FormData();
     fd.append('body', body.value);
     files.value.forEach(f => fd.append('images[]', f));
@@ -225,7 +227,7 @@ async function post() {
     picked.value.forEach(id => fd.append('categories[]', id));
     const nVid = videos.value.length; const hadVideo = nVid > 0;
     try {
-        const res = hadVideo ? await upload('feed', fd, (p) => (progress.value = p)) : await api('feed', { method: 'POST', form: fd });
+        const res = hasMedia ? await upload('feed', fd, (p) => (progress.value = p)) : await api('feed', { method: 'POST', form: fd });
         picked.value = []; invite.value = false;
         body.value = ''; previews.value.forEach(URL.revokeObjectURL); files.value = []; previews.value = []; clearVideos(); consent.value = false; open.value = false;
         if (filter.value !== 'all') filter.value = 'all';
