@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
         // --- Demo-brugere ---
         $mk = function (array $a, string $type, ?string $hh = null, ?User $payer = null) use ($types, $typeMap) {
             $u = User::create($a + [
-                'password' => isset($a['email']) ? $this->pw : null, 'status' => $a['status'] ?? 'active',
+                'password' => isset($a['email']) || isset($a['phone']) ? $this->pw : null, // eget login: e-mail eller telefon 'status' => $a['status'] ?? 'active',
                 'joined_on' => $a['joined_on'] ?? $this->now->copy()->subYears(mt_rand(1, 8))->subDays(mt_rand(0, 300)),
                 'membership_type_id' => $types[$typeMap[$type] ?? $type]->id, 'consent_at' => $this->now->copy()->subYear(),
                 'city' => $a['city'] ?? 'Aarhus', 'postal_code' => $a['postal_code'] ?? '8000',
@@ -79,7 +79,8 @@ class DatabaseSeeder extends Seeder
 
         $sofie = $mk(['name' => 'Sofie Mikkelsen', 'email' => 'medlem@demo.dk', 'phone' => '20 45 67 89', 'address' => 'Havnevej 12', 'birthdate' => '1984-05-14', 'emergency_name' => 'Peter Mikkelsen', 'emergency_phone' => '30 12 34 56'], 'family', 'Familien Mikkelsen');
         $emil = $mk(['name' => 'Emil Mikkelsen', 'birthdate' => $this->now->copy()->subYears(11)->subMonths(3)->toDateString(), 'address' => 'Havnevej 12', 'emergency_name' => 'Sofie Mikkelsen', 'emergency_phone' => '20 45 67 89', 'notify_email' => false], 'family', null, $sofie);
-        $freja = $mk(['name' => 'Freja Mikkelsen', 'birthdate' => $this->now->copy()->subYears(14)->subMonths(7)->toDateString(), 'address' => 'Havnevej 12', 'emergency_name' => 'Sofie Mikkelsen', 'emergency_phone' => '20 45 67 89', 'notify_email' => false], 'family', null, $sofie);
+        // Freja har sit eget login (egen e-mail og eget telefonnummer); Emil har intet – Sofie klarer alt for ham
+        $freja = $mk(['name' => 'Freja Mikkelsen', 'email' => 'barn@demo.dk', 'phone' => '71 45 67 89', 'birthdate' => $this->now->copy()->subYears(14)->subMonths(7)->toDateString(), 'address' => 'Havnevej 12', 'emergency_name' => 'Sofie Mikkelsen', 'emergency_phone' => '20 45 67 89', 'notify_email' => true], 'family', null, $sofie);
 
         $lars = $mk(['name' => 'Lars Holm', 'email' => 'traener@demo.dk', 'phone' => '22 33 44 55', 'address' => 'Strandvejen 88', 'birthdate' => '1979-09-02'], 'trainer');
         $mette = $mk(['name' => 'Mette Kjær', 'email' => 'formand@demo.dk', 'phone' => '40 11 22 33', 'address' => 'Kystvej 3', 'birthdate' => '1975-02-21'], 'adult');
@@ -128,7 +129,9 @@ class DatabaseSeeder extends Seeder
         }
         foreach (range(1, 3) as $k) { // unge medlemmer med eget kontingent
             $p = $members->where('status', 'active')->whereNotNull('email')->values()[$k + 10];
-            $members->push($mk(['name' => $kidNames[$k + 5].' '.explode(' ', $p->name)[1], 'birthdate' => $this->now->copy()->subYears(15 + $k)->toDateString(), 'notify_email' => false, 'emergency_name' => $p->name, 'emergency_phone' => $p->phone], 'youth', null, $p));
+            // Eget login: den ene med egen e-mail, den anden kun med telefonnummer
+            $login = match ($k) { 2 => ['email' => 'ung@demo.dk', 'notify_email' => true], 3 => ['phone' => '71 23 45 67', 'notify_email' => false], default => ['notify_email' => false] };
+            $members->push($mk($login + ['name' => $kidNames[$k + 5].' '.explode(' ', $p->name)[1], 'birthdate' => $this->now->copy()->subYears(15 + $k)->toDateString(), 'emergency_name' => $p->name, 'emergency_phone' => $p->phone], 'youth', null, $p));
         }
         $birgitte->refresh();
         $members->push($birgitte);

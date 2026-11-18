@@ -80,7 +80,23 @@
         <div v-if="cur === 'familie'">
             <div v-if="!shop" class="spinner"></div>
             <template v-else>
-                <div class="card" style="padding:4px 16px">
+                <!-- Ikke betaler (fx et barn): hvem betaler, og hvem er ellers i husstanden -->
+                <template v-if="shop.payer">
+                    <div class="card">
+                        <p style="margin:0 0 6px"><strong>{{ shop.payer.name }}</strong> er betaler for jeres husstand.</p>
+                        <p class="small muted" style="margin:0">{{ shop.payer.name.split(' ')[0] }} betaler kontingent og regninger, kan tilmelde jer alle til aktiviteter og ændre medlemskabet. Skal noget ændres, så kontakt {{ shop.payer.name.split(' ')[0] }}<template v-if="shop.payer.phone || shop.payer.email"> (<a v-if="shop.payer.phone" :href="`tel:${shop.payer.phone.replace(/\s/g, '')}`">{{ shop.payer.phone }}</a><template v-if="shop.payer.phone && shop.payer.email">, </template><a v-if="shop.payer.email" :href="`mailto:${shop.payer.email}`">{{ shop.payer.email }}</a>)</template>.</p>
+                    </div>
+                    <div class="card" style="padding:4px 16px">
+                        <ul class="list">
+                            <li v-for="m in shop.family" :key="m.id" class="row between" style="flex-wrap:nowrap">
+                                <span><strong>{{ m.name }}</strong><template v-if="m.id === p.profile.id"> (dig)</template> <span class="muted small">{{ m.age }} år</span>
+                                    <span class="small muted" style="display:block">{{ m.membership || 'Intet gyldigt medlemskab' }}</span></span>
+                                <span v-if="m.is_payer" class="tag info">Betaler</span>
+                            </li>
+                        </ul>
+                    </div>
+                </template>
+                <div v-else class="card" style="padding:4px 16px">
                     <ul class="list">
                         <li v-for="m in shop.household" :key="m.id" class="row between" style="flex-wrap:nowrap">
                             <span><strong>{{ m.name }}</strong> <span class="muted small">{{ m.age }} år</span>
@@ -92,7 +108,7 @@
                         </li>
                     </ul>
                 </div>
-                <p class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
+                <p v-if="!shop.payer" class="small muted">Som betaler for husstanden kan du tilmelde alle i familien til aktiviteter og betale deres regninger.</p>
 
                 <!-- Næste sæson: betaleren kan fjerne personer fra husstandens medlemskab (penge flyttes ikke) -->
                 <div v-if="shop.next_plan && shop.next_plan.mode !== 'not_renewable'" class="card stack">
@@ -114,14 +130,14 @@
                             <div><strong>{{ x.name }}</strong> · {{ x.amount_fmt }}</div>
                             <div class="small muted">{{ x.people.join(', ') }}. Gælder fra betalingen<template v-if="x.valid_to"> til {{ dato(x.valid_to) }}</template>. Nye personer tilføjes, når der er betalt.</div>
                             <div class="row" style="margin-top:8px">
-                                <RouterLink :to="`/betal/${x.invoice_id}`" class="btn small primary">Betal nu</RouterLink>
+                                <RouterLink v-if="!shop.payer" :to="`/betal/${x.invoice_id}`" class="btn small primary">Betal nu</RouterLink><span v-else class="small muted">{{ shop.payer.name.split(' ')[0] }} betaler.</span>
                                 <button v-if="x.can_cancel && store.user.status !== 'pending'" class="btn small" @click="cancelPurchase(x)">Fortryd</button>
                             </div>
                         </li>
                     </ul>
                 </div>
 
-                <form v-if="store.user.status !== 'pending' && (shop.can_add_people || withoutMembership.length)" class="card stack" @submit.prevent="buyMembership">
+                <form v-if="store.user.status !== 'pending' && !shop.payer && (shop.can_add_people || withoutMembership.length)" class="card stack" @submit.prevent="buyMembership">
                     <h2>Køb medlemskab</h2>
                     <p class="small muted" style="margin:0">Vælg hvem medlemskabet skal dække. Skal der tilføjes et barn eller en partner til husstanden, gør du det her. Har I allerede et medlemskab, kan I udvide det, så det dækker jer alle – med det samme eller fra næste sæson – eller købe et eget medlemskab til den nye person.</p>
                     <div v-if="withoutMembership.length">

@@ -97,6 +97,12 @@ class PackageController extends Controller
             'singles' => self::singles(),
             'products' => $u->status === 'pending' ? [] : self::offers('product'),
             'can_add_people' => ! $u->household_id || $u->household?->payer_id === $u->id,
+            // Personer i en husstand, der ikke selv betaler: hvem betaler, og hvem er ellers med
+            'payer' => ($pay = $u->payer())->id === $u->id ? null : ['name' => $pay->name, 'email' => $pay->email, 'phone' => $pay->phone],
+            'family' => $u->payer()->id === $u->id ? [] : User::where('household_id', $u->household_id)->whereNotIn('status', ['resigned', 'guest'])
+                ->orderByRaw('id = ? desc', [$u->household->payer_id])->orderBy('birthdate')->get()
+                ->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'age' => $m->age(), 'is_payer' => $m->id === $u->household->payer_id,
+                    'membership' => $m->currentMembership()?->package->name])->values(),
             'next_plan' => (! $u->household_id || $u->household?->payer_id === $u->id) && (($b = MembershipChange::bases($u))[0] || $b[1]) ? MembershipChange::nextPlan(...$b) : null,
             'household' => $household->map(fn ($m) => [
                 'id' => $m->id, 'name' => $m->name, 'birthdate' => $m->birthdate?->toDateString(), 'age' => $m->age(), 'status' => $m->status,

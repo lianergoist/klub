@@ -16,7 +16,7 @@ Derfor kan en native app eller en anden frontend genbruge API'et uden ændringer
 
 ## Demo
 
-Kører i demo-tilstand (`APP_DEMO=true` i `.env`): login-siden **i appen** viser hurtig-login for roller (webudgaven er offentlig, så der er hurtig-login slået fra – API'et svarer kun, når Origin er appens). Alle demo-brugere har adgangskoden `demo1234`.
+Kører i demo-tilstand (`APP_DEMO=true` i `.env`): login-siden **i appen** viser hurtig-login for roller (webudgaven er offentlig, så der er hurtig-login slået fra – API'et svarer kun, når Origin er appens). Alle demo-brugere har adgangskoden `demo1234`. Børn med eget login: Freja Mikkelsen (14 år, `barn@demo.dk` eller telefon 71 45 67 89), Agnes Christensen (`ung@demo.dk`) og Malthe Jensen (kun telefon 71 23 45 67). De øvrige børn har intet login – forælderen klarer alt.
 
 Nulstil demodata:
 

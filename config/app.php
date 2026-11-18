@@ -23,6 +23,7 @@ return [
     'demo_accounts' => [
         'medlem@demo.dk' => 'Medlem (forælder med to børn)',
         'enkelt@demo.dk' => 'Medlem (alene – prøv at tilføje familie)',
+        'barn@demo.dk' => 'Barn (14 år, eget login – mor betaler)',
         'traener@demo.dk' => 'Træner',
         'formand@demo.dk' => 'Bestyrelse (formand)',
         'kasserer@demo.dk' => 'Kasserer',
