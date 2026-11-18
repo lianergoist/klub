@@ -107,11 +107,13 @@ async function saveFilter() {
 }
 
 onMounted(async () => {
-    const [c, p] = await Promise.all([api('profile/categories'), api('profile')]);
+    // Alt hentes samtidig: aktiviteterne med det gemte filter (serveren kender det), så der ikke ventes på filteret først
+    loading.value = true; sessionStorage.setItem('actTab', tab.value);
+    const [c, p, l] = await Promise.all([api('profile/categories'), api('profile'), api(`activities?tab=${tab.value}&categories=saved`)]);
     cats.value = c;
     signupInvoice.value = p.signup_invoice_id;
     household.value = Object.fromEntries(p.household.map(m => [m.id, m.name.split(' ')[0]]));
-    await load();
+    list.value = l; loading.value = false;
 });
 watch(tab, load);
 watch(() => cats.value.map(c => c.show).join(), (n, o) => { if (o !== undefined && o !== '') load(); });

@@ -34,24 +34,42 @@ class MemberController extends Controller
             $q->whereHas('roleAssignments', fn ($q) => $q->where('role', $role)->where('starts_on', '<=', now())->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '>=', now())));
         }
         if ($r->query('unpaid')) {
-            $q->whereIn('status', ['active', 'passive']);
-            $paidIds = User::all()->filter(fn ($u) => $u->hasValidMembership())->pluck('id');
-            $q->whereNotIn('id', $paidIds);
+            // Uden et betalt medlemskab, der gælder i dag (samme som User::hasValidMembership, men i én forespørgsel)
+            $q->whereIn('status', ['active', 'passive'])
+                ->whereDoesntHave('purchases', fn ($q) => $q->activeOn()->whereHas('package', fn ($q) => $q->where('kind', 'membership')));
         }
 
         return $q;
     }
 
+    /**
+     * Medlemskabet, der gælder i dag, for mange medlemmer på én gang (som User::currentMembership).
+     * @return \Illuminate\Support\Collection<int, \App\Models\Purchase>  user_id => køb
+     */
+    private static function currentMemberships($users)
+    {
+        $ids = $users->pluck('id');
+        $out = collect();
+        \App\Models\Purchase::activeOn()->with('package')->whereHas('package', fn ($q) => $q->where('kind', 'membership'))
+            ->whereHas('users', fn ($q) => $q->whereIn('users.id', $ids))->with(['users' => fn ($q) => $q->whereIn('users.id', $ids)->select('users.id')])
+            ->get()->sortByDesc(fn ($p) => $p->valid_to?->timestamp ?? -1)
+            ->each(fn ($p) => $p->users->each(fn ($u) => $out->has($u->id) || $out->put($u->id, $p)));
+
+        return $out;
+    }
+
     public function index(Request $r)
     {
         abort_unless($r->user()->may('members.view'), 403);
+        $users = $this->query($r)->get();
+        $ms = self::currentMemberships($users);
 
-        return $this->query($r)->get()->map(fn ($u) => [
+        return $users->map(fn ($u) => [
             'id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone,
             'age' => $u->age(), 'status' => $u->status, 'status_label' => User::STATUS_LABELS[$u->status],
-            'type' => $u->currentMembership()?->package->name, 'roles' => array_values(array_diff($u->roles(), ['member'])),
+            'type' => $ms->get($u->id)?->package->name, 'roles' => array_values(array_diff($u->roles(), ['member'])),
             'household' => $u->household?->name, 'is_payer' => $u->household?->payer_id === $u->id,
-            'paid' => $u->hasValidMembership(),
+            'paid' => $ms->has($u->id),
         ]);
     }
 
@@ -59,9 +77,11 @@ class MemberController extends Controller
     {
         abort_unless($r->user()->may('members.view'), 403);
         Audit::log('members.exported');
-        $rows = $this->query($r)->get()->map(fn ($u) => [
+        $users = $this->query($r)->get();
+        $ms = self::currentMemberships($users);
+        $rows = $users->map(fn ($u) => [
             $u->name, $u->email, $u->phone, $u->address, $u->postal_code, $u->city, $u->birthdate?->toDateString(),
-            User::STATUS_LABELS[$u->status], $u->currentMembership()?->package->name, $u->hasValidMembership() ? 'Betalt' : 'Ikke betalt',
+            User::STATUS_LABELS[$u->status], $ms->get($u->id)?->package->name, $ms->has($u->id) ? 'Betalt' : 'Ikke betalt',
             implode(', ', array_map(fn ($x) => User::ROLE_LABELS[$x], $u->roles())),
         ]);
 

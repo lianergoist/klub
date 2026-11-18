@@ -26,4 +26,9 @@
 
 <IfModule mod_headers.c>
     Header set X-Robots-Tag "noindex, nofollow"
+
+    # Byggede filer (Vite) har indholdet i filnavnet og ændrer sig aldrig: må caches i et år uden at spørge serveren igen
+    <If "%{REQUEST_URI} =~ m#^/build/assets/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
 </IfModule>

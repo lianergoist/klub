@@ -42,6 +42,14 @@ class ActivityController extends Controller
         if (! $u->may('activities.manage')) {
             $q->where('status', 'active');
         }
+        // "saved": medlemmets gemte filter (så appen kan hente aktiviteterne uden først at hente filteret)
+        if ($r->query('categories') === 'saved') {
+            // Som i appen: kun når nogle (men ikke alle) kategorier er valgt
+            $hidden = $u->categorySettings->filter(fn ($c) => ! $c->pivot->show)->pluck('id');
+            $all = \App\Models\Category::whereNull('archived_at')->pluck('id');
+            $shown = $all->diff($hidden);
+            $r->query->set('categories', $shown->isNotEmpty() && $shown->count() < $all->count() ? $shown->join(',') : null);
+        }
         if ($cats = $r->query('categories')) {
             $q->whereHas('categories', fn ($q) => $q->whereIn('categories.id', explode(',', $cats)));
         }

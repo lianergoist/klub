@@ -92,8 +92,8 @@ class FeedController extends Controller
             'created_at' => $p->created_at->toIso8601String(),
             'images' => $p->images->map(fn ($i) => [
                 'kind' => $i->kind, 'status' => $i->status,
-                'url' => $i->status === 'ready' ? URL::temporarySignedRoute('feed.image', now()->addHours(12), ['image' => $i->id]) : null,
-                'poster' => $i->poster_path ? URL::temporarySignedRoute('feed.image', now()->addHours(12), ['image' => $i->id, 'poster' => 1]) : null,
+                'url' => $i->status === 'ready' ? URL::temporarySignedRoute('feed.image', self::linkExpiry(), ['image' => $i->id]) : null,
+                'poster' => $i->poster_path ? URL::temporarySignedRoute('feed.image', self::linkExpiry(), ['image' => $i->id, 'poster' => 1]) : null,
                 'w' => $i->width, 'h' => $i->height, 'duration' => $i->duration,
             ]),
             'likes' => $p->likes_count,
@@ -278,6 +278,17 @@ class FeedController extends Controller
         Audit::log($hide ? 'comment.hidden' : 'comment.shown', $comment);
 
         return ['ok' => true];
+    }
+
+    /**
+     * Udløb for billedlinks: rundet til 6-timers blokke (gælder 12–18 timer). Så er linket det samme i op til 6 timer,
+     * og browseren kan genbruge billedet i stedet for at hente det igen, hver gang opslagene vises.
+     */
+    private static function linkExpiry(): \Illuminate\Support\Carbon
+    {
+        $block = 6 * 3600;
+
+        return \Illuminate\Support\Carbon::createFromTimestamp(intdiv(now()->timestamp, $block) * $block + 18 * 3600);
     }
 
     /** Billeder hentes via tidsbegrænset signeret link (img-tags kan ikke sende login-token). */
