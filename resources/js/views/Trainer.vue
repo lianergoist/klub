@@ -200,7 +200,7 @@ onMounted(() => { loadActs(); loadOpenCount(); });
 </script>
 
 <style scoped>
-.chip .count { margin-left: 6px; background: var(--warn); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .72rem; font-weight: 700; }
+.chip .count { margin-left: 6px; background: var(--warn); color: var(--status-ink); border-radius: 999px; padding: 0 7px; font-size: .72rem; font-weight: 700; }
 .cal-nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 10px; }
 .mnav { min-height: 48px; min-width: 76px; padding: 8px 12px; background: var(--accent-soft); border-color: transparent; color: var(--accent); font-size: 1rem; text-transform: capitalize; }
 .mnav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -225,7 +225,7 @@ onMounted(() => { loadActs(); loadOpenCount(); });
 .avail tr.today .cell.busy { background: var(--surface); }
 .cal-month { min-width: 8.5em; text-align: center; }
 .cell { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-size: .7rem; font-weight: 700; box-shadow: 0 0 0 2px var(--surface); }
-.miss { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 5px; border-radius: 999px; background: var(--bad); color: #fff; font-size: .62rem; font-weight: 700; vertical-align: 1px; box-shadow: 0 0 0 2px var(--surface); }
+.miss { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 5px; border-radius: 999px; background: var(--bad); color: var(--status-ink); font-size: .62rem; font-weight: 700; vertical-align: 1px; box-shadow: 0 0 0 2px var(--surface); }
 .avail .dcol.open { color: var(--bad); cursor: pointer; }
 .cell.off { background: var(--bad-soft); color: var(--bad); }
 .cell.busy { background: var(--accent-soft); color: var(--accent); }

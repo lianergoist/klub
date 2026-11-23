@@ -61,7 +61,7 @@ class Fcm
                     'token' => $token,
                     'notification' => ['title' => $title, 'body' => mb_strimwidth($body, 0, 240, '…')],
                     'data' => ['link' => (string) $link],
-                    'android' => ['priority' => 'high', 'notification' => ['channel_id' => 'klub', 'icon' => 'ic_stat_notify', 'color' => '#7e5a8c']],
+                    'android' => ['priority' => 'high', 'notification' => ['channel_id' => 'klub', 'icon' => 'ic_stat_notify', 'color' => '#7d598b']],
                     'apns' => ['payload' => ['aps' => ['sound' => 'default']]],
                 ]]);
             if ($r->ok()) {

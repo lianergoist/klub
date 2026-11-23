@@ -38,7 +38,7 @@ class CategoryController extends Controller
     public function store(Request $r)
     {
         abort_unless($r->user()->may('categories.manage'), 403);
-        $c = Category::create($r->validate(['name' => 'required|string|max:50|unique:categories,name', 'color' => 'nullable|string|size:7', 'mandatory' => 'boolean']));
+        $c = Category::create($r->validate(['name' => 'required|string|max:50|unique:categories,name', 'color' => ['nullable', 'in:'.implode(',', \App\Support\Design::PALETTE)], 'mandatory' => 'boolean']));
         Audit::log('category.created', $c);
 
         return self::row($c) + ['followers' => User::whereIn('status', ['active', 'passive'])->count(), 'activities' => 0];
@@ -49,7 +49,7 @@ class CategoryController extends Controller
         abort_unless($r->user()->may('categories.manage'), 403);
         $data = $r->validate([
             'name' => 'required|string|max:50|unique:categories,name,'.$category->id,
-            'color' => 'nullable|string|size:7',
+            'color' => ['nullable', 'in:'.implode(',', \App\Support\Design::PALETTE)],
             'mandatory' => 'boolean',
             'archived' => 'boolean',
         ]);

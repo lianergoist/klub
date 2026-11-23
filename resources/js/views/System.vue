@@ -42,10 +42,8 @@
         </div>
         <Modal v-if="cat" :title="cat.id ? cat.orig : 'Ny kategori'" @close="cat = null">
             <form class="stack" @submit.prevent="save(cat)">
-                <div class="row" style="flex-wrap:nowrap">
-                    <label class="field" style="flex:0 0 auto"><span>Farve</span><input type="color" v-model="cat.color" style="width:56px;padding:2px"></label>
-                    <label class="field" style="flex:1"><span>Navn</span><input v-model="cat.name" placeholder="Fx Surfski" required maxlength="50"></label>
-                </div>
+                <label class="field"><span>Navn</span><input v-model="cat.name" placeholder="Fx Surfski" required maxlength="50"></label>
+                <div><div class="group-label" style="margin-bottom:6px">Farve</div><PalettePick v-model="cat.color" label="Kategoriens farve" /></div>
                 <div>
                     <label class="check"><input type="checkbox" v-model="cat.mandatory"> Kan ikke fravælges</label>
                     <p class="small muted" style="margin:4px 0 0 30px">Alle aktive medlemmer får besked om nye aktiviteter i kategorien. Medlemmerne ser den nedtonet og kan ikke slå den fra. Brug det til fx generalforsamling og arbejdsdage.</p>
@@ -61,13 +59,14 @@
 import { ref, computed, onMounted } from 'vue';
 import Modal from '../components/Modal.vue';
 import Icon from '../components/Icon.vue';
+import PalettePick from '../components/PalettePick.vue';
 import { api, toast, store } from '../api';
 const can = computed(() => store.user.can);
 const cats = ref([]);
 const active = computed(() => cats.value.filter(c => !c.archived));
 // Rettes på en kopi, så listen først ændres, når der gemmes
 const cat = ref(null); const openCat = (c) => { cat.value = { ...c }; };
-const newCat = () => { cat.value = { name: '', color: '#0f7c8c', mandatory: false }; };
+const newCat = () => { cat.value = { name: '', color: '#2599be', mandatory: false }; };
 const archived = computed(() => cats.value.filter(c => c.archived));
 async function loadCats() { cats.value = (await api('categories')).map(c => ({ ...c, orig: c.name })); }
 onMounted(() => { if (can.value.categories_manage) loadCats(); });

@@ -1,59 +1,91 @@
-@import '@fontsource/poppins/400.css';
-@import '@fontsource/poppins/500.css';
-@import '@fontsource/poppins/600.css';
-@import '@fontsource/poppins/700.css';
+@import '@fontsource/jost/400.css';
+@import '@fontsource/jost/500.css';
+@import '@fontsource/jost/600.css';
+@import '@fontsource/jost/700.css';
 
+/* ===== Farver fra SurfHorsens' designguide (digital, 100 %) =====
+   Primære: gul #f8c760 · laks #f18975 · lys pink #f5b8d9 · pink #e668a3 · blå #2599be · lyseblå #78cadb · orange #ff9832 · lilla #7d598b · creme #fffef0
+   Sekundære: mint #acd3d2 · petrol #64a3a2 · grå #575756
+   Alle temaer bruger kun disse farver. Synlige flader (menu, knapper, kort, overskrifter) er rene paletfarver; baggrunde er lyse toninger
+   (35 % farve på creme), og kanter, dæmpet tekst og statusfarver er toninger af paletfarverne, så tekst kan læses (WCAG AA).
+   Paletten har hverken hvid eller sort: tekst er grå eller creme. Skrift: Futura, ellers Jost (fri, tegnet efter Futura), ellers Arial.
+   Lomon Milk (statements) må kun bruges af designstudiet og indgår ikke.
+   Samme beregning som egne temaer (derive i resources/js/design.js). */
 :root {
     color-scheme: light;
-    --bg: #f4f6f5;
-    --surface: #ffffff;
-    --surface-2: #eef2f1;
-    --line: #dde3e1;
-    --ink: #10201f;
-    --ink-2: #4a5a58;
-    --ink-3: #74827f;
-    --brand: #0c4a5e;
-    --brand-ink: #ffffff;
-    --accent: #0f7c8c;
-    --accent-soft: #e0f1f2;
-    --sand: #f3ead8;
-    --ok: #157f3b;  --ok-soft: #e3f4e8;
-    --warn: #9a5b00; --warn-soft: #fdf1dc;
-    --bad: #b42318;  --bad-soft: #fde8e6;
-    --series-1: #2a78d6;
-    --series-2: #eb6834;
-    --mp: #5a78ff;
+    --bg: #fce6e8;
+    --surface: #fffef0;
+    --surface-2: #fef2ec;
+    --line: #e8d5d6;
+    --ink: #575756;
+    --ink-2: #696967;
+    --ink-3: #696967;
+    --heading: #7d598b;
+    --brand: #7d598b;
+    --brand-ink: #fffef0;
+    --accent: #7d598b;
+    --btn-ink: #fffef0;
+    --accent-soft: #ede7e2;
+    --sand: #ffe8c6;
+    --orange: #ff9832;
+    --pink: #e668a3;
+    --teal: #64a3a2;
+    --ok: #5a6b6a;   --ok-soft: #deede4;
+    --warn: #79644f; --warn-soft: #fce8b6;
+    --bad: #825c6d;  --bad-soft: #fbe2e7;
+    --status-ink: #fffef0;
+    --series-1: #2599be;
+    --series-2: #e668a3;
+    --mp: #5a78ff; /* MobilePays egen farve (deres knap), ikke klubbens */
+    /* Menuen i venstre side (pc): mørk menu med creme tekst */
+    --nav-ink: #fffef0; --nav-ink-2: rgba(255,254,240,.9); --nav-hover: rgba(255,254,240,.08); --nav-on: rgba(255,254,240,.16); --nav-line: rgba(255,254,240,.16);
     --radius: 14px;
-    --shadow: 0 1px 2px rgba(16,32,31,.06), 0 4px 16px rgba(16,32,31,.05);
-    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --shadow: 0 1px 2px rgba(87,87,86,.07), 0 4px 16px rgba(87,87,86,.06);
+    --font: Futura, "Futura PT", "Jost", Arial, sans-serif;
 }
-/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: Automatisk = SurfHorsens, mørk udgave (html[data-mork]) når enheden står på mørk tilstand. */
-/* ===== Tema: Mørk ===== */
-html[data-tema=mork] {
-    color-scheme: dark;
-    --bg: #0d1716; --surface: #15211f; --surface-2: #1c2a28; --line: #2a3a38;
-    --ink: #e9efee; --ink-2: #b3c0be; --ink-3: #8a9896;
-    --brand: #0f2e36; --accent: #4cc2cf; --accent-soft: #143436; --sand: #2a2619;
-    --ok: #5fd08a; --ok-soft: #12301f; --warn: #f0b252; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
-    --series-1: #3987e5; --series-2: #d95926;
-    --shadow: 0 1px 2px rgba(0,0,0,.3);
+/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: Automatisk = SurfHorsens, mørk udgave (html[data-mork]) når enheden står på mørk tilstand.
+   Nøglerne standard/gron/orange er de tidligere temaer Blå/Grøn/Orange, så gemte valg flyttes med til Hav/Mint/Solnedgang. */
+/* ===== SurfHorsens (Arial): samme farver, kun Arial ===== */
+html[data-tema=klub-arial] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; }
+/* ===== Hav: lyseblå baggrund, grå menu og knapper, blå detaljer ===== */
+html[data-tema=standard] {
+    --bg: #d0ece9; --surface-2: #e8f5ed; --line: #c1dad7; --ink-2: #666664; --ink-3: #666664;
+    --heading: #575756; --brand: #575756; --accent: #575756; --accent-soft: #e7e7da; --sand: #d6eff4; --orange: #2599be;
 }
-html[data-tema=mork] .btn.primary { color: #062226; }
-html[data-tema=mork] .sidebar { border-right: 1px solid var(--line); }
-/* ===== Tema: Grøn ===== */
+/* ===== Mint: mint baggrund, creme menu, lilla knapper, petrol detaljer ===== */
 html[data-tema=gron] {
-    --bg: #f2f5f1; --surface: #ffffff; --surface-2: #e8efe7; --line: #d8e2d6;
-    --ink: #142018; --ink-2: #47584b; --ink-3: #6f7f72;
-    --brand: #1d4d35; --accent: #2a7a4f; --accent-soft: #e1f0e6; --sand: #eef0d8;
-    --series-1: #2a7a4f; --series-2: #d4700c;
+    --bg: #e2efe6; --surface-2: #f1f7eb; --line: #d1ddd5;
+    --heading: #575756; --brand: #fffef0; --brand-ink: #575756; --sand: #e7f1ea; --orange: #64a3a2;
+    --nav-ink: #575756; --nav-ink-2: #575756; --nav-hover: rgba(87,87,86,.06); --nav-on: #e2efe6; --nav-line: #d1ddd5;
 }
-/* ===== Tema: Orange ===== */
+html[data-tema=gron] .sidebar { border-right: 1px solid var(--line); }
+/* ===== Solnedgang: gul baggrund og menu, lilla knapper, orange detaljer ===== */
 html[data-tema=orange] {
-    --bg: #f8f4f0; --surface: #ffffff; --surface-2: #f3ebe4; --line: #e7dcd2;
-    --ink: #2a1a10; --ink-2: #5e4a3c; --ink-3: #87725f;
-    --brand: #6b2f12; --accent: #b84a12; --accent-soft: #fbe7da; --sand: #fdecd4;
-    --series-1: #b84a12; --series-2: #2a78d6;
+    --bg: #fdebbe; --surface-2: #fef5d7; --line: #e9d9b2;
+    --brand: #f8c760; --brand-ink: #575756;
+    --nav-ink: #575756; --nav-ink-2: #575756; --nav-hover: rgba(87,87,86,.07); --nav-on: rgba(255,254,240,.55); --nav-line: rgba(87,87,86,.18);
 }
+/* ===== SurfHorsens (mørk): grå baggrund og menu, creme tekst, gule knapper. Grundlag for alle mørke temaer (html[data-mork]); bruges også af Automatisk, når enheden står på mørk tilstand ===== */
+html[data-tema=mork], html[data-mork] {
+    color-scheme: dark;
+    --bg: #575756; --surface: #575756; --surface-2: #5f5e5d; --line: #7c7c78;
+    --ink: #fffef0; --ink-2: #ddddd1; --ink-3: #d0cfc5;
+    --heading: #f8c760; --brand: #575756; --brand-ink: #fffef0; --accent: #f8c760; --btn-ink: #575756; --accent-soft: #6e6757; --sand: #7b5b69; --orange: #e668a3;
+    --ok: #cae2dd; --ok-soft: #596261; --warn: #fbe0a2; --warn-soft: #706151; --bad: #f8d0e1; --bad-soft: #6c5a62; --status-ink: #575756;
+    --series-1: #78cadb; --series-2: #f5b8d9;
+    --nav-ink: #fffef0; --nav-ink-2: rgba(255,254,240,.9); --nav-hover: rgba(255,254,240,.08); --nav-on: rgba(255,254,240,.16); --nav-line: rgba(255,254,240,.16);
+    --shadow: none;
+}
+/* Mørke udgaver af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
+   Lyseblå og mint er lige under 4,5 i kontrast på grå; knapper/links er derfor en let toning mod creme (Hav 28 %, Mint 6 %). */
+html[data-tema=standard-mork] { --heading: #78cadb; --accent: #9ed9e1; --accent-soft: #616969; --sand: #4b6870; --orange: #2599be; }
+html[data-tema=gron-mork] { --heading: #acd3d2; --accent: #b1d6d4; --accent-soft: #646968; --sand: #5a6a69; --orange: #64a3a2; }
+html[data-tema=orange-mork] { --heading: #ff9832; --sand: #81674d; --orange: #ff9832; }
+html[data-tema=mork] .tag.info, html[data-mork] .tag.info { color: var(--ink); }
+/* Menuen har samme farve som siden: en streg adskiller dem */
+html[data-tema=mork] .sidebar, html[data-mork] .sidebar { border-right: 1px solid var(--line); }
+/* Kategoriprikker (fx grå Teori) skal kunne ses på grå baggrund */
+html[data-tema=mork] :is(.chip, .tag) .sw, html[data-mork] :is(.chip, .tag) .sw { box-shadow: 0 0 0 1px rgba(255,254,240,.6); }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
 /* Ingen sidelæns scroll og ingen "elastik"-effekt, når siden trækkes ud over kanten (iOS) */
@@ -64,7 +96,7 @@ a { color: var(--accent); text-decoration: none; }
 :where(p, .banner) a:not(.btn):not(.chip):hover { text-decoration-thickness: 2px; }
 h1 { color: var(--heading, var(--ink)); font-size: 1.55rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
 h2 { color: var(--heading, var(--ink)); font-size: 1.1rem; margin: 0 0 .75rem; }
-h3 { font-size: .95rem; margin: 0 0 .5rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+h3 { font-size: .95rem; margin: 0 0 .5rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
 p { margin: 0 0 .75rem; }
 .muted { color: var(--ink-3); }
 .small { font-size: .85rem; }
@@ -83,17 +115,17 @@ p { margin: 0 0 .75rem; }
 .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px 7px; font-size: .7rem; color: var(--ink-3); position: relative; }
 .tabbar a.router-link-active { color: var(--accent); }
 .tabbar svg { width: 24px; height: 24px; }
-.dot { position: absolute; top: 5px; left: calc(50% + 6px); background: var(--bad); color: #fff; font-size: .62rem; min-width: 16px; height: 16px; border-radius: 8px; display: grid; place-items: center; padding: 0 4px; }
+.dot { position: absolute; top: 5px; left: calc(50% + 6px); background: var(--bad); color: var(--status-ink); font-size: .62rem; min-width: 16px; height: 16px; border-radius: 8px; display: grid; place-items: center; padding: 0 4px; }
 @media (min-width: 900px) {
-    .sidebar { display: flex; flex-direction: column; width: 236px; flex-shrink: 0; background: var(--brand); color: #d8ecef; padding: calc(env(safe-area-inset-top, 0px) + 20px) 12px calc(env(safe-area-inset-bottom, 0px) + 20px); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sidebar .brandmark { color: #fff; padding: 0 10px 18px; }
-    .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #cfe5e8; position: relative; }
-    .sidebar nav a:hover { background: rgba(255,255,255,.07); }
-    .sidebar nav a.router-link-active { background: rgba(255,255,255,.14); color: #fff; }
+    .sidebar { display: flex; flex-direction: column; width: 236px; flex-shrink: 0; background: var(--brand); color: var(--nav-ink); padding: calc(env(safe-area-inset-top, 0px) + 20px) 12px calc(env(safe-area-inset-bottom, 0px) + 20px); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar .brandmark { color: var(--nav-ink); padding: 0 10px 18px; }
+    .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: var(--nav-ink-2); position: relative; }
+    .sidebar nav a:hover { background: var(--nav-hover); }
+    .sidebar nav a.router-link-active { background: var(--nav-on); color: var(--nav-ink); box-shadow: inset 3px 0 0 var(--orange); }
     .sidebar svg { width: 20px; height: 20px; opacity: .9; }
-    .sidebar .sect { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #8fbcc3; margin: 16px 12px 6px; }
+    .sidebar .sect { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--nav-ink-2); margin: 16px 12px 6px; }
     .sidebar .dot { position: static; margin-left: auto; }
-    .sidebar .who { margin-top: auto; padding: 10px 12px 8px; border-top: 1px solid rgba(255,255,255,.12); font-size: .85rem; }
+    .sidebar .who { margin-top: auto; padding: 10px 12px 8px; border-top: 1px solid var(--nav-line); font-size: .85rem; }
     .sidebar .who button { margin-top: 8px; }
     .tabbar, .mobile-only { display: none !important; }
     /* Tablet på langs i appen: hold også her fri af statuslinjen (og evt. hjem-indikator) */
@@ -101,56 +133,6 @@ p { margin: 0 0 .75rem; }
 }
 
 
-/* ===== Tema: SurfHorsens (farver fra surfhorsens.dk) =====
-   sand #e3d8d3 · lilla #7e5a8c · pink #e665a1 · orange #ff9933 · petrol #65a4a3 · Poppins */
-html[data-tema=klub] {
-    --bg: #e3d8d3;
-    --surface: #fbf7f5;
-    --surface-2: #efe6e2;
-    --line: #d6c8c2;
-    --ink: #33243a;
-    --ink-2: #5e4a66;
-    --ink-3: #85728b;
-    --heading: #7e5a8c;
-    --brand: #7e5a8c;
-    --accent: #7e5a8c;
-    --accent-soft: #ece1f0;
-    --sand: #ffe2c2;
-    --pink: #e665a1;
-    --orange: #ff9933;
-    --teal: #65a4a3;
-    --series-1: #7a4a96;
-    --series-2: #d4700c;
-    --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-}
-/* Mørk SurfHorsens – bruges af Automatisk, når enheden står på mørk tilstand */
-html[data-tema=klub][data-mork] {
-    color-scheme: dark;
-    --bg: #1d1520; --surface: #291f2e; --surface-2: #33283a; --line: #45364c;
-    --ink: #f3ebef; --ink-2: #cbbcd0; --ink-3: #a090a6;
-    --heading: #d9b8e6; --brand: #4f3559; --accent: #c49ad6; --accent-soft: #3a2a43; --sand: #3a2a18;
-    --ok: #5fd08a; --ok-soft: #12301f; --warn: #f0b252; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1714;
-    --series-1: #a274c0; --series-2: #d9781a;
-    --shadow: 0 1px 2px rgba(0,0,0,.3);
-}
-html[data-tema=klub][data-mork] .btn.primary { color: #21142a; }
-html[data-tema=klub][data-mork] .act .when { background: #3a2a18; color: #ffd9ae; }
-html[data-tema=klub][data-mork] .act .when .m { color: #f0b46e; }
-html[data-tema=klub][data-mork] .demo-ribbon, html[data-tema=klub][data-mork] .banner.info { background: #3d2231; color: #f7cfe1; }
-html[data-tema=klub] body { letter-spacing: -.005em; }
-html[data-tema=klub] h1 { font-weight: 600; letter-spacing: -.015em; }
-html[data-tema=klub] h3 { color: var(--ink-3); }
-html[data-tema=klub] .sidebar { background: var(--brand); color: #f4ebf6; }
-html[data-tema=klub] .sidebar nav a { color: #eadcef; }
-html[data-tema=klub] .sidebar nav a.router-link-active { background: rgba(255,255,255,.16); box-shadow: inset 3px 0 0 var(--orange); }
-html[data-tema=klub] .sidebar .sect { color: #f5c9de; }
-html[data-tema=klub] .btn.primary { background: var(--accent); border-color: var(--accent); }
-html[data-tema=klub] .btn.primary:hover { filter: brightness(1.08); }
-html[data-tema=klub] .tabbar a.router-link-active { color: var(--accent); }
-html[data-tema=klub] .act .when { background: #ffe8cf; color: #4a2c0a; }
-html[data-tema=klub] .act .when .m { color: #9a5a12; }
-html[data-tema=klub] .capacity > i { background: var(--teal); }
-html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { background: #f7dce9; color: #5a2a44; }
 
 /* Klubbens logo vises i alle temaer */
 
@@ -164,8 +146,9 @@ html[data-tema=klub] .demo-ribbon, html[data-tema=klub] .banner.info { backgroun
 .stack > * + * { margin-top: 10px; }
 .btn { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 9px 14px; font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; justify-content: center; min-height: 40px; }
 .btn:hover { border-color: var(--ink-3); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.brand { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--btn-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.brand { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
 .btn.danger { color: var(--bad); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--accent); padding-inline: 8px; }
 .btn.small { min-height: 32px; padding: 5px 10px; font-size: .85rem; }
@@ -197,9 +180,6 @@ textarea { min-height: 90px; }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .tag.bad { background: var(--bad-soft); color: var(--bad); }
 .tag.info { background: var(--accent-soft); color: var(--accent); }
-/* Små mærker i mørke temaer: lysere tekst, så de er lette at læse */
-html[data-tema=klub][data-mork] .tag.info { color: #ead3f3; }
-html[data-tema=mork] .tag.info { color: #a8eef4; }
 .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: .92rem; }
 .banner.warn { background: var(--warn-soft); color: var(--warn); }
 .banner.info { background: var(--accent-soft); color: var(--ink); }
@@ -219,9 +199,9 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 .kpi .s { font-size: .85rem; color: var(--ink-2); }
 .empty { text-align: center; padding: 32px 16px; color: var(--ink-3); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 50; background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.2); max-width: calc(100% - 32px); font-weight: 600; }
-.toast.error { background: var(--bad); color: #fff; }
+.toast.error { background: var(--bad); color: var(--status-ink); }
 @media (min-width: 900px) { .toast { bottom: 28px; } }
-.modal-bg { position: fixed; inset: 0; background: rgba(5,15,15,.45); z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
+.modal-bg { position: fixed; inset: 0; background: rgba(87,87,86,.55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
 .modal { background: var(--surface); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 20px 18px calc(env(safe-area-inset-bottom, 0px) + 20px); max-height: 90vh; overflow-y: auto; }
 @media (min-width: 600px) { .modal-bg { align-items: center; } .modal { border-radius: 18px; } }
 .spinner { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 40px auto; }
@@ -231,14 +211,14 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 /* Aktivitetskort */
 .act { display: flex; gap: 14px; padding: 14px; color: inherit; }
 .act + .act { border-top: 1px solid var(--line); }
-.act .when { width: 52px; flex-shrink: 0; text-align: center; background: var(--surface-2); border-radius: 12px; padding: 6px 0; height: fit-content; }
+.act .when { width: 52px; flex-shrink: 0; text-align: center; background: var(--sand); border-radius: 12px; padding: 6px 0; height: fit-content; }
 .act .when .d { font-size: 1.3rem; font-weight: 700; line-height: 1.1; }
-.act .when .m { font-size: .72rem; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.act .when .m { font-size: .72rem; text-transform: uppercase; color: var(--ink); font-weight: 600; }
 .act .t { font-weight: 650; }
 .act .meta { font-size: .85rem; color: var(--ink-2); margin: 2px 0 6px; }
 .act.cancelled .t { text-decoration: line-through; color: var(--ink-3); }
 .capacity { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-top: 6px; max-width: 160px; }
-.capacity > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.capacity > i { display: block; height: 100%; background: var(--teal); border-radius: 3px; }
 .timeline { list-style: none; padding: 0; margin: 0; font-size: .87rem; }
 .timeline li { padding: 4px 0 4px 16px; position: relative; color: var(--ink-2); }
 .timeline li::before { content: ''; position: absolute; left: 3px; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
@@ -294,8 +274,8 @@ html.native body::before { content: ''; position: fixed; top: 0; left: 0; right:
 /* Hjælp: lille "?" ved overskrifter (HelpButton) */
 .help-btn { appearance: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--accent); background: transparent; color: var(--accent); font: inherit; font-size: .8rem; font-weight: 700; line-height: 1; cursor: pointer; vertical-align: middle; margin-left: 8px; padding: 0; flex-shrink: 0; }
 .help-btn:hover { background: var(--accent-soft); }
-.sidebar nav button.navbtn { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: #cfe5e8; background: none; border: 0; font: inherit; width: 100%; cursor: pointer; text-align: left; }
-.sidebar nav button.navbtn:hover { background: rgba(255,255,255,.07); }
+.sidebar nav button.navbtn { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; color: var(--nav-ink-2); background: none; border: 0; font: inherit; width: 100%; cursor: pointer; text-align: left; }
+.sidebar nav button.navbtn:hover { background: var(--nav-hover); }
 
 /* Klubbens logo (kan skiftes under Indstillinger → Design): bredden er fast, et højt logo skaleres ned i stedet for at skubbe siden */
 img.brand-logo, .brand-logo img { max-height: 110px; object-fit: contain; }

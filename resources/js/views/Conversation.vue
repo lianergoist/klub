@@ -161,7 +161,7 @@ watch(() => props.id, load);
 .msg.mine { align-self: flex-end; align-items: flex-end; }
 .msg.theirs { align-self: flex-start; }
 .msg .b { padding: 8px 12px; border-radius: 16px; white-space: pre-line; overflow-wrap: anywhere; }
-.msg.mine .b { background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.msg.mine .b { background: var(--accent); color: var(--btn-ink); border-bottom-right-radius: 5px; }
 .msg.theirs .b { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
 .msg .meta { font-size: .7rem; color: var(--ink-3); margin: 2px 6px 6px; display: flex; gap: 6px; align-items: center; }
 .rep { border: 0; background: none; color: var(--ink-3); cursor: pointer; padding: 0; opacity: .6; }

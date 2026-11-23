@@ -19,12 +19,16 @@ import { findTheme } from '../design';
 
 // Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen)
 const SWATCH = {
-    auto: 'linear-gradient(135deg, #e665a1 0 25%, #7e5a8c 25% 50%, #4f3559 50% 75%, #1d1520 75%)',
-    standard: 'linear-gradient(135deg, #0c4a5e 50%, #0f7c8c 50%)',
-    gron: 'linear-gradient(135deg, #1d4d35 50%, #2a7a4f 50%)',
-    orange: 'linear-gradient(135deg, #6b2f12 50%, #b84a12 50%)',
-    klub: 'conic-gradient(#7e5a8c 0 25%, #e665a1 0 50%, #ff9933 0 75%, #65a4a3 0)',
-    mork: 'linear-gradient(135deg, #0d1716 50%, #4cc2cf 50%)',
+    auto: 'linear-gradient(135deg, #f5b8d9 0 25%, #7d598b 25% 50%, #575756 50% 75%, #f8c760 75%)',
+    klub: 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
+    'klub-arial': 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
+    standard: 'linear-gradient(135deg, #575756 50%, #2599be 50%)',
+    gron: 'linear-gradient(135deg, #acd3d2 50%, #64a3a2 50%)',
+    orange: 'linear-gradient(135deg, #f8c760 50%, #ff9832 50%)',
+    mork: 'linear-gradient(135deg, #575756 50%, #f8c760 50%)',
+    'standard-mork': 'linear-gradient(135deg, #575756 50%, #78cadb 50%)',
+    'gron-mork': 'linear-gradient(135deg, #575756 50%, #acd3d2 50%)',
+    'orange-mork': 'linear-gradient(135deg, #575756 50%, #ff9832 50%)',
 };
 // Egne temaer: menu, knapper og detaljer
 const swatch = (k) => {
@@ -46,8 +50,8 @@ option { color: var(--ink); background: var(--surface); }
 /* I den mørke sidemenu: gennemsigtig vælger, der arver menuens tekstfarve */
 .sidebar .theme-switch .ts-label { width: 100%; }
 .sidebar .theme-switch .ts-box { flex-basis: 100%; }
-.sidebar .theme-switch select { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); color: inherit; }
-.sidebar .theme-switch option { color: #10201f; background: #fff; }
+.sidebar .theme-switch select { background: var(--nav-hover); border-color: var(--nav-line); color: inherit; }
+.sidebar .theme-switch option { color: #575756; background: #fffef0; }
 /* Sidemenuen er smal og lav: forklaringen til Automatisk vises under Profil i stedet */
 .sidebar .theme-switch .ts-hint { display: none; }
 </style>

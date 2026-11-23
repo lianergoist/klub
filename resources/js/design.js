@@ -7,36 +7,6 @@ import { api, store } from './api';
  * De indbyggede temaer ligger i app.css og kan ikke rettes; BUILT_IN er deres grundfarver, så man kan åbne en kopi.
  * Et eget tema har nøglen 'egen-<id>' (html[data-tema=egen-5]) og følger enhedens lyse/mørke tilstand.
  */
-const KLUB_DARK = { bg: '#1d1520', surface: '#291f2e', ink: '#f3ebef', heading: '#d9b8e6', accent: '#c49ad6', brand: '#4f3559', orange: '#ff9933' };
-const MORK = { bg: '#0d1716', surface: '#15211f', ink: '#e9efee', heading: '#e9efee', accent: '#4cc2cf', brand: '#0f2e36', orange: '#4cc2cf' };
-const BLAA = { bg: '#f4f6f5', surface: '#ffffff', ink: '#10201f', heading: '#10201f', accent: '#0f7c8c', brand: '#0c4a5e', orange: '#0f7c8c' };
-export const BUILT_IN = {
-    klub: { name: 'SurfHorsens', data: { light: { bg: '#e3d8d3', surface: '#fbf7f5', ink: '#33243a', heading: '#7e5a8c', accent: '#7e5a8c', brand: '#7e5a8c', orange: '#ff9933' }, dark: KLUB_DARK, radius: 14, font: 'poppins', logo: null } },
-    standard: { name: 'Blå', data: { light: BLAA, dark: MORK, radius: 14, font: 'system', logo: null } },
-    gron: { name: 'Grøn', data: { light: { bg: '#f2f5f1', surface: '#ffffff', ink: '#142018', heading: '#142018', accent: '#2a7a4f', brand: '#1d4d35', orange: '#2a7a4f' }, dark: MORK, radius: 14, font: 'system', logo: null } },
-    orange: { name: 'Orange', data: { light: { bg: '#f8f4f0', surface: '#ffffff', ink: '#2a1a10', heading: '#2a1a10', accent: '#b84a12', brand: '#6b2f12', orange: '#b84a12' }, dark: MORK, radius: 14, font: 'system', logo: null } },
-    mork: { name: 'Mørk', data: { light: BLAA, dark: MORK, radius: 14, font: 'system', logo: null } },
-};
-export const DEFAULT_LOGO = '/brand/surfhorsens-logo.webp';
-
-export const COLOR_FIELDS = [
-    ['bg', 'Baggrund', 'Bag kortene og på login-siden'],
-    ['surface', 'Kort og felter', 'Kort, lister og indtastningsfelter'],
-    ['ink', 'Tekst', 'Dæmpet tekst og kanter beregnes ud fra den'],
-    ['heading', 'Overskrifter', ''],
-    ['accent', 'Knapper og links', 'Teksten på knapperne bliver selv hvid eller mørk'],
-    ['brand', 'Menu', 'Menuen i venstre side på pc'],
-    ['orange', 'Detaljer', 'Markering af den valgte side i menuen'],
-];
-export const FONTS = { poppins: 'Poppins (klubbens skrift)', system: 'Enhedens egen skrift' };
-const FONT_CSS = {
-    poppins: '"Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
-    system: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-};
-
-/** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: klubbens logo. */
-export const design = reactive({ themes: [], logo: DEFAULT_LOGO });
-
 // ---------- farver ----------
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const hex = (c) => '#' + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
@@ -45,21 +15,74 @@ export const mix = (a, b, t) => { const x = rgb(a), y = rgb(b); return hex(x.map
 const lum = (h) => { const [r, g, b] = rgb(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 export const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 /** Hvid eller mørk tekst – den med bedst kontrast */
-export const inkOn = (bg, darkInk = '#1f1724') => (contrast('#ffffff', bg) >= contrast(darkInk, bg) ? '#ffffff' : darkInk);
+export const inkOn = (bg) => (contrast('#fffef0', bg) >= contrast('#575756', bg) ? '#fffef0' : '#575756'); // creme eller grå (paletten har ikke hvid/sort)
+
+// SurfHorsens' designguide: de eneste tilladte farver (digital, 100 %). Samme liste i app/Support/Design.php.
+export const PALETTE = {
+    '#f8c760': 'Gul', '#f18975': 'Laks', '#f5b8d9': 'Lys pink', '#e668a3': 'Pink', '#2599be': 'Blå', '#78cadb': 'Lyseblå',
+    '#ff9832': 'Orange', '#7d598b': 'Lilla', '#fffef0': 'Creme', '#acd3d2': 'Mint', '#64a3a2': 'Petrol', '#575756': 'Grå',
+};
+const CREME = '#fffef0', GRAA = '#575756';
+/** Lys toning: 35 % paletfarve på creme – til baggrunde. Skal give samme værdier som Design::tints() i PHP. */
+export const TINTS = Object.fromEntries(Object.entries(PALETTE).filter(([h]) => h !== CREME).map(([h, n]) => [mix(CREME, h, 0.35), `${n}, lys`]));
+/** Farver, man kan vælge i egne temaer */
+/** Lyseblå og mint en anelse mod creme, så de kan bruges til knapper og links på grå (mørk udgave). Samme i Design::DARK_TONES (PHP). */
+export const DARK_TONES = { '#9ed9e1': 'Lyseblå, til mørk', '#b1d6d4': 'Mint, til mørk' };
+export const ALLOWED = { ...PALETTE, ...TINTS, ...DARK_TONES };
+
+const MORK = { bg: GRAA, surface: GRAA, ink: CREME, heading: '#f8c760', accent: '#f8c760', brand: GRAA, orange: '#e668a3' };
+const KLUB = { bg: mix(CREME, '#f5b8d9', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#7d598b', orange: '#ff9832' };
+export const BUILT_IN = {
+    klub: { name: 'SurfHorsens', data: { light: KLUB, dark: MORK, radius: 14, font: 'futura', logo: null } },
+    'klub-arial': { name: 'SurfHorsens (Arial)', data: { light: KLUB, dark: MORK, radius: 14, font: 'arial', logo: null } },
+    standard: { name: 'Hav', data: { light: { bg: mix(CREME, '#78cadb', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: GRAA, brand: GRAA, orange: '#2599be' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
+    gron: { name: 'Mint', data: { light: { bg: mix(CREME, '#acd3d2', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: '#7d598b', brand: CREME, orange: '#64a3a2' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
+    orange: { name: 'Solnedgang', data: { light: { bg: mix(CREME, '#f8c760', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#f8c760', orange: '#ff9832' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
+    mork: { name: 'SurfHorsens (mørk)', data: { light: KLUB, dark: MORK, radius: 14, font: 'futura', logo: null } },
+    'standard-mork': { name: 'Hav (mørk)', data: { light: { bg: mix(CREME, '#78cadb', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: GRAA, brand: GRAA, orange: '#2599be' }, dark: { ...MORK, heading: '#78cadb', accent: '#9ed9e1', orange: '#2599be' }, radius: 14, font: 'futura', logo: null } },
+    'gron-mork': { name: 'Mint (mørk)', data: { light: { bg: mix(CREME, '#acd3d2', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: '#7d598b', brand: CREME, orange: '#64a3a2' }, dark: { ...MORK, heading: '#acd3d2', accent: '#b1d6d4', orange: '#64a3a2' }, radius: 14, font: 'futura', logo: null } },
+    'orange-mork': { name: 'Solnedgang (mørk)', data: { light: { bg: mix(CREME, '#f8c760', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#f8c760', orange: '#ff9832' }, dark: { ...MORK, heading: '#ff9832', orange: '#ff9832' }, radius: 14, font: 'futura', logo: null } },
+};
+export const DEFAULT_LOGO = '/brand/surfhorsens-logo.webp';
+
+export const COLOR_FIELDS = [
+    ['bg', 'Baggrund', 'Bag kortene og på login-siden'],
+    ['surface', 'Kort og felter', 'Kort, lister og indtastningsfelter'],
+    ['ink', 'Tekst', 'Dæmpet tekst og kanter beregnes ud fra den'],
+    ['heading', 'Overskrifter', ''],
+    ['accent', 'Knapper og links', 'Teksten på knapperne bliver selv creme eller grå'],
+    ['brand', 'Menu', 'Menuen i venstre side på pc'],
+    ['orange', 'Detaljer', 'Markering af den valgte side i menuen'],
+];
+// Designguiden: Futura, ellers Arial. Jost er en fri skrift tegnet efter Futura (bruges, hvor Futura ikke findes).
+export const FONTS = { futura: 'Futura (klubbens skrift)', arial: 'Arial' };
+const FONT_CSS = {
+    futura: 'Futura, "Futura PT", "Jost", Arial, sans-serif',
+    arial: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+};
+
+/** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: klubbens logo. */
+export const design = reactive({ themes: [], logo: DEFAULT_LOGO });
 
 /** Alle variabler for én tilstand ud fra de 7 valgte farver */
 export function derive(c, dark) {
-    return {
+    const v = {
         ...c,
         'surface-2': mix(c.surface, c.bg, 0.5),
-        line: mix(c.bg, c.ink, dark ? 0.18 : 0.1),
-        'ink-2': mix(c.ink, c.surface, 0.22),
-        'ink-3': mix(c.ink, c.surface, dark ? 0.38 : 0.32),
-        'accent-soft': mix(c.surface, c.accent, dark ? 0.22 : 0.14),
-        sand: mix(c.surface, c.orange, dark ? 0.2 : 0.18),
+        line: mix(c.bg, c.ink, dark ? 0.22 : 0.12),
+        'accent-soft': mix(c.surface, c.accent, 0.14),
+        sand: mix(c.surface, c.orange, dark ? 0.25 : 0.22),
         'btn-ink': inkOn(c.accent),
         'brand-ink': inkOn(c.brand),
     };
+    // Dæmpet tekst: så lys som muligt, men stadig læselig (4,5) på kort og baggrund
+    const muted = (t) => {
+        for (let s = t; s > 0; s -= 0.01) { const m = mix(c.ink, c.surface, s); if ([v.surface, v['surface-2'], v.bg].every((b) => contrast(m, b) >= 4.6)) return m; }
+        return c.ink;
+    };
+    v['ink-2'] = muted(0.2);
+    v['ink-3'] = muted(0.32);
+    return v;
 }
 
 /** Kontrolpunkter. min 4.5 for brødtekst, 3 for store overskrifter (WCAG AA). */
@@ -81,7 +104,8 @@ export function checks(d) {
 
 const rgba = (h, a) => `rgba(${rgb(h).join(',')},${a})`;
 // Mørk udgave: statusfarver, der kan læses på mørk baggrund (som temaet Mørk)
-const DARK_EXTRA = { ok: '#5fd08a', 'ok-soft': '#12301f', warn: '#f0b252', 'warn-soft': '#33270f', bad: '#ff8a80', 'bad-soft': '#3a1714', shadow: '0 1px 2px rgba(0,0,0,.3)' };
+// (statusfarverne er toninger af paletten – lyse udgaver kommer fra :root i app.css)
+const DARK_EXTRA = { ok: '#cae2dd', 'ok-soft': '#596261', warn: '#fbe0a2', 'warn-soft': '#706151', bad: '#f8d0e1', 'bad-soft': '#6c5a62', 'status-ink': '#575756', shadow: 'none' };
 
 /** CSS for ét eget tema (nøgle fx 'egen-5') */
 export function themeCss(key, d) {
@@ -94,11 +118,11 @@ export function themeCss(key, d) {
         const ink = v['brand-ink'];
         out += `${sel}{color-scheme:${isDark ? 'dark' : 'light'};${Object.entries(v).map(([k, x]) => `--${k}:${x}`).join(';')}}\n`;
         out += `${sel} .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--btn-ink)}${sel} .btn.brand{color:var(--brand-ink)}\n`;
-        out += `${sel} .sidebar{color:${ink}}${sel} .sidebar nav a,${sel} .sidebar nav button.navbtn{color:${rgba(ink, 0.86)}}${sel} .sidebar .sect{color:${rgba(ink, 0.7)}}`
+        out += `${sel} .sidebar{color:${ink}}${sel} .sidebar nav a,${sel} .sidebar nav button.navbtn{color:${rgba(ink, 0.9)}}${sel} .sidebar .sect{color:${rgba(ink, 0.9)}}`
             + `${sel} .sidebar nav a:hover,${sel} .sidebar nav button.navbtn:hover{background:${rgba(ink, 0.08)}}${sel} .sidebar nav a.router-link-active{color:${ink};background:${rgba(ink, 0.16)};box-shadow:inset 3px 0 0 var(--orange)}\n`;
         if (isDark) out += `${sel} .sidebar{border-right:1px solid var(--line)}\n`;
     }
-    out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.system}}\n`;
+    out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.futura}}\n`;
     return out;
 }
 

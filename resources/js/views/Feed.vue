@@ -284,7 +284,7 @@ label.btn.disabled { opacity: .45; pointer-events: none; }
 .gallery.n3 { grid-template-columns: 1fr 1fr; } .gallery.n3 button:first-child { grid-row: span 2; } .gallery.n3 button { aspect-ratio: 1; } .gallery.n3 button:first-child { aspect-ratio: auto; }
 .gallery.n4 { grid-template-columns: 1fr 1fr; } .gallery.n4 button { aspect-ratio: 1; }
 .gallery.n5 { grid-template-columns: 1fr 1fr 1fr; } .gallery.n5 button { aspect-ratio: 1; } /* 5–10 billeder */
-.like.on { color: #d6336c; }
+.like.on { color: var(--pink); }
 .like.on svg { fill: currentColor; }
 .comments { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 10px; }
 .comment { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }

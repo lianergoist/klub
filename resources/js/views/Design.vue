@@ -108,14 +108,17 @@
                         <button :class="{ on: mode === 'light' }" @click="mode = 'light'">Lys udgave</button>
                         <button :class="{ on: mode === 'dark' }" @click="mode = 'dark'">Mørk udgave</button>
                     </div>
-                    <p class="small muted" style="margin:0 0 4px">Tryk på en farve for at ændre den. {{ mode === 'light' ? 'Den lyse udgave bruges, når enheden står på lys tilstand.' : 'Den mørke udgave bruges, når enheden står på mørk tilstand.' }}</p>
+                    <p class="small muted" style="margin:0 0 4px">Tryk på en farve for at ændre den. Der kan kun vælges farver fra klubbens designguide og lyse toninger af dem. {{ mode === 'light' ? 'Den lyse udgave bruges, når enheden står på lys tilstand.' : 'Den mørke udgave bruges, når enheden står på mørk tilstand.' }}</p>
                     <ul class="list colors">
                         <li v-for="[k, label, hint] in COLOR_FIELDS" :key="k">
-                            <label class="crow">
-                                <input type="color" v-model="ed.data[mode][k]" class="cpick">
-                                <span class="mtext"><strong>{{ label }}</strong><span v-if="hint" class="small muted">{{ hint }}</span></span>
-                            </label>
-                            <button v-if="ed.data[mode][k] !== orig.data[mode][k]" class="btn ghost small" title="Fortryd ændringen af farven" @click="ed.data[mode][k] = orig.data[mode][k]">↺</button>
+                            <div class="crow-wrap">
+                                <button type="button" class="crow" :aria-expanded="openField === k" @click="openField = openField === k ? null : k">
+                                    <span class="cpick" :style="{ background: ed.data[mode][k] }"></span>
+                                    <span class="mtext"><strong>{{ label }}</strong><span class="small muted">{{ ALLOWED[ed.data[mode][k]] || ed.data[mode][k] }}{{ hint ? ' · ' + hint : '' }}</span></span>
+                                </button>
+                                <button v-if="ed.data[mode][k] !== orig.data[mode][k]" class="btn ghost small" title="Fortryd ændringen af farven" @click="ed.data[mode][k] = orig.data[mode][k]">↺</button>
+                            </div>
+                            <PalettePick v-if="openField === k" v-model="ed.data[mode][k]" :colors="ALLOWED" :label="label" class="cpal" />
                         </li>
                     </ul>
                     <h3 style="margin-top:14px">Kan man læse det?</h3>
@@ -161,7 +164,8 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { api, toast } from '../api';
-import { BUILT_IN, COLOR_FIELDS, FONTS, checks, refreshDesign, inkOn } from '../design';
+import { ALLOWED, BUILT_IN, COLOR_FIELDS, FONTS, checks, refreshDesign, inkOn } from '../design';
+import PalettePick from '../components/PalettePick.vue';
 import { isMobile } from '../mobile';
 import HelpButton from '../components/HelpButton.vue';
 import Modal from '../components/Modal.vue';
@@ -182,6 +186,7 @@ const themes = ref(null);
 const ed = ref(null);   // temaet, der redigeres: { id|null, name, status, data }
 const orig = ref(null); // som det var, da det blev åbnet/gemt
 const panel = ref('tema');
+const openField = ref(null); // farven, hvis palet er foldet ud
 const title = computed(() => TITLES[panel.value]);
 const mode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 const page = ref('/aktiviteter');
@@ -347,7 +352,7 @@ onUnmounted(() => {
 .tool.on { background: var(--accent-soft); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
 .tool:disabled { opacity: .4; cursor: default; }
 .tool .udot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
-.tool .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: #fff; font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; }
+.tool .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: var(--status-ink); font-size: .7rem; display: inline-flex; align-items: center; justify-content: center; }
 .view { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .view .cur { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seg { margin: 0; padding: 3px; flex: none; }
@@ -378,12 +383,11 @@ onUnmounted(() => {
 .tl .mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .tl .sw { width: 26px; height: 26px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--line); }
 .tl .btn { flex: none; }
-.colors li { display: flex; align-items: center; gap: 6px; }
-.crow { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; padding: 2px 0; }
-.cpick { width: 46px; height: 38px; padding: 0; flex: none; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: none; }
-.cpick::-webkit-color-swatch-wrapper { padding: 3px; }
-.cpick::-webkit-color-swatch { border: 0; border-radius: 7px; }
-.cpick::-moz-color-swatch { border: 0; border-radius: 7px; }
+.colors li { display: block; }
+.crow-wrap { display: flex; align-items: center; gap: 6px; }
+.crow { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; padding: 2px 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; }
+.cpick { width: 46px; height: 38px; flex: none; border: 1px solid var(--line); border-radius: 10px; }
+.cpal { margin: 10px 0 4px 58px; }
 .crow .mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .rdemo { border: 1px solid var(--line); background: var(--surface-2); padding: 10px 18px; font-size: .85rem; }
 </style>

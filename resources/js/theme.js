@@ -3,12 +3,18 @@ import { store } from './api';
 import { PREVIEW, design, findTheme, themeColor } from './design';
 
 // Temaet Marie blev fjernet 16/11-2026; har man det valgt, giver setTheme Automatisk.
-// Nøglen 'standard' bevares, så tidligere valg huskes (vises som Blå).
+// 23/11-2026: alle temaer følger SurfHorsens' designguide. Nøglerne standard/gron/orange var Blå/Grøn/Orange og er nu Hav/Mint/Solnedgang,
+// så tidligere valg huskes.
 // 'auto' = SurfHorsens, lys eller mørk efter telefonens/computerens indstilling.
 // Egne temaer fra System → Design tilføjes som 'egen-<id>' og følger også telefonens lyse/mørke tilstand.
-const BUILT_IN = { auto: 'Automatisk', klub: 'SurfHorsens', standard: 'Blå', gron: 'Grøn', orange: 'Orange', mork: 'Mørk' };
+const BUILT_IN = {
+    auto: 'Automatisk', klub: 'SurfHorsens', mork: 'SurfHorsens (mørk)', 'klub-arial': 'SurfHorsens (Arial)',
+    standard: 'Hav', 'standard-mork': 'Hav (mørk)', gron: 'Mint', 'gron-mork': 'Mint (mørk)', orange: 'Solnedgang', 'orange-mork': 'Solnedgang (mørk)',
+};
+// Altid mørke temaer: får html[data-mork] ligesom den mørke udgave af SurfHorsens
+const DARK = ['mork', 'standard-mork', 'gron-mork', 'orange-mork'];
 export const THEMES = reactive({ ...BUILT_IN });
-const COLORS = { standard: '#0c4a5e', gron: '#1d4d35', orange: '#6b2f12', klub: '#7e5a8c', 'klub-mork': '#1d1520', mork: '#0d1716' };
+const COLORS = { klub: '#7d598b', 'klub-arial': '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', 'klub-mork': '#575756', mork: '#575756', 'standard-mork': '#575756', 'gron-mork': '#575756', 'orange-mork': '#575756' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);
@@ -38,12 +44,12 @@ function apply() {
     const followsDevice = store.tema === 'auto' || isCustom(t);
     const mork = PREVIEW ? PREVIEW === 'mork' : followsDevice && systemDark();
     html.dataset.tema = t;
-    if (mork && (t === 'klub' || isCustom(t))) html.dataset.mork = ''; else delete html.dataset.mork;
+    if (DARK.includes(t) || (mork && (t === 'klub' || isCustom(t)))) html.dataset.mork = ''; else delete html.dataset.mork;
     const color = isCustom(t) ? themeColor(t, mork) : COLORS[mork && t === 'klub' ? 'klub-mork' : t];
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', color || COLORS.klub);
     // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke
     // eslint-disable-next-line no-undef
-    if (__APP__) import('./native').then((m) => m.setStatusBarDark(mork || t === 'mork')).catch(() => {});
+    if (__APP__) import('./native').then((m) => m.setStatusBarDark(mork || DARK.includes(t))).catch(() => {});
 }
 
 /** remember=true, når medlemmet selv vælger – kun aktive valg gemmes. */

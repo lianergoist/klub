@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
         $seasonStart = \App\Support\Season::start($this->now);
 
         $cats = collect([
-            ['Windsurf', '#0e7490'], ['Kite', '#b45309'], ['SUP', '#15803d'], ['Wingfoil', '#7c3aed'], ['Klubliv og teori', '#be185d'],
+            ['Windsurf', '#2599be'], ['Kite', '#ff9832'], ['SUP', '#64a3a2'], ['Wingfoil', '#7d598b'], ['Klubliv og teori', '#e668a3'],
         ])->mapWithKeys(fn ($c) => [$c[0] => Category::create(['name' => $c[0], 'color' => $c[1]])]);
 
         // --- Demo-brugere ---
@@ -412,7 +412,7 @@ class DatabaseSeeder extends Seeder
     {
         // Aktivitetskategorier
         Category::where('name', 'Klubliv og teori')->update(['name' => 'Klubliv', 'mandatory' => true]);
-        Category::firstOrCreate(['name' => 'Teori'], ['color' => '#778899']);
+        Category::firstOrCreate(['name' => 'Teori'], ['color' => '#575756']);
         $catIds = fn (array $names) => Category::whereIn('name', $names)->pluck('id')->all();
         Activity::where('title', 'Teoriaften: vejr, vind og strøm')->first()?->categories()->sync($catIds(['Klubliv', 'Teori']));
         Activity::where('title', 'Sæsonstart: standerhejsning')->first()?->categories()->sync($catIds(['Klubliv']));

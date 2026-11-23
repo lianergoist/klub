@@ -86,5 +86,5 @@ watch(tab, load); onMounted(load);
 .cname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snip { color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snip.unread { color: var(--ink); font-weight: 600; }
-.badge { background: var(--accent); color: #fff; border-radius: 999px; font-size: .72rem; font-weight: 700; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 6px; }
+.badge { background: var(--accent); color: var(--btn-ink); border-radius: 999px; font-size: .72rem; font-weight: 700; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 6px; }
 </style>

@@ -614,11 +614,13 @@ Klubbens hjemmeside ligger i klubsystemet og henter kalender og priser derfra, s
 
 Klubben kan lave egne farvetemaer uden teknisk hjælp og uden at ødelægge, hvordan siderne virker på mobil og pc.
 
-- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, Blå, Grøn, Orange, Mørk) kan ikke rettes. Under System → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
-- **Kerne:** et eget tema har navn, 7 farver i en lys og en mørk udgave (følger enhedens indstilling), skrift (Poppins eller enhedens egen) og runde hjørner. Farverne vælges ved at trykke på dem. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layout og logo kan ikke ændres.
+- **Kerne:** alle temaer følger SurfHorsens' designguide: kun guidens 12 farver (9 primære, 3 sekundære) og lyse toninger af dem. Skriften er Futura, og hvor den ikke findes, Jost, der er tegnet efter Futura. Der er også en udgave med Arial. Lomon Milk (statements) må kun bruges af designstudiet og bruges ikke. Paletten har ingen hvid eller sort, så teksten er grå eller creme. Statusfarverne (fejl, advarsel, OK) er toninger af pink, orange og petrol. Aktivitetskategorier kan også kun få paletfarver.
+- **Kerne:** de indbyggede temaer (Automatisk/SurfHorsens, SurfHorsens (mørk), SurfHorsens (Arial), Hav, Hav (mørk), Mint, Mint (mørk), Solnedgang, Solnedgang (mørk)) kan ikke rettes. Under System → Design åbner man en kopi af et af dem eller retter et af klubbens egne temaer.
+- **Kerne:** et eget tema har navn, 7 farver i en lys og en mørk udgave (følger enhedens indstilling), skrift (Futura eller Arial) og runde hjørner. Farverne vælges ved at trykke på dem, og man kan kun vælge designguidens farver og lyse toninger af dem. Kanter, dæmpet tekst og tekstfarven på knapper og i menuen beregnes automatisk. Layout og logo kan ikke ændres.
 - **Kerne:** **Gem** og **Gem som…** (nyt navn, det gamle tema bevares). Status er *Under udvikling* (kun dem, der må rette design, kan vælge det under Farvetema) eller *Tilgængeligt for medlemmer*. Et tema kan slettes. Medlemmer med det valgt får så Automatisk.
 - **Kerne:** forhåndsvisning af de rigtige sider på mobil og computer, hvor intet kan gemmes. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis temaet gøres tilgængeligt alligevel. Oprettelse, ændring og sletning står i ændringsloggen. Kræver rettigheden "Lave og rette farvetemaer" (standard: administrator).
 - **Senere:** større ændringer (fx en ny forside) tegnes som forslag i Figma eller Penpot og bygges ind af udvikleren.
+- **Afklares:** MobilePay-knappen bruger MobilePays egen blå farve, og hjemmesiden (/hjemmeside) bruger stadig de gamle farver og Poppins. Skal de også følge designguiden?
 - **Afklares:** hvem i klubben skal have lov til at lave temaer? Skal klubben kunne vælge et af sine egne temaer som standard i stedet for SurfHorsens?
 
 ## Forslag til faseopdeling

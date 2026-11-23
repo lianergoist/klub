@@ -3,8 +3,8 @@
   "short_name": "SurfHorsens",
   "start_url": "/aktiviteter",
   "display": "standalone",
-  "background_color": "#e3d8d3",
-  "theme_color": "#7e5a8c",
+  "background_color": "#fce6e8",
+  "theme_color": "#7d598b",
   "lang": "da",
   "icons": [
     {
