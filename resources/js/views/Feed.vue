@@ -37,7 +37,7 @@
         </div>
 
         <div v-if="posts === null" class="spinner"></div>
-        <div v-else-if="!posts.length" class="card empty">{{ filter === 'all' ? 'Ingen opslag endnu. Del det første!' : 'Intet at moderere. 🎉' }}</div>
+        <div v-else-if="!posts.length" class="card empty">{{ filter === 'all' ? 'Ingen opslag endnu. Del det første – så meget ALÅHA!' : 'Intet at moderere. 🎉' }}</div>
 
         <article v-for="p in posts || []" :key="p.id" :class="['card post', { hidden: p.hidden }]">
             <div v-if="p.hidden" class="banner warn small" style="margin:-4px 0 12px">

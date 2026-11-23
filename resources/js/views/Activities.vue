@@ -69,7 +69,7 @@ const tab = ref(sessionStorage.getItem('actTab') || 'upcoming');
 const cats = ref([]); const list = ref([]); const loading = ref(true); const dirty = ref(false);
 const household = ref({}); const signupInvoice = ref(null);
 
-const emptyText = computed(() => ({ upcoming: 'Ingen kommende aktiviteter i de valgte kategorier.', mine: 'Du er ikke tilmeldt nogen kommende aktiviteter.', attended: 'Ingen registreret deltagelse endnu.' })[tab.value]);
+const emptyText = computed(() => ({ upcoming: 'Ingen kommende aktiviteter i de valgte kategorier.', mine: 'Du er ikke tilmeldt nogen kommende aktiviteter endnu. Find en under Kommende, og kom med ud i vinden 🤙', attended: 'Ingen registreret deltagelse endnu.' })[tab.value]);
 
 const grouped = computed(() => {
     const out = [];

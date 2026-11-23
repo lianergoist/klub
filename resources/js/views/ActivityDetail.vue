@@ -279,7 +279,7 @@ async function signup() {
         const r = await api(`activities/${a.value.id}/signup`, { method: 'POST', body: { member_ids: picked.value } });
         if (r.invoice_ids.length) { track('tilmelding', 'til_betaling'); return router.push(`/betal/${r.invoice_ids.join(',')}`); }
         track('tilmelding', 'ok');
-        toast('Du er tilmeldt'); await load(); refreshMe();
+        toast('Du er tilmeldt. ALÅHA 🤙'); await load(); refreshMe();
     } catch (e) { toast(e.message, 'error'); track('tilmelding', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }
 async function unsign(m) {
@@ -309,7 +309,7 @@ async function take() {
     busy.value = true;
     try {
         a.value = await api(`activities/${a.value.id}/take`, { method: 'POST' });
-        toast('Du er træner på aktiviteten');
+        toast('Tak! Du er træner på aktiviteten 🤙');
     } catch (e) { toast(e.message, 'error'); } finally { busy.value = false; }
 }
 async function leave() {

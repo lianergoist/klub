@@ -57,7 +57,7 @@ async function submit() {
         const r = await api('punchcards/signup', { method: 'POST', body: f });
         setSession(r.token, r.user); track('klippekort', 'ok');
         if (r.invoice_id) return router.push(`/betal/${r.invoice_id}`);
-        toast('Klippekortet er klar');
+        toast('Klippekortet er klar. Vi ses på vandet 🤙');
         router.push('/klip');
     } catch (e) { error.value = e.message; track('klippekort', 'fejl', { status: e.status }); } finally { busy.value = false; }
 }

@@ -112,7 +112,7 @@ async function submit() {
     try {
         const r = await api('register', { method: 'POST', body: { ...f, new_members: others.value.map(m => ({ ...m, email: m.email?.trim() || null, phone: m.phone?.trim() || null })) } }); setSession(r.token, r.user);
         track('indmeldelse', 'ok', { betaling: !r.paid, personer: 1 + others.value.length });
-        if (r.paid) { toast('Velkommen i klubben! Dit betalte beløb dækkede kontingentet.'); router.push(til || '/aktiviteter'); }
+        if (r.paid) { toast('Velkommen i klubben – ALÅHA 🤙 Dit betalte beløb dækkede kontingentet.'); router.push(til || '/aktiviteter'); }
         else router.push({ path: `/betal/${r.invoice_id}`, query: til ? { til } : {} });
     }
     catch (e) { error.value = e.message; track('indmeldelse', 'fejl', { status: e.status }); } finally { busy.value = false; }

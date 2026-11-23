@@ -4,7 +4,7 @@
         <template v-else-if="done">
             <div class="card" style="text-align:center;padding:32px 20px">
                 <div style="width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin:0 auto 14px"><Icon name="check" style="width:34px" /></div>
-                <h1>{{ isSignup ? 'Velkommen i klubben!' : isUpgrade ? 'I er nu en familie i klubben' : 'Betaling gennemført' }}</h1>
+                <h1>{{ isSignup ? 'Velkommen i klubben – ALÅHA 🤙' : isUpgrade ? 'I er nu en familie i klubben' : 'Betaling gennemført' }}</h1>
                 <p class="muted">{{ kr(total) }} er betalt. Du har fået en kvittering i din indbakke<span v-if="store.user.email"> og på mail</span>.</p>
                 <p v-if="store.user.status !== 'guest'" class="small muted">Regningen er automatisk markeret som betalt og bogført i klubbens regnskab.</p>
                 <p v-if="isSignup" class="small">Du er nu aktivt medlem og kan tilmelde dig aktiviteter med det samme.</p>
@@ -16,7 +16,7 @@
             <h1 style="margin:8px 0 14px">Betaling</h1>
             <div class="card">
                 <div class="small muted">Du betaler</div>
-                <div style="font-size:2rem;font-weight:700;letter-spacing:-.02em">{{ kr(total) }}</div>
+                <div style="font-size:2rem;font-weight:700">{{ kr(total) }}</div>
                 <ul class="list" style="margin:6px 0 12px">
                     <li v-for="i in invs" :key="i.id" class="row between small" style="flex-wrap:nowrap"><span>{{ i.description }}</span><span class="num">{{ i.amount_fmt }}</span></li>
                 </ul>

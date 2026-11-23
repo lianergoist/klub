@@ -3,7 +3,7 @@
         <div class="login-hero">
             <img class="brand-logo" :src="design.logo" alt="SurfHorsens" style="width:200px;height:auto;margin:0 auto 6px">
             <h1>Medlemsportal</h1>
-            <p>Aktiviteter, medlemskab og betaling samlet ét sted.</p>
+            <p>Vild med vind – så meget ALÅHA. Aktiviteter, medlemskab og betaling samlet ét sted.</p>
         </div>
         <div class="card login-card">
             <form @submit.prevent="login" class="stack">

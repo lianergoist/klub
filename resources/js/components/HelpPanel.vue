@@ -66,7 +66,7 @@ watch(search, (q) => {
 </script>
 
 <style scoped>
-.sect { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); margin: 14px 0 4px; }
+.sect { font-size: .72rem; text-transform: uppercase; letter-spacing: var(--caps-spacing); color: var(--ink-3); margin: 14px 0 4px; }
 .help-item { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .help-item summary { cursor: pointer; font-weight: 600; }
 .help-text :deep(p) { margin: 8px 0; }

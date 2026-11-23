@@ -4,7 +4,7 @@
         <template v-else>
             <div class="card" style="text-align:center;padding:28px 20px">
                 <div class="okdot"><Icon name="check" style="width:30px" /></div>
-                <h1>Du er tilmeldt, {{ s.name.split(' ')[0] }}!</h1>
+                <h1>ALÅHA {{ s.name.split(' ')[0] }} 🤙 Du er tilmeldt!</h1>
                 <ul class="list" style="text-align:left;margin:14px 0">
                     <li v-for="(b, i) in s.bookings" :key="i"><strong>{{ b.title }}</strong><div class="small muted">{{ datoLang(b.starts_at) }} kl. {{ klok(b.starts_at) }}<span v-if="b.location"> · {{ b.location }}</span></div></li>
                 </ul>
