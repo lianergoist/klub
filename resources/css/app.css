@@ -46,14 +46,12 @@
     /* Som designguiden og surfhorsens.dk: små overskrifter med store bogstaver og luft mellem bogstaverne; ingen sammenpresset tekst */
     --caps-spacing: .1em;
 }
-/* Temaerne vælges under Farvetema (html[data-tema]). Uden valg: Automatisk = SurfHorsens, mørk udgave (html[data-mork]) når enheden står på mørk tilstand.
-   Nøglerne standard/gron/orange er de tidligere temaer Blå/Grøn/Orange, så gemte valg flyttes med til Hav/Mint/Solnedgang. */
-/* ===== SurfHorsens (Arial): samme farver, kun Arial ===== */
-html[data-tema=klub-arial] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; }
-/* Arial har kun normal og fed: knapperne skal være fede, ellers bliver vægt 500 til normal */
-html[data-tema=klub-arial] .btn { font-weight: 700; }
-/* ===== SurfHorsens kombi: Futura/Jost i overskrifter og knapper (brandet), Arial i brødtekst, lister og tabeller (læsbart i små størrelser) ===== */
-html[data-tema=klub-kombi] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; --font-heading: Futura, "Futura PT", "Jost", Arial, sans-serif; }
+/* Udseende = tre valg (resources/js/theme.js): farvetema html[data-tema] (klub = SurfHorsens, standard = Hav, gron = Mint, orange = Solnedgang, egen-<id>),
+   mørk udgave html[data-mork] (Lys, Mørk eller Automatisk efter enheden) og letlæselig skrift html[data-letlaeselig].
+   Nøglerne standard/gron/orange er de tidligere temaer Blå/Grøn/Orange, så gemte valg flyttes med. */
+/* ===== Letlæselig skrift: Arial i brødtekst, lister og tabeller (læsbart i små størrelser), Futura/Jost i overskrifter og knapper.
+   html:root, så den også gælder egne temaer (:root[data-tema=egen-…] sætter selv --font) ===== */
+html:root[data-letlaeselig] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; --font-heading: Futura, "Futura PT", "Jost", Arial, sans-serif; }
 /* ===== Hav: lyseblå baggrund, grå menu og knapper, blå detaljer ===== */
 html[data-tema=standard] {
     --bg: #d0ece9; --surface-2: #e8f5ed; --line: #c1dad7; --ink-2: #666664; --ink-3: #666664;
@@ -72,8 +70,8 @@ html[data-tema=orange] {
     --brand: #f8c760; --brand-ink: #575756;
     --nav-ink: #575756; --nav-ink-2: #575756; --nav-hover: rgba(87,87,86,.07); --nav-on: rgba(255,254,240,.55); --nav-line: rgba(87,87,86,.18);
 }
-/* ===== SurfHorsens (mørk): grå baggrund og menu, creme tekst, gule knapper. Grundlag for alle mørke temaer (html[data-mork]); bruges også af Automatisk, når enheden står på mørk tilstand ===== */
-html[data-tema=mork], html[data-mork] {
+/* ===== Mørk udgave (SurfHorsens): grå baggrund og menu, creme tekst, gule knapper. Grundlag for mørk udgave af alle temaer: html[data-mork] = valgt Mørk, eller Automatisk, når enheden står på mørk ===== */
+html[data-mork] {
     color-scheme: dark;
     --bg: #575756; --surface: #575756; --surface-2: #5f5e5d; --line: #7c7c78;
     --ink: #fffef0; --ink-2: #ddddd1; --ink-3: #d0cfc5;
@@ -83,16 +81,16 @@ html[data-tema=mork], html[data-mork] {
     --nav-ink: #fffef0; --nav-ink-2: rgba(255,254,240,.9); --nav-hover: rgba(255,254,240,.08); --nav-on: rgba(255,254,240,.16); --nav-line: rgba(255,254,240,.16);
     --shadow: none;
 }
-/* Mørke udgaver af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
+/* Mørk udgave af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
    Lyseblå og mint er lige under 4,5 i kontrast på grå; knapper/links er derfor en let toning mod creme (Hav 28 %, Mint 6 %). */
-html[data-tema=standard-mork] { --heading: #78cadb; --accent: #9ed9e1; --accent-soft: #616969; --sand: #4b6870; --orange: #2599be; }
-html[data-tema=gron-mork] { --heading: #acd3d2; --accent: #b1d6d4; --accent-soft: #646968; --sand: #5a6a69; --orange: #64a3a2; }
-html[data-tema=orange-mork] { --heading: #ff9832; --sand: #81674d; --orange: #ff9832; }
-html[data-tema=mork] .tag.info, html[data-mork] .tag.info { color: var(--ink); }
+html[data-tema=standard][data-mork] { --heading: #78cadb; --accent: #9ed9e1; --accent-soft: #616969; --sand: #4b6870; --orange: #2599be; }
+html[data-tema=gron][data-mork] { --heading: #acd3d2; --accent: #b1d6d4; --accent-soft: #646968; --sand: #5a6a69; --orange: #64a3a2; }
+html[data-tema=orange][data-mork] { --heading: #ff9832; --sand: #81674d; --orange: #ff9832; }
+html[data-mork] .tag.info { color: var(--ink); }
 /* Menuen har samme farve som siden: en streg adskiller dem */
-html[data-tema=mork] .sidebar, html[data-mork] .sidebar { border-right: 1px solid var(--line); }
+html[data-mork] .sidebar { border-right: 1px solid var(--line); }
 /* Kategoriprikker (fx grå Teori) skal kunne ses på grå baggrund */
-html[data-tema=mork] :is(.chip, .tag) .sw, html[data-mork] :is(.chip, .tag) .sw { box-shadow: 0 0 0 1px rgba(255,254,240,.6); }
+html[data-mork] :is(.chip, .tag) .sw { box-shadow: 0 0 0 1px rgba(255,254,240,.6); }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
 /* Ingen sidelæns scroll og ingen "elastik"-effekt, når siden trækkes ud over kanten (iOS) */

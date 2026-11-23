@@ -74,7 +74,7 @@
                     <ul class="list tl">
                         <li v-for="(b, k) in BUILT_IN" :key="k">
                             <span class="sw" :style="{ background: sw(b.data) }"></span>
-                            <span class="mtext"><strong>{{ b.name }}</strong><span v-if="k === 'klub'" class="small muted">Bruges af Automatisk</span></span>
+                            <span class="mtext"><strong>{{ b.name }}</strong><span v-if="k === 'klub'" class="small muted">Standard</span></span>
                             <button class="btn small ghost" @click="openCopy(k)">Åbn kopi</button>
                         </li>
                     </ul>
@@ -131,12 +131,9 @@
                     </template>
                 </template>
 
-                <!-- Skrift og hjørner -->
+                <!-- Hjørner (skriften er altid klubbens; medlemmerne kan selv vælge letlæselig skrifttype under Farvetema) -->
                 <template v-else-if="panel === 'skrift' && ed">
-                    <div class="small" style="font-weight:600;margin-bottom:6px">Skrift</div>
-                    <div class="chips" style="margin-bottom:14px">
-                        <button v-for="(label, k) in FONTS" :key="k" :class="['chip', { on: ed.data.font === k }]" @click="ed.data.font = k">{{ ed.data.font === k ? '✓ ' : '' }}{{ label }}</button>
-                    </div>
+                    <p class="small muted" style="margin:0 0 12px">Skriften er altid klubbens (Futura). Medlemmerne kan selv vælge <em>Brug letlæselig skrifttype</em> under Farvetema.</p>
                     <label class="field"><span>Runde hjørner: {{ ed.data.radius }} px</span>
                         <input type="range" min="0" max="20" step="1" v-model.number="ed.data.radius"></label>
                     <div class="row" style="gap:8px;margin-top:8px">
@@ -164,7 +161,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { api, toast } from '../api';
-import { ALLOWED, BUILT_IN, COLOR_FIELDS, FONTS, checks, refreshDesign, inkOn } from '../design';
+import { ALLOWED, BUILT_IN, COLOR_FIELDS, checks, refreshDesign, inkOn } from '../design';
 import PalettePick from '../components/PalettePick.vue';
 import { isMobile } from '../mobile';
 import HelpButton from '../components/HelpButton.vue';
@@ -174,9 +171,9 @@ const TOOLS = [
     { id: 'tema', label: 'Tema' },
     { id: 'gem', label: 'Gem' },
     { id: 'farver', label: 'Farver' },
-    { id: 'skrift', label: 'Skrift og hjørner' },
+    { id: 'skrift', label: 'Hjørner' },
 ];
-const TITLES = { tema: 'Vælg tema', gem: 'Gem', farver: 'Farver', skrift: 'Skrift og hjørner' };
+const TITLES = { tema: 'Vælg tema', gem: 'Gem', farver: 'Farver', skrift: 'Hjørner' };
 const PAGES = { '/aktiviteter': 'Aktiviteter', '/opslag': 'Opslag', '/profil': 'Profil', '/mere': 'Mere' };
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const datoTid = (s) => new Date(s).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

@@ -17,8 +17,8 @@ class Design
     public const PALETTE = ['#f8c760', '#f18975', '#f5b8d9', '#e668a3', '#2599be', '#78cadb', '#ff9832', '#7d598b', '#fffef0', '#acd3d2', '#64a3a2', '#575756'];
     /** Lyseblå og mint en anelse mod creme (knapper/links på grå i mørk udgave), som DARK_TONES i design.js */
     public const DARK_TONES = ['#9ed9e1', '#b1d6d4'];
-    /** Designguiden: Futura (ellers Jost, der er tegnet efter Futura), eller Arial */
-    public const FONTS = ['futura', 'arial', 'kombi'];
+    /** Egne temaer bruger altid klubbens skrift (Futura, ellers Jost); medlemmet kan selv vælge letlæselig skrift */
+    public const FONTS = ['futura'];
     public const STATUSES = ['available', 'development'];
     /** Navnene på de indbyggede temaer kan ikke bruges igen */
     public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'SurfHorsens (Arial)', 'SurfHorsens kombi', 'SurfHorsens (mørk)', 'Hav', 'Hav (mørk)', 'Mint', 'Mint (mørk)', 'Solnedgang', 'Solnedgang (mørk)', 'Mørk'];
@@ -29,7 +29,7 @@ class Design
             'name' => ['required', 'string', 'max:40', 'not_in:'.implode(',', self::BUILT_IN),
                 \Illuminate\Validation\Rule::unique('design_themes', 'name')->ignore($ignoreId)],
             'status' => 'required|in:'.implode(',', self::STATUSES),
-            'data' => 'required|array', 'data.radius' => 'required|integer|min:0|max:20', 'data.font' => 'required|in:'.implode(',', self::FONTS),
+            'data' => 'required|array', 'data.radius' => 'required|integer|min:0|max:20', 'data.font' => 'nullable|string',
         ];
         foreach (['light', 'dark'] as $m) {
             foreach (self::COLORS as $c) $r["data.$m.$c"] = ['required', 'regex:/^#[0-9a-fA-F]{6}$/', fn ($a, $v, $fail) => self::allowed($v) || $fail('Farven er ikke en af klubbens farver.')];
@@ -85,7 +85,7 @@ class Design
     /** Kun de kendte nøgler gemmes. */
     public static function clean(array $d): array
     {
-        $out = ['radius' => (int) $d['radius'], 'font' => $d['font']];
+        $out = ['radius' => (int) $d['radius'], 'font' => 'futura'];
         foreach (['light', 'dark'] as $m) {
             foreach (self::COLORS as $c) $out[$m][$c] = strtolower($d[$m][$c]);
         }
