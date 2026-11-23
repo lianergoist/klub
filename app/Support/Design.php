@@ -15,8 +15,8 @@ class Design
     public const COLORS = ['bg', 'surface', 'ink', 'heading', 'accent', 'brand', 'orange'];
     /** SurfHorsens' designguide: de eneste tilladte farver (digital, 100 %). Samme liste i resources/js/design.js (PALETTE). */
     public const PALETTE = ['#f8c760', '#f18975', '#f5b8d9', '#e668a3', '#2599be', '#78cadb', '#ff9832', '#7d598b', '#fffef0', '#acd3d2', '#64a3a2', '#575756'];
-    /** Lyseblå og mint en anelse mod creme (knapper/links på grå i mørk udgave), som DARK_TONES i design.js */
-    public const DARK_TONES = ['#9ed9e1', '#b1d6d4'];
+    /** Mørk udgave: lyse farver en anelse mod creme (knapper/links) og lilla blandet med grå, som DARK_TONES i design.js */
+    public const DARK_TONES = ['#9ed9e1', '#b1d6d4', '#f9d2e2', '#6e5876', '#66586b'];
     /** Egne temaer bruger altid klubbens skrift (Futura, ellers Jost); medlemmet kan selv vælge letlæselig skrift */
     public const FONTS = ['futura'];
     public const STATUSES = ['available', 'development'];

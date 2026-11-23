@@ -83,6 +83,12 @@ html[data-mork] {
 }
 /* Mørk udgave af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
    Lyseblå og mint er lige under 4,5 i kontrast på grå; knapper/links er derfor en let toning mod creme (Hav 28 %, Mint 6 %). */
+/* Mørk SurfHorsens: lilla (60 % lilla på grå) i stedet for grå, så det ikke ligner mørk Solnedgang. Gul kan ikke læses på lilla:
+   knapper og links er lys pink med 37 % creme, overskrifter lys pink. */
+html[data-tema=klub][data-mork] {
+    --bg: #6e5876; --surface: #66586b; --surface-2: #6a5871; --line: #8e7d91; --ink-2: #eeece1; --ink-3: #eeece1;
+    --heading: #f5b8d9; --brand: #6e5876; --accent: #f9d2e2; --accent-soft: #7b697c; --sand: #865c79; --orange: #e668a3;
+}
 html[data-tema=standard][data-mork] { --heading: #78cadb; --accent: #9ed9e1; --accent-soft: #616969; --sand: #4b6870; --orange: #2599be; }
 html[data-tema=gron][data-mork] { --heading: #acd3d2; --accent: #b1d6d4; --accent-soft: #646968; --sand: #5a6a69; --orange: #64a3a2; }
 html[data-tema=orange][data-mork] { --heading: #ff9832; --sand: #81674d; --orange: #ff9832; }

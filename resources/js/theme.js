@@ -10,9 +10,9 @@ import { PREVIEW, design, findTheme, themeColor } from './design';
 // oversættes af fromOld(), så medlemmerne beholder deres valg.
 const BUILT_IN = { klub: 'SurfHorsens', standard: 'Hav', gron: 'Mint', orange: 'Solnedgang' };
 export const THEMES = reactive({ ...BUILT_IN });
-export const MODES = { lys: 'Lys', mork: 'Mørk', auto: 'Automatisk' };
+export const MODES = { auto: 'Automatisk', lys: 'Lys', mork: 'Mørk' }; // Automatisk først: det er standard
 // Statuslinjens farve (menufarven i lys udgave; mørk udgave er altid grå)
-const COLORS = { klub: '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#575756' };
+const COLORS = { klub: '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#575756', 'klub-dark': '#6e5876' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);
@@ -64,7 +64,7 @@ function apply() {
     html.dataset.tema = t;
     if (mork) html.dataset.mork = ''; else delete html.dataset.mork;
     if (store.letlaeselig && !PREVIEW) html.dataset.letlaeselig = ''; else delete html.dataset.letlaeselig;
-    const color = isCustom(t) ? themeColor(t, mork) : (mork ? COLORS.dark : COLORS[t]);
+    const color = isCustom(t) ? themeColor(t, mork) : (mork ? COLORS[t + '-dark'] || COLORS.dark : COLORS[t]);
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', color || COLORS.klub);
     // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke
     // eslint-disable-next-line no-undef
