@@ -187,6 +187,8 @@ textarea { min-height: 90px; }
 .tag.warn { background: var(--warn-soft); color: var(--warn); }
 .tag.bad { background: var(--bad-soft); color: var(--bad); }
 .tag.info { background: var(--accent-soft); color: var(--accent); }
+/* Mærkater direkte på sidens baggrund (fx øverst på profilen): creme som kortene, statusfarven bevares i teksten */
+.on-bg .tag { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: .92rem; }
 .banner.warn { background: var(--warn-soft); color: var(--warn); }
 .banner.info { background: var(--accent-soft); color: var(--ink); }

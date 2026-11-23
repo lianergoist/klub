@@ -8,7 +8,7 @@
         </template>
         <template v-else>
         <h1>{{ p.profile.name }}</h1>
-        <p class="muted" style="margin-bottom:14px">
+        <p class="muted on-bg" style="margin-bottom:14px">
             <span :class="['tag', p.profile.status === 'active' ? 'ok' : 'warn']">{{ p.profile.status_label }}</span>
             <span v-if="p.membership" class="tag ok">{{ p.membership.name }}<template v-if="p.membership.valid_to"> · til {{ dato(p.membership.valid_to) }}</template></span>
             <span v-else-if="p.upcoming" class="tag info">{{ p.upcoming.name }} · fra {{ dato(p.upcoming.valid_from) }}</span>
