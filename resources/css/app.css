@@ -6,11 +6,13 @@
 /* ===== Farver fra SurfHorsens' designguide (digital, 100 %) =====
    Primære: gul #f8c760 · laks #f18975 · lys pink #f5b8d9 · pink #e668a3 · blå #2599be · lyseblå #78cadb · orange #ff9832 · lilla #7d598b · creme #fffef0
    Sekundære: mint #acd3d2 · petrol #64a3a2 · grå #575756
+   Tilføjet af klubben: sand #e3d8d3 – baggrunden på surfhorsens.dk (lavet af samme designer), bruges i temaet Sand.
    Alle temaer bruger kun disse farver. Synlige flader (menu, knapper, kort, overskrifter) er rene paletfarver; baggrunde er lyse toninger
    (35 % farve på creme), og kanter, dæmpet tekst og statusfarver er toninger af paletfarverne, så tekst kan læses (WCAG AA).
    Paletten har hverken hvid eller sort: tekst er grå eller creme. Skrift: Futura, ellers Jost (fri, tegnet efter Futura), ellers Arial.
    Lomon Milk (statements) må kun bruges af designstudiet og indgår ikke.
-   Samme beregning som egne temaer (derive i resources/js/design.js). */
+   Samme beregning som egne temaer (derive i resources/js/design.js).
+   :root er SurfHorsens (standardtemaet, data-tema=klub) og grundlaget for de andre temaer. */
 :root {
     color-scheme: light;
     --bg: #fce6e8;
@@ -30,6 +32,7 @@
     --orange: #ff9832;
     --pink: #e668a3;
     --teal: #64a3a2;
+    --track: var(--surface-2); /* bunden af pladsbjælken (fyldt med --teal) */
     --ok: #5a6b6a;   --ok-soft: #deede4;
     --warn: #79644f; --warn-soft: #fce8b6;
     --bad: #825c6d;  --bad-soft: #fbe2e7;
@@ -49,6 +52,14 @@
 /* Udseende = tre valg (resources/js/theme.js): farvetema html[data-tema] (klub = SurfHorsens, standard = Hav, gron = Mint, orange = Solnedgang, egen-<id>),
    mørk udgave html[data-mork] (Lys, Mørk eller Automatisk efter enheden) og letlæselig skrift html[data-letlaeselig].
    Nøglerne standard/gron/orange er de tidligere temaer Blå/Grøn/Orange, så gemte valg flyttes med. */
+/* ===== Sand: sand baggrund som på surfhorsens.dk og designguidens farvekombinationer:
+   lilla menu med orange markering og creme (orange/lilla), datobokse i gul (orange/gul tone i tone),
+   pladsbjælke i mint og petrol (tone i tone), valgte filtre og info i lys pink.
+   Lilla på sand har kontrast 4,1: fint til overskrifter, lidt under 4,5 for små links direkte på baggrunden (som på hjemmesiden). ===== */
+html[data-tema=sand] {
+    --bg: #e3d8d3; --surface-2: #f1ebe2; --line: #d2c9c4; --ink-2: #5e5e5c; --ink-3: #5e5e5c;
+    --accent-soft: #fce6e8; --sand: #fce5af; --track: #d6e9e1;
+}
 /* ===== Letlæselig skrift: Arial i brødtekst, lister og tabeller (læsbart i små størrelser), Futura/Jost i overskrifter og knapper.
    html:root, så den også gælder egne temaer (:root[data-tema=egen-…] sætter selv --font) ===== */
 html:root[data-letlaeselig] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; --font-heading: Futura, "Futura PT", "Jost", Arial, sans-serif; }
@@ -77,15 +88,15 @@ html[data-mork] {
     --ink: #fffef0; --ink-2: #ddddd1; --ink-3: #d0cfc5;
     --heading: #f8c760; --brand: #575756; --brand-ink: #fffef0; --accent: #f8c760; --btn-ink: #575756; --accent-soft: #6e6757; --sand: #7b5b69; --orange: #e668a3;
     --ok: #cae2dd; --ok-soft: #596261; --warn: #fbe0a2; --warn-soft: #706151; --bad: #f8d0e1; --bad-soft: #6c5a62; --status-ink: #575756;
-    --series-1: #78cadb; --series-2: #f5b8d9;
+    --series-1: #78cadb; --series-2: #f5b8d9; --track: var(--surface-2);
     --nav-ink: #fffef0; --nav-ink-2: rgba(255,254,240,.9); --nav-hover: rgba(255,254,240,.08); --nav-on: rgba(255,254,240,.16); --nav-line: rgba(255,254,240,.16);
     --shadow: none;
 }
 /* Mørk udgave af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
    Lyseblå og mint er lige under 4,5 i kontrast på grå; knapper/links er derfor en let toning mod creme (Hav 28 %, Mint 6 %). */
-/* Mørk SurfHorsens: lilla (60 % lilla på grå) i stedet for grå, så det ikke ligner mørk Solnedgang. Gul kan ikke læses på lilla:
+/* Mørk SurfHorsens og Sand: lilla (60 % lilla på grå) i stedet for grå, så det ikke ligner mørk Solnedgang. Gul kan ikke læses på lilla:
    knapper og links er lys pink med 37 % creme, overskrifter lys pink. */
-html[data-tema=klub][data-mork] {
+html:is([data-tema=klub], [data-tema=sand])[data-mork] {
     --bg: #6e5876; --surface: #66586b; --surface-2: #6a5871; --line: #8e7d91; --ink-2: #eeece1; --ink-3: #eeece1;
     --heading: #f5b8d9; --brand: #6e5876; --accent: #f9d2e2; --accent-soft: #7b697c; --sand: #865c79; --orange: #e668a3;
 }
@@ -233,7 +244,7 @@ h1, h2, h3, h4, .btn, .brandmark, .tabs a, .tabs button, th, .kpi .l, .mgroup, .
 .act .t { font-weight: 650; }
 .act .meta { font-size: .85rem; color: var(--ink-2); margin: 2px 0 6px; }
 .act.cancelled .t { text-decoration: line-through; color: var(--ink-3); }
-.capacity { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-top: 6px; max-width: 160px; }
+.capacity { height: 5px; background: var(--track); border-radius: 3px; overflow: hidden; margin-top: 6px; max-width: 160px; }
 .capacity > i { display: block; height: 100%; background: var(--teal); border-radius: 3px; }
 .timeline { list-style: none; padding: 0; margin: 0; font-size: .87rem; }
 .timeline li { padding: 4px 0 4px 16px; position: relative; color: var(--ink-2); }

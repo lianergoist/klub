@@ -27,12 +27,15 @@ import { store } from '../api';
 import { MODES, THEMES, setMode, setReadable, setTheme } from '../theme';
 import { findTheme } from '../design';
 
-// Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen)
+// Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen):
+// designguidens farvekombinationer – to halvcirkler med en creme prik i midten
+const combo = (top, bottom, mid = '#fffef0') => `radial-gradient(circle, ${mid} 0 28%, transparent 30%), linear-gradient(${top} 50%, ${bottom} 50%)`;
 const SWATCH = {
-    klub: 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
-    standard: 'linear-gradient(135deg, #575756 50%, #2599be 50%)',
-    gron: 'linear-gradient(135deg, #acd3d2 50%, #64a3a2 50%)',
-    orange: 'linear-gradient(135deg, #f8c760 50%, #ff9832 50%)',
+    klub: combo('#f18975', '#f5b8d9', '#e668a3'), // laks/lys pink med pink (blandet)
+    sand: combo('#ff9832', '#7d598b'),          // orange/lilla (blandet)
+    standard: combo('#2599be', '#78cadb'),      // blå/lyseblå (tone i tone)
+    gron: combo('#acd3d2', '#64a3a2'),          // mint/petrol (tone i tone)
+    orange: combo('#ff9832', '#f8c760'),        // orange/gul (tone i tone)
 };
 // Egne temaer: menu, knapper og detaljer
 const swatch = (k) => {

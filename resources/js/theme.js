@@ -3,16 +3,16 @@ import { store } from './api';
 import { PREVIEW, design, findTheme, themeColor } from './design';
 
 // Udseende = tre uafhængige valg (24/11-2026):
-//   farvetema  (store.tema):        klub = SurfHorsens, standard = Hav, gron = Mint, orange = Solnedgang, eller et eget tema 'egen-<id>'
+//   farvetema  (store.tema):        klub = SurfHorsens (lyserød, standard), sand = Sand (baggrunden fra surfhorsens.dk), standard = Hav, gron = Mint, orange = Solnedgang, eller et eget tema 'egen-<id>'
 //   tilstand   (store.tilstand):    'lys', 'mork' eller 'auto' (efter telefonens/computerens indstilling)
 //   letlæselig (store.letlaeselig): Arial i brødtekst, Futura/Jost i overskrifter og knapper
 // Nøglerne standard/gron/orange var engang Blå/Grøn/Orange; de gamle valg (fx 'auto', 'mork', 'standard-mork', 'klub-kombi')
 // oversættes af fromOld(), så medlemmerne beholder deres valg.
-const BUILT_IN = { klub: 'SurfHorsens', standard: 'Hav', gron: 'Mint', orange: 'Solnedgang' };
+const BUILT_IN = { klub: 'SurfHorsens', sand: 'Sand', standard: 'Hav', gron: 'Mint', orange: 'Solnedgang' };
 export const THEMES = reactive({ ...BUILT_IN });
 export const MODES = { auto: 'Automatisk', lys: 'Lys', mork: 'Mørk' }; // Automatisk først: det er standard
 // Statuslinjens farve (menufarven i lys udgave; mørk udgave er altid grå)
-const COLORS = { klub: '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#575756', 'klub-dark': '#6e5876' };
+const COLORS = { klub: '#7d598b', 'klub-dark': '#6e5876', sand: '#7d598b', 'sand-dark': '#6e5876', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#575756' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);
@@ -21,7 +21,7 @@ const isCustom = (t) => typeof t === 'string' && t.startsWith('egen-');
 /** Et gammelt temavalg (før 24/11-2026: ét valg for farve, lys/mørk og skrift) → { tema, tilstand, letlaeselig } */
 function fromOld(old) {
     if (isCustom(old)) return { tema: old, tilstand: 'auto', letlaeselig: false }; // egne temaer fulgte enheden
-    const m = /^(klub|standard|gron|orange)(-mork)?$/.exec(old || '');
+    const m = /^(klub|sand|standard|gron|orange)(-mork)?$/.exec(old || '');
     if (m) return { tema: m[1], tilstand: m[2] ? 'mork' : 'lys', letlaeselig: false };
     return {
         mork: { tema: 'klub', tilstand: 'mork', letlaeselig: false },

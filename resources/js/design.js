@@ -21,6 +21,7 @@ export const inkOn = (bg) => (contrast('#fffef0', bg) >= contrast('#575756', bg)
 export const PALETTE = {
     '#f8c760': 'Gul', '#f18975': 'Laks', '#f5b8d9': 'Lys pink', '#e668a3': 'Pink', '#2599be': 'Blå', '#78cadb': 'Lyseblå',
     '#ff9832': 'Orange', '#7d598b': 'Lilla', '#fffef0': 'Creme', '#acd3d2': 'Mint', '#64a3a2': 'Petrol', '#575756': 'Grå',
+    '#e3d8d3': 'Sand', // ikke i designguiden: baggrunden på surfhorsens.dk (samme designer), tilføjet af klubben
 };
 const CREME = '#fffef0', GRAA = '#575756';
 /** Lys toning: 35 % paletfarve på creme – til baggrunde. Skal give samme værdier som Design::tints() i PHP. */
@@ -31,10 +32,12 @@ export const DARK_TONES = { '#9ed9e1': 'Lyseblå, til mørk', '#b1d6d4': 'Mint, 
 export const ALLOWED = { ...PALETTE, ...TINTS, ...DARK_TONES };
 
 const MORK = { bg: GRAA, surface: GRAA, ink: CREME, heading: '#f8c760', accent: '#f8c760', brand: GRAA, orange: '#e668a3' };
-const KLUB = { bg: mix(CREME, '#f5b8d9', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#7d598b', orange: '#ff9832' };
+const KLUB_DARK = { bg: '#6e5876', surface: '#66586b', ink: CREME, heading: '#f5b8d9', accent: '#f9d2e2', brand: '#6e5876', orange: '#e668a3' };
+const PINK = { bg: mix(CREME, '#f5b8d9', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#7d598b', orange: '#ff9832' };
 // Indbyggede temaer (kan åbnes som kopi i System → Design). Mørk udgave af Hav og Mint: lyseblå/mint en anelse mod creme til knapper (DARK_TONES).
 export const BUILT_IN = {
-    klub: { name: 'SurfHorsens', data: { light: KLUB, dark: { bg: '#6e5876', surface: '#66586b', ink: CREME, heading: '#f5b8d9', accent: '#f9d2e2', brand: '#6e5876', orange: '#e668a3' }, radius: 14, font: 'futura', logo: null } },
+    klub: { name: 'SurfHorsens', data: { light: PINK, dark: KLUB_DARK, radius: 14, font: 'futura', logo: null } },
+    sand: { name: 'Sand', data: { light: { ...PINK, bg: '#e3d8d3' }, dark: KLUB_DARK, radius: 14, font: 'futura', logo: null } },
     standard: { name: 'Hav', data: { light: { bg: mix(CREME, '#78cadb', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: GRAA, brand: GRAA, orange: '#2599be' }, dark: { ...MORK, heading: '#78cadb', accent: '#9ed9e1', orange: '#2599be' }, radius: 14, font: 'futura', logo: null } },
     gron: { name: 'Mint', data: { light: { bg: mix(CREME, '#acd3d2', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: '#7d598b', brand: CREME, orange: '#64a3a2' }, dark: { ...MORK, heading: '#acd3d2', accent: '#b1d6d4', orange: '#64a3a2' }, radius: 14, font: 'futura', logo: null } },
     orange: { name: 'Solnedgang', data: { light: { bg: mix(CREME, '#f8c760', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#f8c760', orange: '#ff9832' }, dark: { ...MORK, heading: '#ff9832', orange: '#ff9832' }, radius: 14, font: 'futura', logo: null } },
