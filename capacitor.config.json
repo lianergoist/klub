@@ -10,7 +10,7 @@
         },
         "StatusBar": {
             "style": "LIGHT",
-            "backgroundColor": "#7e5a8c"
+            "backgroundColor": "#7d598b"
         },
         "FirebaseMessaging": {
             "presentationOptions": [
