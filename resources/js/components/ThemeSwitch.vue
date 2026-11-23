@@ -20,11 +20,15 @@
             <input type="checkbox" :checked="store.letlaeselig" @change="setReadable($event.target.checked)">
             <span>Brug letlæselig skrifttype</span>
         </label>
+        <label v-if="store.tilstand !== 'lys'" class="ts-check">
+            <input type="checkbox" :checked="store.sort" @change="setBlack($event.target.checked)">
+            <span>Næsten sort baggrund i mørk (prøve)</span>
+        </label>
     </div>
 </template>
 <script setup>
 import { store } from '../api';
-import { MODES, THEMES, setMode, setReadable, setTheme } from '../theme';
+import { MODES, THEMES, setBlack, setMode, setReadable, setTheme } from '../theme';
 import { findTheme } from '../design';
 
 // Farveprikken ved siden af vælgeren viser det valgte tema (en <select> kan ikke vise farver i listen):

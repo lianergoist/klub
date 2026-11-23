@@ -24,7 +24,7 @@ export function usageHeaders() {
     return { 'X-Usage-Session': usageSession(), 'X-Platform': IS_APP ? 'app' : 'web' };
 }
 
-export const store = reactive({ user: null, token: readToken(), toast: null, tema: 'klub', tilstand: 'auto', letlaeselig: false });
+export const store = reactive({ user: null, token: readToken(), toast: null, tema: 'klub', tilstand: 'auto', letlaeselig: false, sort: false });
 
 export function setSession(token, user) {
     store.token = token; store.user = user;

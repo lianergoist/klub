@@ -621,6 +621,8 @@ Klubben kan lave egne farvetemaer uden teknisk hjælp og uden at ødelægge, hvo
 - **Kerne:** forhåndsvisning af de rigtige sider på mobil og computer, hvor intet kan gemmes. Siden advarer, hvis tekst og baggrund giver for lidt kontrast (WCAG AA), og man skal bekræfte, hvis temaet gøres tilgængeligt alligevel. Oprettelse, ændring og sletning står i ændringsloggen. Kræver rettigheden "Lave og rette farvetemaer" (standard: administrator).
 - **Senere:** større ændringer (fx en ny forside) tegnes som forslag i Figma eller Penpot og bygges ind af udvikleren.
 - **Afklares:** MobilePay-knappen bruger MobilePays egen blå farve, og hjemmesiden (/hjemmeside) bruger stadig de gamle farver og Poppins. Skal de også følge designguiden?
+- **Prøve:** *Næsten sort baggrund i mørk (prøve)* under Farvetema (eller `?sort=1` i adressen) giver de fem indbyggede temaer en næsten sort baggrund i mørk udgave: mørk grå (`#1f1f1e`), i SurfHorsens og Sand mørk lilla (`#262227`). Menuen er guidens grå eller lilla. Mod den mørke baggrund kan paletfarverne bruges rene i overskrifter, links og knapper. Egne temaer er ikke med.
+- **Afklares:** næsten sort baggrund bryder designguidens regel om ingen sort. Skal den være standard i mørk udgave, et valg for medlemmerne eller fjernes? Skal designeren spørges?
 - **Afklares:** hvem i klubben skal have lov til at lave temaer? Skal klubben kunne vælge et af sine egne temaer som standard i stedet for SurfHorsens?
 
 ## Forslag til faseopdeling
