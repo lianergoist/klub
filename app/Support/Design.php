@@ -18,10 +18,10 @@ class Design
     /** Lyseblå og mint en anelse mod creme (knapper/links på grå i mørk udgave), som DARK_TONES i design.js */
     public const DARK_TONES = ['#9ed9e1', '#b1d6d4'];
     /** Designguiden: Futura (ellers Jost, der er tegnet efter Futura), eller Arial */
-    public const FONTS = ['futura', 'arial'];
+    public const FONTS = ['futura', 'arial', 'kombi'];
     public const STATUSES = ['available', 'development'];
     /** Navnene på de indbyggede temaer kan ikke bruges igen */
-    public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'SurfHorsens (Arial)', 'SurfHorsens (mørk)', 'Hav', 'Hav (mørk)', 'Mint', 'Mint (mørk)', 'Solnedgang', 'Solnedgang (mørk)', 'Mørk'];
+    public const BUILT_IN = ['Automatisk', 'SurfHorsens', 'SurfHorsens (Arial)', 'SurfHorsens kombi', 'SurfHorsens (mørk)', 'Hav', 'Hav (mørk)', 'Mint', 'Mint (mørk)', 'Solnedgang', 'Solnedgang (mørk)', 'Mørk'];
 
     public static function rules(?int $ignoreId = null): array
     {

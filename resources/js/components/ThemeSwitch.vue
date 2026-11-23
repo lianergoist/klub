@@ -22,6 +22,7 @@ const SWATCH = {
     auto: 'linear-gradient(135deg, #f5b8d9 0 25%, #7d598b 25% 50%, #575756 50% 75%, #f8c760 75%)',
     klub: 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
     'klub-arial': 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
+    'klub-kombi': 'conic-gradient(#7d598b 0 25%, #e668a3 0 50%, #ff9832 0 75%, #64a3a2 0)',
     standard: 'linear-gradient(135deg, #575756 50%, #2599be 50%)',
     gron: 'linear-gradient(135deg, #acd3d2 50%, #64a3a2 50%)',
     orange: 'linear-gradient(135deg, #f8c760 50%, #ff9832 50%)',

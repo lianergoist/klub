@@ -35,6 +35,7 @@ const KLUB = { bg: mix(CREME, '#f5b8d9', 0.35), surface: CREME, ink: GRAA, headi
 export const BUILT_IN = {
     klub: { name: 'SurfHorsens', data: { light: KLUB, dark: MORK, radius: 14, font: 'futura', logo: null } },
     'klub-arial': { name: 'SurfHorsens (Arial)', data: { light: KLUB, dark: MORK, radius: 14, font: 'arial', logo: null } },
+    'klub-kombi': { name: 'SurfHorsens kombi', data: { light: KLUB, dark: MORK, radius: 14, font: 'kombi', logo: null } },
     standard: { name: 'Hav', data: { light: { bg: mix(CREME, '#78cadb', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: GRAA, brand: GRAA, orange: '#2599be' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
     gron: { name: 'Mint', data: { light: { bg: mix(CREME, '#acd3d2', 0.35), surface: CREME, ink: GRAA, heading: GRAA, accent: '#7d598b', brand: CREME, orange: '#64a3a2' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
     orange: { name: 'Solnedgang', data: { light: { bg: mix(CREME, '#f8c760', 0.35), surface: CREME, ink: GRAA, heading: '#7d598b', accent: '#7d598b', brand: '#f8c760', orange: '#ff9832' }, dark: MORK, radius: 14, font: 'futura', logo: null } },
@@ -55,11 +56,14 @@ export const COLOR_FIELDS = [
     ['orange', 'Detaljer', 'Markering af den valgte side i menuen'],
 ];
 // Designguiden: Futura, ellers Arial. Jost er en fri skrift tegnet efter Futura (bruges, hvor Futura ikke findes).
-export const FONTS = { futura: 'Futura (klubbens skrift)', arial: 'Arial' };
+export const FONTS = { futura: 'Futura (klubbens skrift)', arial: 'Arial', kombi: 'Kombi: Futura i overskrifter, Arial i tekst' };
 const FONT_CSS = {
     futura: 'Futura, "Futura PT", "Jost", Arial, sans-serif',
     arial: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
 };
+FONT_CSS.kombi = FONT_CSS.arial;
+/** Overskrifter, knapper og faner */
+const FONT_HEAD = { futura: FONT_CSS.futura, arial: FONT_CSS.arial, kombi: FONT_CSS.futura };
 
 /** themes: egne temaer, man kan vælge (dem under udvikling kun for dem, der må rette design). logo: klubbens logo. */
 export const design = reactive({ themes: [], logo: DEFAULT_LOGO });
@@ -122,7 +126,8 @@ export function themeCss(key, d) {
             + `${sel} .sidebar nav a:hover,${sel} .sidebar nav button.navbtn:hover{background:${rgba(ink, 0.08)}}${sel} .sidebar nav a.router-link-active{color:${ink};background:${rgba(ink, 0.16)};box-shadow:inset 3px 0 0 var(--orange)}\n`;
         if (isDark) out += `${sel} .sidebar{border-right:1px solid var(--line)}\n`;
     }
-    out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.futura}}\n`;
+    out += `:root[data-tema=${key}]{--radius:${Number(d.radius) || 0}px;--font:${FONT_CSS[d.font] || FONT_CSS.futura};--font-heading:${FONT_HEAD[d.font] || FONT_HEAD.futura}}\n`;
+    if (d.font === 'arial') out += `:root[data-tema=${key}] .btn{font-weight:700}\n`;
     return out;
 }
 

@@ -8,13 +8,13 @@ import { PREVIEW, design, findTheme, themeColor } from './design';
 // 'auto' = SurfHorsens, lys eller mørk efter telefonens/computerens indstilling.
 // Egne temaer fra System → Design tilføjes som 'egen-<id>' og følger også telefonens lyse/mørke tilstand.
 const BUILT_IN = {
-    auto: 'Automatisk', klub: 'SurfHorsens', mork: 'SurfHorsens (mørk)', 'klub-arial': 'SurfHorsens (Arial)',
+    auto: 'Automatisk', klub: 'SurfHorsens', mork: 'SurfHorsens (mørk)', 'klub-arial': 'SurfHorsens (Arial)', 'klub-kombi': 'SurfHorsens kombi',
     standard: 'Hav', 'standard-mork': 'Hav (mørk)', gron: 'Mint', 'gron-mork': 'Mint (mørk)', orange: 'Solnedgang', 'orange-mork': 'Solnedgang (mørk)',
 };
 // Altid mørke temaer: får html[data-mork] ligesom den mørke udgave af SurfHorsens
 const DARK = ['mork', 'standard-mork', 'gron-mork', 'orange-mork'];
 export const THEMES = reactive({ ...BUILT_IN });
-const COLORS = { klub: '#7d598b', 'klub-arial': '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', 'klub-mork': '#575756', mork: '#575756', 'standard-mork': '#575756', 'gron-mork': '#575756', 'orange-mork': '#575756' };
+const COLORS = { klub: '#7d598b', 'klub-arial': '#7d598b', 'klub-kombi': '#7d598b', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', 'klub-mork': '#575756', mork: '#575756', 'standard-mork': '#575756', 'gron-mork': '#575756', 'orange-mork': '#575756' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);

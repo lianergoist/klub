@@ -42,6 +42,7 @@
     --radius: 14px;
     --shadow: 0 1px 2px rgba(87,87,86,.07), 0 4px 16px rgba(87,87,86,.06);
     --font: Futura, "Futura PT", "Jost", Arial, sans-serif;
+    --font-heading: var(--font); /* overskrifter, små overskrifter med store bogstaver, knapper og faner */
     /* Som designguiden og surfhorsens.dk: små overskrifter med store bogstaver og luft mellem bogstaverne; ingen sammenpresset tekst */
     --caps-spacing: .1em;
 }
@@ -49,6 +50,10 @@
    Nøglerne standard/gron/orange er de tidligere temaer Blå/Grøn/Orange, så gemte valg flyttes med til Hav/Mint/Solnedgang. */
 /* ===== SurfHorsens (Arial): samme farver, kun Arial ===== */
 html[data-tema=klub-arial] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; }
+/* Arial har kun normal og fed: knapperne skal være fede, ellers bliver vægt 500 til normal */
+html[data-tema=klub-arial] .btn { font-weight: 700; }
+/* ===== SurfHorsens kombi: Futura/Jost i overskrifter og knapper (brandet), Arial i brødtekst, lister og tabeller (læsbart i små størrelser) ===== */
+html[data-tema=klub-kombi] { --font: Arial, "Helvetica Neue", Helvetica, sans-serif; --font-heading: Futura, "Futura PT", "Jost", Arial, sans-serif; }
 /* ===== Hav: lyseblå baggrund, grå menu og knapper, blå detaljer ===== */
 html[data-tema=standard] {
     --bg: #d0ece9; --surface-2: #e8f5ed; --line: #c1dad7; --ink-2: #666664; --ink-3: #666664;
@@ -209,6 +214,9 @@ tfoot td { font-weight: 700; border-bottom: 0; }
 .spinner { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 40px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .demo-ribbon { background: var(--sand); color: var(--ink-2); font-size: .78rem; text-align: center; padding: 4px 8px; }
+
+/* Overskriftsskrift (i SurfHorsens kombi Futura/Jost, mens brødteksten er Arial) */
+h1, h2, h3, h4, .btn, .brandmark, .tabs a, .tabs button, th, .kpi .l, .mgroup, .sidebar .sect, .act .when, .help-btn { font-family: var(--font-heading); }
 
 /* Aktivitetskort */
 .act { display: flex; gap: 14px; padding: 14px; color: inherit; }
