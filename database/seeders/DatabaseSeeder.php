@@ -62,7 +62,8 @@ class DatabaseSeeder extends Seeder
         // --- Demo-brugere ---
         $mk = function (array $a, string $type, ?string $hh = null, ?User $payer = null) use ($types, $typeMap) {
             $u = User::create($a + [
-                'password' => isset($a['email']) || isset($a['phone']) ? $this->pw : null, // eget login: e-mail eller telefon 'status' => $a['status'] ?? 'active',
+                'password' => isset($a['email']) || isset($a['phone']) ? $this->pw : null, // eget login: e-mail eller telefon
+                'status' => $a['status'] ?? 'active',
                 'joined_on' => $a['joined_on'] ?? $this->now->copy()->subYears(mt_rand(1, 8))->subDays(mt_rand(0, 300)),
                 'membership_type_id' => $types[$typeMap[$type] ?? $type]->id, 'consent_at' => $this->now->copy()->subYear(),
                 'city' => $a['city'] ?? 'Aarhus', 'postal_code' => $a['postal_code'] ?? '8000',
