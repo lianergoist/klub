@@ -437,7 +437,7 @@ class ActivityController extends Controller
         abort_unless($r->user()->may('activities.manage'), 403);
         $reason = $r->validate(['reason' => 'required|string|max:300', 'series' => 'boolean'])['reason'];
         $list = $this->scope($activity, $r->boolean('series'))->filter(fn ($a) => ! $a->cancelled_at);
-        $archived = 0;
+        $archived = 0; $money = ['refunded' => 0, 'refunded_amount' => 0, 'cancelled' => 0];
         foreach ($list as $a) {
             // Ingen tilmeldte: aktiviteten arkiveres og vises ikke som aflyst på listerne
             $empty = ! $a->registrations()->whereIn('status', ['signed_up', 'pending_payment'])->exists();
@@ -446,11 +446,14 @@ class ActivityController extends Controller
             // Ingen nåede at tilmelde sig: "Ny aktivitet"-notifikationen fjernes også fra indbakkerne
             if ($empty) self::forgetNotifications($a);
             Audit::log('activity.cancelled', $a, ['reason' => $reason, 'archived' => $empty]);
+            // Besked før afregning, så også dem med ubetalt regning (pending_payment) får den
             $this->notifyParticipants($a, 'Aflyst: '.$a->title.' '.$a->starts_at->locale('da')->isoFormat('D. MMM'),
-                'Aktiviteten er aflyst. Årsag: '.$reason.($a->price ? ' Betalingen refunderes af kassereren.' : ''));
+                'Aktiviteten er aflyst. Årsag: '.$reason.($a->price ? ' Betalinger refunderes, og ubetalte regninger er annulleret.' : ''),
+                ['signed_up', 'pending_payment']);
+            foreach (Payments::settleCancelledActivity($a, $r->user(), $reason) as $k => $v) $money[$k] += $v;
         }
 
-        return ['ok' => true, 'count' => $list->count(), 'archived' => $archived];
+        return ['ok' => true, 'count' => $list->count(), 'archived' => $archived] + $money + ['refunded_fmt' => Money::fmt($money['refunded_amount'])];
     }
 
     public function attendance(Request $r, Activity $activity)
@@ -666,9 +669,9 @@ class ActivityController extends Controller
         ));
     }
 
-    private function notifyParticipants(Activity $a, string $title, string $body): void
+    private function notifyParticipants(Activity $a, string $title, string $body, array $statuses = ['signed_up']): void
     {
-        $a->registrations()->where('status', 'signed_up')->with('user.household.payer')->get()
+        $a->registrations()->whereIn('status', $statuses)->with('user.household.payer')->get()
             ->map(fn ($reg) => $reg->user->payer())->unique('id')
             ->each->notify(new ClubMessage($title, $body, '/aktiviteter/'.$a->id));
     }

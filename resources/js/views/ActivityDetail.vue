@@ -204,7 +204,7 @@
         </div>
 
         <Modal v-if="showCancel" title="Aflys aktivitet" @close="showCancel = false">
-            <p v-if="a.signed_up_count">Alle tilmeldte får besked.<span v-if="a.price"> Betalinger skal refunderes af kassereren.</span></p>
+            <p v-if="a.signed_up_count">Alle tilmeldte får besked.<span v-if="a.price"> Betalte tilmeldinger refunderes automatisk, og ubetalte regninger annulleres.</span></p>
             <p v-else>Der er ingen tilmeldte, så aktiviteten arkiveres og vises ikke på aktivitetslisten.</p>
             <div v-if="a.series && a.series.remaining > 1" class="stack" style="gap:6px;margin-bottom:10px">
                 <label class="check"><input type="radio" v-model="cancelSeries" :value="false"> Kun denne gang</label>
@@ -303,7 +303,8 @@ async function cancelActivity() {
     const r = await api(`activities/${a.value.id}/cancel`, { method: 'POST', body: { reason: cancelReason.value, series: cancelSeries.value } });
     showCancel.value = false;
     if (r.count === 1 && r.archived) { toast('Aktiviteten er aflyst. Der var ingen tilmeldte, så den er arkiveret og vises ikke på listen'); return router.push('/aktiviteter'); }
-    toast(r.count > 1 ? `${r.count} gange er aflyst${r.archived ? ` (${r.archived} uden tilmeldte er arkiveret)` : ''}, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked'); load();
+    const money = [r.refunded ? `${r.refunded} betaling${r.refunded > 1 ? 'er' : ''} (${r.refunded_fmt}) refunderet` : '', r.cancelled ? `${r.cancelled} ubetalt${r.cancelled > 1 ? 'e' : ''} regning${r.cancelled > 1 ? 'er' : ''} annulleret` : ''].filter(Boolean).join(', ');
+    toast((r.count > 1 ? `${r.count} gange er aflyst${r.archived ? ` (${r.archived} uden tilmeldte er arkiveret)` : ''}, og deltagerne har fået besked` : 'Aktiviteten er aflyst, og deltagerne har fået besked') + (money ? `. ${money}` : '')); load();
 }
 async function take() {
     busy.value = true;

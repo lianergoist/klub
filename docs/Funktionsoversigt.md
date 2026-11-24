@@ -108,7 +108,9 @@ Trænere og bestyrelse opretter aktiviteter. Medlemmer ser dem og tilmelder sig.
 
 - **Senere:** forudsætninger (kræver fx duelighedsbevis eller eget udstyr), så systemet kan advare ved tilmelding.
 
-- **Senere:** aflysning med begrundelse, som automatisk giver besked og refunderer betaling.
+- **Kerne:** aflyses en aktivitet, der koster penge, refunderes betalte tilmeldinger automatisk, og ubetalte regninger annulleres, så de ikke kan betales bagefter. Både tilmeldte og dem, der mangler at betale, får besked. Refusionen bogføres som en modpostering. I proof of concept er refusionen kun en bogføring; pengene skal sendes tilbage manuelt, indtil integrationen med betalingsudbyderen er på plads.
+
+- **Afklares:** skal refusionen ved aflysning ske helt automatisk (også hos betalingsudbyderen), eller skal den lægges klar, så kassereren godkender den, før pengene sendes tilbage? Gælder det samme, uanset om det er træneren eller bestyrelsen, der aflyser? I proof of concept sker refusionen automatisk og registreres i den aflysendes navn.
 
 - **Senere:** vejrnote eller "afgøres dagen før", fordi mange aktiviteter afhænger af vind.
 

@@ -97,6 +97,38 @@ class Payments
         });
     }
 
+    /**
+     * Aflyst aktivitet: betalte tilmeldinger refunderes (resten af beløbet, hvis noget allerede er refunderet),
+     * og ubetalte regninger annulleres, så de ikke kan betales bagefter.
+     * I PoC'en er refusionen kun en bogføring; i drift skal den også sendes til betalingsudbyderen.
+     *
+     * @return array{refunded: int, refunded_amount: int, cancelled: int}
+     */
+    public static function settleCancelledActivity(\App\Models\Activity $activity, User $by, string $reason): array
+    {
+        return DB::transaction(function () use ($activity, $by, $reason) {
+            $out = ['refunded' => 0, 'refunded_amount' => 0, 'cancelled' => 0];
+            $invoices = Invoice::whereIn('id', $activity->registrations()->whereIn('status', ['signed_up', 'pending_payment'])
+                ->whereNotNull('invoice_id')->pluck('invoice_id'))->get();
+
+            foreach ($invoices as $invoice) {
+                if ($invoice->status === 'open') {
+                    $invoice->update(['status' => 'cancelled']);
+                    Audit::log('invoice.cancelled', $invoice, ['reason' => 'Aktivitet aflyst: '.$reason]);
+                    $out['cancelled']++;
+                } elseif ($invoice->status === 'paid') {
+                    $rest = $invoice->amount + $invoice->payments()->where('amount', '<', 0)->sum('amount');
+                    if ($rest <= 0) continue;
+                    self::refund($invoice, $rest, $by, 'Aktivitet aflyst – '.$reason);
+                    $out['refunded']++;
+                    $out['refunded_amount'] += $rest;
+                }
+            }
+
+            return $out;
+        });
+    }
+
     public static function methodLabel(string $m): string
     {
         return ['mobilepay' => 'MobilePay', 'card' => 'Betalingskort', 'cash' => 'Kontant', 'bank' => 'Bankoverførsel'][$m] ?? $m;
