@@ -9,7 +9,7 @@
    Tilføjet af klubben: sand #e3d8d3 – baggrunden på surfhorsens.dk (lavet af samme designer), bruges i temaet Sand.
    Alle temaer bruger kun disse farver. Synlige flader (menu, knapper, kort, overskrifter) er rene paletfarver; baggrunde er lyse toninger
    (35 % farve på creme), og kanter, dæmpet tekst og statusfarver er toninger af paletfarverne, så tekst kan læses (WCAG AA).
-   Paletten har hverken hvid eller sort: tekst er grå eller creme (undtagen prøven med næsten sort baggrund, html[data-sort]). Skrift: Futura, ellers Jost (fri, tegnet efter Futura), ellers Arial.
+   Paletten har hverken hvid eller sort: tekst er grå eller creme (undtagen den næsten sorte baggrund i mørk udgave af de indbyggede temaer). Skrift: Futura, ellers Jost (fri, tegnet efter Futura), ellers Arial.
    Lomon Milk (statements) må kun bruges af designstudiet og indgår ikke.
    Samme beregning som egne temaer (derive i resources/js/design.js).
    :root er SurfHorsens (standardtemaet, data-tema=klub) og grundlaget for de andre temaer. */
@@ -81,7 +81,7 @@ html[data-tema=orange] {
     --brand: #f8c760; --brand-ink: #575756;
     --nav-ink: #575756; --nav-ink-2: #575756; --nav-hover: rgba(87,87,86,.07); --nav-on: rgba(255,254,240,.55); --nav-line: rgba(87,87,86,.18);
 }
-/* ===== Mørk udgave (SurfHorsens): grå baggrund og menu, creme tekst, gule knapper. Grundlag for mørk udgave af alle temaer: html[data-mork] = valgt Mørk, eller Automatisk, når enheden står på mørk ===== */
+/* ===== Mørk udgave: grå baggrund og menu, creme tekst, gule knapper. Grundlag for mørk udgave af alle temaer (de indbyggede gøres næsten sorte nedenfor): html[data-mork] = valgt Mørk, eller Automatisk, når enheden står på mørk ===== */
 html[data-mork] {
     color-scheme: dark;
     --bg: #575756; --surface: #575756; --surface-2: #5f5e5d; --line: #7c7c78;
@@ -92,33 +92,22 @@ html[data-mork] {
     --nav-ink: #fffef0; --nav-ink-2: rgba(255,254,240,.9); --nav-hover: rgba(255,254,240,.08); --nav-on: rgba(255,254,240,.16); --nav-line: rgba(255,254,240,.16);
     --shadow: none;
 }
-/* Mørk udgave af Hav, Mint og Solnedgang: samme grå flader, egne knap-, overskrifts- og detaljefarver.
-   Lyseblå og mint er lige under 4,5 i kontrast på grå; knapper/links er derfor en let toning mod creme (Hav 28 %, Mint 6 %). */
-/* Mørk SurfHorsens og Sand: lilla (60 % lilla på grå) i stedet for grå, så det ikke ligner mørk Solnedgang. Gul kan ikke læses på lilla:
-   knapper og links er lys pink med 37 % creme, overskrifter lys pink. */
-html:is([data-tema=klub], [data-tema=sand])[data-mork] {
-    --bg: #6e5876; --surface: #66586b; --surface-2: #6a5871; --line: #8e7d91; --ink-2: #eeece1; --ink-3: #eeece1;
-    --heading: #f5b8d9; --brand: #6e5876; --accent: #f9d2e2; --accent-soft: #7b697c; --sand: #865c79; --orange: #e668a3;
-}
-html[data-tema=standard][data-mork] { --heading: #78cadb; --accent: #9ed9e1; --accent-soft: #616969; --sand: #4b6870; --orange: #2599be; }
-html[data-tema=gron][data-mork] { --heading: #acd3d2; --accent: #b1d6d4; --accent-soft: #646968; --sand: #5a6a69; --orange: #64a3a2; }
-html[data-tema=orange][data-mork] { --heading: #ff9832; --sand: #81674d; --orange: #ff9832; }
-/* ===== PRØVE: næsten sort baggrund i mørk udgave (html[data-sort], valgt under Udseende eller ?sort=1). Bryder designguidens "ingen sort":
-   baggrunden er en meget mørk udgave af guidens grå (lilla i SurfHorsens og Sand), kort lidt lysere, menuen er guidens grå/lilla.
-   Mod den mørke baggrund kan paletfarverne bruges rene til overskrifter, links og knapper (kontrast 7-10 i stedet for 2-4,5).
-   Gælder kun de fem indbyggede temaer; egne temaer har deres egen mørke udgave. ===== */
-html[data-mork][data-sort] {
+/* ===== Næsten sort mørk udgave af de fem indbyggede temaer (fast fra 24/11-2026; før var baggrunden guidens grå/lilla).
+   Bryder designguidens "ingen sort": baggrunden er en meget mørk udgave af guidens grå (lilla i SurfHorsens og Sand), kort lidt lysere,
+   menuen er guidens grå/lilla. Mod den mørke baggrund kan paletfarverne bruges rene til overskrifter, links og knapper (kontrast 7-10).
+   Egne temaer bruger stadig html[data-mork] ovenfor (grå) med deres egne farver. ===== */
+html:is([data-tema=klub], [data-tema=sand], [data-tema=standard], [data-tema=gron], [data-tema=orange])[data-mork] {
     --bg: #1f1f1e; --surface: #292928; --surface-2: #2f2f2e; --line: #454543;
     --brand: #575756; --btn-ink: #1f1f1e; --accent-soft: #3c3c3b; --status-ink: #1f1f1e;
     --ok-soft: #304342; --warn-soft: #533a1f; --bad-soft: #573142; --track: var(--line);
 }
-html:is([data-tema=klub], [data-tema=sand])[data-mork][data-sort] {
-    --bg: #262227; --surface: #332a36; --surface-2: #3d3041; --line: #5a4a60;
+html:is([data-tema=klub], [data-tema=sand])[data-mork] {
+    --bg: #262227; --surface: #332a36; --surface-2: #3d3041; --line: #5a4a60; --ink-2: #eeece1; --ink-3: #eeece1;
     --brand: #7d598b; --heading: #f5b8d9; --accent: #f5b8d9; --btn-ink: #262227; --accent-soft: #503d58; --sand: #613549; --orange: #e668a3; --status-ink: #262227;
 }
-html[data-tema=standard][data-mork][data-sort] { --heading: #78cadb; --accent: #78cadb; --sand: #1e4653; --orange: #2599be; --accent-soft: #32464a; }
-html[data-tema=gron][data-mork][data-sort] { --heading: #acd3d2; --accent: #acd3d2; --sand: #304342; --orange: #64a3a2; --accent-soft: #3e4847; }
-html[data-tema=orange][data-mork][data-sort] { --heading: #ff9832; --accent: #f8c760; --sand: #533a1f; --orange: #ff9832; --accent-soft: #52452b; }
+html[data-tema=standard][data-mork] { --heading: #78cadb; --accent: #78cadb; --sand: #1e4653; --orange: #2599be; --accent-soft: #32464a; }
+html[data-tema=gron][data-mork] { --heading: #acd3d2; --accent: #acd3d2; --sand: #304342; --orange: #64a3a2; --accent-soft: #3e4847; }
+html[data-tema=orange][data-mork] { --heading: #ff9832; --accent: #f8c760; --sand: #533a1f; --orange: #ff9832; --accent-soft: #52452b; }
 html[data-mork] .tag.info { color: var(--ink); }
 /* Menuen har samme farve som siden: en streg adskiller dem */
 html[data-mork] .sidebar { border-right: 1px solid var(--line); }

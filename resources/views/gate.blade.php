@@ -12,7 +12,7 @@
     <style>
         /* Klubbens farver (designguiden); lys eller mørk efter enheden */
         :root { color-scheme: light; --bg:#fce6e8; --card:#fffef0; --ink:#575756; --ink2:#575756; --line:#e8d5d6; --accent:#7d598b; --accentink:#fffef0; --bad:#825c6d; --badsoft:#fbe2e7; }
-        @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --bg:#575756; --card:#575756; --ink:#fffef0; --ink2:#ddddd1; --line:#7c7c78; --accent:#f8c760; --accentink:#575756; --bad:#f8d0e1; --badsoft:#6c5a62; } }
+        @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --bg:#262227; --card:#332a36; --ink:#fffef0; --ink2:#eeece1; --line:#5a4a60; --accent:#f5b8d9; --accentink:#262227; --bad:#f8d0e1; --badsoft:#573142; } }
         * { box-sizing: border-box; }
         body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink); font:15px/1.45 Futura, "Futura PT", Arial, sans-serif; padding:24px 16px; }
         .box { width:100%; max-width:380px; text-align:center; }

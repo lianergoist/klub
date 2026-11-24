@@ -11,10 +11,8 @@ import { PREVIEW, design, findTheme, themeColor } from './design';
 const BUILT_IN = { klub: 'SurfHorsens', sand: 'Sand', standard: 'Hav', gron: 'Mint', orange: 'Solnedgang' };
 export const THEMES = reactive({ ...BUILT_IN });
 export const MODES = { auto: 'Automatisk', lys: 'Lys', mork: 'Mørk' }; // Automatisk først: det er standard
-// Statuslinjens farve (menufarven i lys udgave; mørk udgave er altid grå)
-const COLORS = { klub: '#7d598b', 'klub-dark': '#6e5876', sand: '#7d598b', 'sand-dark': '#6e5876', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#575756' };
-// PRØVE: næsten sort baggrund i mørk udgave (html[data-sort])
-const BLACK = { klub: '#262227', sand: '#262227', dark: '#1f1f1e' };
+// Statuslinjens farve (menufarven i lys udgave; i mørk udgave baggrunden: næsten sort, lilla i SurfHorsens og Sand)
+const COLORS = { klub: '#7d598b', 'klub-dark': '#262227', sand: '#7d598b', 'sand-dark': '#262227', standard: '#575756', gron: '#e2efe6', orange: '#f8c760', dark: '#1f1f1e' };
 const dark = window.matchMedia('(prefers-color-scheme: dark)');
 // Android-appen: WebView'en melder ikke telefonens mørke tilstand videre, så vi spørger appen selv (MainActivity.KlubNative)
 const systemDark = () => (typeof window.KlubNative?.isDark === 'function' ? window.KlubNative.isDark() : dark.matches);
@@ -47,7 +45,7 @@ function save() {
         localStorage.setItem('farvetema', store.tema);
         localStorage.setItem('tilstand', store.tilstand);
         localStorage.setItem('letlaeselig', store.letlaeselig ? '1' : '0');
-        localStorage.setItem('sort', store.sort ? '1' : '0');
+        localStorage.removeItem('sort'); // prøven med næsten sort baggrund (23/11-2026) er nu standard
     } catch {}
 }
 
@@ -67,9 +65,7 @@ function apply() {
     html.dataset.tema = t;
     if (mork) html.dataset.mork = ''; else delete html.dataset.mork;
     if (store.letlaeselig && !PREVIEW) html.dataset.letlaeselig = ''; else delete html.dataset.letlaeselig;
-    const sort = mork && store.sort && !PREVIEW && !isCustom(t);
-    if (sort) html.dataset.sort = ''; else delete html.dataset.sort;
-    const color = isCustom(t) ? themeColor(t, mork) : sort ? BLACK[t] || BLACK.dark : (mork ? COLORS[t + '-dark'] || COLORS.dark : COLORS[t]);
+    const color = isCustom(t) ? themeColor(t, mork) : (mork ? COLORS[t + '-dark'] || COLORS.dark : COLORS[t]);
     document.querySelector('meta[name=theme-color]')?.setAttribute('content', color || COLORS.klub);
     // Appen: statuslinjens klokkeslæt og ikoner skal være mørke på lyse temaer og lyse på mørke
     // eslint-disable-next-line no-undef
@@ -85,10 +81,8 @@ export function setTheme(t, remember = false) {
 }
 export function setMode(m) { store.tilstand = MODES[m] ? m : 'auto'; apply(); save(); }
 export function setReadable(on) { store.letlaeselig = !!on; apply(); save(); }
-/** PRØVE: næsten sort baggrund i mørk udgave */
-export function setBlack(on) { store.sort = !!on; apply(); save(); }
 
-/** Fx ?tema=hav... i adressen: ?tema=<nøgle> (også de gamle som 'standard-mork'), ?tilstand=lys|mork|auto, ?letlaeselig=1, ?sort=1 (prøve) */
+/** Fx ?tema=hav... i adressen: ?tema=<nøgle> (også de gamle som 'standard-mork'), ?tilstand=lys|mork|auto, ?letlaeselig=1 */
 export function initTheme() {
     // Forhåndsvisningen i System → Design viser temaet, der redigeres, og gemmer intet (localStorage deles med siden udenom)
     if (PREVIEW) {
@@ -107,9 +101,7 @@ export function initTheme() {
     if (q.has('letlaeselig')) v.letlaeselig = q.get('letlaeselig') === '1';
     store.tilstand = MODES[v.tilstand] ? v.tilstand : 'auto';
     store.letlaeselig = !!v.letlaeselig;
-    try { store.sort = localStorage.getItem('sort') === '1'; } catch {}
-    if (q.has('sort')) store.sort = q.get('sort') === '1';
-    setTheme(v.tema, !!(fromUrl || q.has('tilstand') || q.has('letlaeselig') || q.has('sort')));
+    setTheme(v.tema, !!(fromUrl || q.has('tilstand') || q.has('letlaeselig')));
     // Følg med, når telefonen skifter mellem lys og mørk (fx om aftenen)
     const follow = () => { if (store.tilstand === 'auto') apply(); };
     dark.addEventListener('change', follow);
