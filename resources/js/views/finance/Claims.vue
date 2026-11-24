@@ -103,12 +103,12 @@ watch(status, load);
 onMounted(async () => { load(); accounts.value = await api('finance/accounts'); });
 
 const viewing = ref(null);
-/** Billeder vises i appen/siden; PDF'er åbnes i en ny fane (web) eller deles via Del-menuen (app). */
+/** Billeder vises i appen/siden; PDF'er åbnes i en ny fane (web) eller i telefonens PDF-læser (app). */
 async function openFile(e, c) {
     if (!c.is_pdf) { e.preventDefault(); viewing.value = c; return; }
     if (!IS_APP) return;
     e.preventDefault();
-    try { const blob = await (await fetch(c.file_url)).blob(); (await import('../../native')).shareFile(blob, `kvittering-${c.id}.pdf`); }
+    try { const blob = await (await fetch(c.file_url)).blob(); await (await import('../../native')).openFile(blob, `kvittering-${c.id}.pdf`); }
     catch { toast('Kvitteringen kunne ikke åbnes', 'error'); }
 }
 async function copy(text, what) {

@@ -95,7 +95,13 @@ export async function download(path, filename) {
     if (!res.ok) { toast('Filen kunne ikke hentes', 'error'); return; }
     const blob = await res.blob();
     // eslint-disable-next-line no-undef
-    if (__APP__) { (await import('./native')).shareFile(blob, filename).catch(() => toast('Filen kunne ikke deles', 'error')); return; }
+    if (__APP__) {
+        const native = await import('./native');
+        // Bilag (PDF/billeder) åbnes i en app, der kan vise dem; CSV og dataudtræk deles
+        if (native.isViewable(filename, blob.type)) native.openFile(blob, filename).catch(() => toast('Filen kunne ikke åbnes', 'error'));
+        else native.shareFile(blob, filename).catch(() => toast('Filen kunne ikke deles', 'error'));
+        return;
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();

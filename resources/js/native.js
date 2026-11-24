@@ -76,14 +76,33 @@ export async function openWeb(path) {
     await Browser.open({ url: WEB_URL + path });
 }
 
-/** Filer i appen (CSV, bilag, dataudtræk): WebView'en kan ikke downloade, så filen gemmes midlertidigt og deles via telefonens Del-menu. */
-export async function shareFile(blob, filename) {
+/** WebView'en kan ikke downloade, så filer gemmes midlertidigt i appens cache-mappe. Returnerer filens URI. */
+async function writeCache(blob, filename) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem');
-    const { Share } = await import('@capacitor/share');
     const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
-    const { uri } = await Filesystem.writeFile({ path: filename.replace(/[\\/:*?"<>|]/g, '_'), data, directory: Directory.Cache });
+    return (await Filesystem.writeFile({ path: filename.replace(/[\\/:*?"<>|]/g, '_'), data, directory: Directory.Cache })).uri;
+}
+
+async function shareUri(uri, filename) {
+    const { Share } = await import('@capacitor/share');
     try { await Share.share({ title: filename, files: [uri] }); } catch { /* brugeren lukkede Del-menuen */ }
 }
+
+/** Filer, der skal sendes videre (CSV, dataudtræk): deles via telefonens Del-menu. */
+export async function shareFile(blob, filename) {
+    await shareUri(await writeCache(blob, filename), filename);
+}
+
+/** Filer, der skal ses (PDF, billeder): åbnes i en app, der kan vise filtypen ("Åbn med").
+ *  Del-menuen viser kun apps, der kan modtage filer, ikke fx PDF-læsere. Findes ingen app til filtypen, bruges Del-menuen. */
+export async function openFile(blob, filename) {
+    const uri = await writeCache(blob, filename);
+    const { FileOpener } = await import('@capacitor-community/file-opener');
+    try { await FileOpener.open({ filePath: uri, contentType: blob.type || undefined, openWithDefault: true }); } catch { await shareUri(uri, filename); }
+}
+
+/** Kan filen vises i en app (frem for at blive delt)? */
+export const isViewable = (filename, type = '') => /^(application\/pdf|image\/)/.test(type) || /\.(pdf|jpe?g|png|gif|webp|heic)$/i.test(filename);
 
 /** Statuslinjen: lyse ikoner på mørke temaer (Style.Dark), mørke ikoner på lyse temaer (Style.Light). Kaldes fra theme.js. */
 export function setStatusBarDark(isDark) {
