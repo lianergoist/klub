@@ -98,12 +98,14 @@ class PackageController extends Controller
             'products' => $u->status === 'pending' ? [] : self::offers('product'),
             'can_add_people' => ! $u->household_id || $u->household?->payer_id === $u->id,
             // Personer i en husstand, der ikke selv betaler: hvem betaler, og hvem er ellers med
-            'payer' => ($pay = $u->payer())->id === $u->id ? null : ['name' => $pay->name, 'email' => $pay->email, 'phone' => $pay->phone],
+            'payer' => ($pay = $u->payer())->id === $u->id ? null : ['name' => $pay->name],
             'family' => $u->payer()->id === $u->id ? [] : User::where('household_id', $u->household_id)->whereNotIn('status', ['resigned', 'guest'])
                 ->orderByRaw('id = ? desc', [$u->household->payer_id])->orderBy('birthdate')->get()
                 ->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'age' => $m->age(), 'is_payer' => $m->id === $u->household->payer_id,
                     'membership' => $m->currentMembership()?->package->name])->values(),
-            'next_plan' => (! $u->household_id || $u->household?->payer_id === $u->id) && (($b = MembershipChange::bases($u))[0] || $b[1]) ? MembershipChange::nextPlan(...$b) : null,
+            // Kun for betaleren af et medlemskab med flere personer – for et enkeltmedlemskab er der ingen at fjerne
+            'next_plan' => (! $u->household_id || $u->household?->payer_id === $u->id) && (($b = MembershipChange::bases($u))[0] || $b[1])
+                && count(($np = MembershipChange::nextPlan(...$b))['people']) > 1 ? $np : null,
             'household' => $household->map(fn ($m) => [
                 'id' => $m->id, 'name' => $m->name, 'birthdate' => $m->birthdate?->toDateString(), 'age' => $m->age(), 'status' => $m->status,
                 'email' => $m->email, 'phone' => $m->phone, 'can_login' => (bool) \App\Support\TempPassword::loginOf($m), 'has_password' => (bool) $m->password,

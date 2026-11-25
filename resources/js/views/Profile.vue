@@ -84,7 +84,7 @@
                 <template v-if="shop.payer">
                     <div class="card">
                         <p style="margin:0 0 6px"><strong>{{ shop.payer.name }}</strong> er betaler for jeres husstand.</p>
-                        <p class="small muted" style="margin:0">{{ shop.payer.name.split(' ')[0] }} betaler kontingent og regninger, kan tilmelde jer alle til aktiviteter og ændre medlemskabet. Skal noget ændres, så kontakt {{ shop.payer.name.split(' ')[0] }}<template v-if="shop.payer.phone || shop.payer.email"> (<a v-if="shop.payer.phone" :href="`tel:${shop.payer.phone.replace(/\s/g, '')}`">{{ shop.payer.phone }}</a><template v-if="shop.payer.phone && shop.payer.email">, </template><a v-if="shop.payer.email" :href="`mailto:${shop.payer.email}`">{{ shop.payer.email }}</a>)</template>.</p>
+                        <p class="small muted" style="margin:0">{{ shop.payer.name.split(' ')[0] }} betaler kontingent og regninger, kan tilmelde jer alle til aktiviteter og ændre medlemskabet. Skal noget ændres, så kontakt {{ shop.payer.name.split(' ')[0] }}.</p>
                     </div>
                     <div class="card" style="padding:4px 16px">
                         <ul class="list">
@@ -205,10 +205,11 @@
             <h2 style="margin-top:20px">Beskeder fra andre medlemmer</h2>
             <label class="check"><input type="checkbox" v-model="f.allow_messages" @change="saveProfile"> Andre medlemmer må skrive til mig</label>
             <p class="small muted" style="margin-top:4px">Slår du det fra, kan andre medlemmer ikke skrive til dig, og du kan selv kun skrive med trænere og bestyrelse. Trænere og bestyrelse kan altid skrive til dig om klubbens aktiviteter.</p>
+            <h2 style="margin-top:20px">Opslag fra andre medlemmer</h2>
+            <label class="check"><input type="checkbox" v-model="f.notify_posts" @change="saveProfile"> Push-besked, når et medlem skriver et opslag om en kategori, jeg følger</label>
+            <p v-if="f.notify_posts && !f.notify_push" class="small muted" style="margin:4px 0 0 30px">Kræver, at push-besked på telefonen er slået til ovenfor.</p>
             <h2 style="margin-top:20px">Hvilke kategorier vil du høre om?</h2>
             <p class="small muted">Fravælg kategorier, du ikke er interesseret i. Det gælder både nye aktiviteter og opslag. Du får stadig besked om aktiviteter, du er tilmeldt. Nedtonede kategorier får alle medlemmer besked om.</p>
-            <label class="check" style="margin:8px 0"><input type="checkbox" v-model="f.notify_posts" @change="saveProfile"> Push-besked, når et medlem skriver et opslag om en kategori, jeg følger</label>
-            <p v-if="f.notify_posts && !f.notify_push" class="small muted" style="margin:-4px 0 8px 30px">Kræver, at push-besked på telefonen er slået til ovenfor.</p>
             <ul class="list">
                 <li v-for="c in cats" :key="c.id"><label :class="['check', { locked: c.mandatory }]" :title="c.mandatory ? 'Klubben sender altid besked om denne kategori' : null"><input type="checkbox" v-model="c.notify" :disabled="c.mandatory" @change="saveCats"><span class="tag"><span class="sw" :style="{ background: c.color }"></span>{{ c.name }}</span><span v-if="c.mandatory" class="small muted">Kan ikke fravælges</span></label></li>
             </ul>
